@@ -1,0 +1,60 @@
+body {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Circulos decorativos TeamZen */
+.bg-teamzen-circles {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.bg-teamzen-circles span {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(32px);
+  opacity: 0.24;
+  mix-blend-mode: lighten;
+}
+
+/* Mint Teal */
+.bg-teamzen-circles .circle-mint {
+  background: #55C2A2;
+  width: 340px;
+  height: 340px;
+  left: -120px;
+  top: 80px;
+}
+
+/* Soft Purple */
+.bg-teamzen-circles .circle-purple {
+  background: #9D83C6;
+  width: 260px;
+  height: 260px;
+  right: -100px;
+  top: 320px;
+}
+
+/* Lavender Gray */
+.bg-teamzen-circles .circle-gray {
+  background: #DAD5E4;
+  width: 180px;
+  height: 180px;
+  left: 60vw;
+  bottom: 60px;
+}
+
+/* Puedes agregar más círculos si lo deseas */
+
+@layer utilities {
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .animate-float {
+    animation: float 3.5s ease-in-out infinite;
+  }
+}
