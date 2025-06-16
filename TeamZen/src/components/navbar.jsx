@@ -1,26 +1,36 @@
+import "./navbar.css";
 import React, { useState, useEffect } from "react";
 
 const navItems = [
-  { name: "Inicio", href: "#" },
-  { name: "Servicios", href: "#" },
-  { name: "Equipo", href: "#" },
+  { name: "Inicio", href: "#top" },
+  { name: "Nosotros", href: "#nosotros" },
+  { name: "Servicios", href: "#servicios" },
   { name: "Contacto", href: "#" },
 ];
 
 export default function Navbar() {
   const [show, setShow] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false); // Nuevo estado
 
   useEffect(() => {
     const timeout = setTimeout(() => setShow(true), 100);
     return () => clearTimeout(timeout);
   }, []);
 
-  // Bloquea scroll cuando el menú móvil está abierto
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [open]);
+
+  // Maneja el cierre con animación
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setOpen(false);
+      setIsClosing(false);
+    }, 350); // Duración igual a la animación de salida
+  };
 
   return (
     <nav className="w-full fixed top-0 left-0 z-50">
@@ -67,11 +77,14 @@ export default function Navbar() {
             )}
           </svg>
         </button>
-        {open && (
-          <div className="fixed inset-0 bg-[#FAF9F6]/98 z-50 flex flex-col items-center justify-center gap-8 animate-fadein">
+        {(open || isClosing) && (
+          <div
+            className={`fixed inset-0 bg-[#FAF9F6]/98 z-50 flex flex-col items-center justify-center gap-8
+              ${isClosing ? "animate-fadeout" : "animate-fadein"}`}
+          >
             <button
               className="absolute top-6 right-8 p-2"
-              onClick={() => setOpen(false)}
+              onClick={handleClose}
               aria-label="Cerrar menú"
             >
               <svg
@@ -91,7 +104,7 @@ export default function Navbar() {
                 className={`text-2xl font-bold text-[#2E2E3A] px-8 py-3 rounded-xl hover:bg-[#55C2A2] hover:text-[#FAF9F6] transition-all duration-300
                   animate-slideup`}
                 style={{ animationDelay: `${0.1 + idx * 0.08}s` }}
-                onClick={() => setOpen(false)}
+                onClick={handleClose}
               >
                 {item.name}
               </a>
@@ -99,23 +112,6 @@ export default function Navbar() {
           </div>
         )}
       </div>
-      {/* Animaciones para el menú móvil */}
-      <style>{`
-        @keyframes fadein {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .animate-fadein {
-          animation: fadein 0.35s cubic-bezier(.4,0,.2,1);
-        }
-        @keyframes slideup {
-          from { opacity: 0; transform: translateY(24px);}
-          to { opacity: 1; transform: translateY(0);}
-        }
-        .animate-slideup {
-          animation: slideup 0.5s cubic-bezier(.4,0,.2,1) both;
-        }
-      `}</style>
     </nav>
   );
 }

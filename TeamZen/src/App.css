@@ -58,3 +58,7 @@ body {
     animation: float 3.5s ease-in-out infinite;
   }
 }
+
+html {
+  scroll-behavior: smooth;
+}

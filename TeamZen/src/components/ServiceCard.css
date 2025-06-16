@@ -1,0 +1,56 @@
+@keyframes fadein-up {
+  0% {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fadein-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-32px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+@keyframes fadein-right {
+  0% {
+    opacity: 0;
+    transform: translateX(32px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-fadein-up {
+  animation: fadein-up 0.7s cubic-bezier(.4,0,.2,1) both;
+}
+.animate-fadein-left {
+  animation: fadein-left 0.7s cubic-bezier(.4,0,.2,1) both;
+}
+.animate-fadein-right {
+  animation: fadein-right 0.7s cubic-bezier(.4,0,.2,1) both;
+}
+.animate-pop-in {
+  animation: pop-in 0.7s cubic-bezier(.4,0,.2,1) both;
+}
