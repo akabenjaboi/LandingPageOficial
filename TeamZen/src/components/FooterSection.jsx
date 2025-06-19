@@ -14,7 +14,7 @@ export default function Footer() {
             style={{ maxWidth: "300px" }}
           />
           <p className="text-base md:text-lg text-[#5B5B6B] max-w-sm mx-auto md:mx-0">
-            TeamZen es una plataforma digital que impulsa el bienestar y la
+            La primera plataforma digital hecha en Chile en prevenir el burnout e impulsar el bienestar y la
             colaboración en equipos, combinando tecnología y empatía para
             transformar la cultura organizacional.
           </p>
