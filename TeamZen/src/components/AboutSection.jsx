@@ -1,4 +1,9 @@
 import React from "react";
+import SplitText from "./ReactBits/SplitText/SplitText";
+
+const handleAnimationComplete = () => {
+  console.log("All letters have animated!");
+};
 
 export default function AboutSection({ sobreRef, sobreInView }) {
   return (
@@ -19,7 +24,9 @@ export default function AboutSection({ sobreRef, sobreInView }) {
           ${sobreInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
         `}
       >
-        TeamZen nació para <span className="text-[#55C2A2]">humanizar el trabajo</span> desde el <span className="text-[#9D83C6]">bienestar emocional</span>.
+        TeamZen nació para{" "}
+        <span className="text-[#55C2A2]">humanizar el trabajo</span> desde el{" "}
+        <span className="text-[#9D83C6]">bienestar emocional</span>.
       </p>
       {/* Responsive collage */}
       <div className="flex flex-col md:flex-row items-center justify-center w-full gap-4 md:gap-0 relative h-auto md:h-[340px] lg:h-[420px] mb-4">
@@ -53,6 +60,32 @@ export default function AboutSection({ sobreRef, sobreInView }) {
           style={{
             zIndex: 10,
           }}
+        />
+      </div>
+      
+      {/* SplitText destacado */}
+      <div className="w-full justify-center mt-30 px-2 hidden lg:block">
+        <SplitText
+          text={
+            <>
+              <span className="text-[#55C2A2] font-extrabold">Anticiparse</span> es clave:{" "}
+              <span className="text-[#9D83C6] font-bold">TeamZen</span> es el primer software que transforma{" "}
+              <span className="text-[#55C2A2] font-bold">señales emocionales</span> en{" "}
+              <span className="font-extrabold">prevención real</span> del{" "}
+              <span className="text-[#2E2E3A] font-extrabold">agotamiento laboral</span>.
+            </>
+          }
+          className="text-[1rem] sm:text-[6rem] md:text-[8rem] lg:text-[4rem] font-extrabold text-center text-[#2E2E3A] leading-snug drop-shadow-lg break-words sm:break-normal"
+          delay={20}
+          duration={0.5}
+          ease="elastic.out(1, 0.9)"
+          splitType="chars"
+          from={{ opacity: 0, y: 40 }}
+          to={{ opacity: 1, y: 0 }}
+          threshold={0.1}
+          rootMargin="-50px"
+          textAlign="center"
+          onLetterAnimationComplete={handleAnimationComplete}
         />
       </div>
     </section>

@@ -1,0 +1,29 @@
+Dado el estilo del logo de **TeamZen** con **Zenpanda**, los colores predominantes son:
+
+* 🎧 **Púrpura suave** (para los audífonos)
+* 🐼 **Negro/Gris oscuro** (contornos y cuerpo del panda)
+* 🧘‍♂️ **Verde menta / teal** (taza)
+* ⚪ **Blanco / Beige claro** (fondo)
+
+### 🎨 Paleta recomendada para la landing page
+
+Aquí te propongo una paleta coherente y funcional:
+
+| Color                 | Uso sugerido                       | Código Hex |
+| --------------------- | ---------------------------------- | ---------- |
+| **Deep Charcoal**     | Texto principal, títulos           | `#2E2E3A`  |
+| **Lavender Gray**     | Fondo secciones alternas o botones | `#DAD5E4`  |
+| **Mint Teal**         | Botones primarios, íconos          | `#55C2A2`  |
+| **Soft Purple**       | Enlaces, hover, elementos sutiles  | `#9D83C6`  |
+| **Off White / Cream** | Fondo principal                    | `#FAF9F6`  |
+| **Black 90%**         | Textos secundarios                 | `#1F1F1F`  |
+
+### 🌈 Combinaciones prácticas
+
+* **Header**: fondo `#FAF9F6`, logo a la izquierda, botón con `#55C2A2` (hover `#9D83C6`)
+* **CTA principal**: botón verde menta con texto oscuro (`#2E2E3A`)
+* **Tarjetas o secciones**: alternancia entre blanco y `#DAD5E4`
+* **Iconografía**: íconos en `#9D83C6` o `#55C2A2`
+* **Footer**: fondo más oscuro con texto claro o viceversa
+
+

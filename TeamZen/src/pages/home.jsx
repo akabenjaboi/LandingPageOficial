@@ -3,6 +3,8 @@ import useInView from "../hooks/useInView";
 import HeroSection from "../components/HeroSection";
 import AboutSection from "../components/AboutSection";
 import ServicesSection from "../components/ServicesSection";
+import TeamSecion from "../components/TeamSecion";
+import FooterSection from "../components/FooterSection";
 
 export default function Home() {
   // Animación al hacer scroll para "Sobre TeamZen"
@@ -19,6 +21,13 @@ export default function Home() {
 
       {/* Servicios */}
       <ServicesSection />
+
+      {/* Equipo */}
+      <TeamSecion />
+
+      {/* Footer */}
+      <FooterSection />
+
     </main>
   );
 }

@@ -74,7 +74,7 @@ const servicios = [
 ];
 
 export default function ServicesSection() {
-  const [serviciosRef] = useInView({ threshold: 0.2 });
+  const [serviciosRef, serviciosInView] = useInView({ threshold: 0.2 });
   const isMobile = useIsMobile();
 
   const serviciosToShow = isMobile
@@ -92,16 +92,28 @@ export default function ServicesSection() {
 
   function AnimatedServiceCard(props) {
     const [ref, inView] = useInView({ threshold: 0.2 });
+    const [hasShown, setHasShown] = React.useState(false);
+
+    React.useEffect(() => {
+      if (inView && !hasShown) setHasShown(true);
+    }, [inView, hasShown]);
+
+    const [animationClass] = React.useState(props.animationClass);
+
     return (
       <div ref={ref} className="w-full flex justify-center">
-        <ServiceCard {...props} show={inView} />
+        <ServiceCard {...props} show={hasShown} animationClass={animationClass} />
       </div>
     );
   }
 
   return (
-    <section id="servicios" ref={serviciosRef} className="scroll-mt-32 w-full max-w-6xl mt-30 mb-10 px-2">
-      <h3 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#2E2E3A] text-center mb-8">
+    <section id="servicios" ref={serviciosRef} className="scroll-mt-32 w-full max-w-6xl mt-10 mb-10 px-2">
+      <h3
+        className={`text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#2E2E3A] text-center mb-8 drop-shadow-lg tracking-tight transition-all duration-700
+          ${serviciosInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
+        `}
+      >
         Servicios
       </h3>
       <div className={`grid ${isMobile ? "grid-cols-1 gap-y-8" : "grid-cols-3 gap-8"} justify-items-center`}>

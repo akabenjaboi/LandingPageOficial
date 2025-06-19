@@ -5,7 +5,7 @@ const navItems = [
   { name: "Inicio", href: "#top" },
   { name: "Nosotros", href: "#nosotros" },
   { name: "Servicios", href: "#servicios" },
-  { name: "Contacto", href: "#" },
+  { name: "Equipo", href: "#equipo" },
 ];
 
 export default function Navbar() {
