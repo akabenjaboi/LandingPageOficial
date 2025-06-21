@@ -44,8 +44,8 @@ function LoginForm() {
                     button: "9999px",
                   },
                   fontSizes: {
-                    input: "5xlrem",
-                    button: "5xlrem",
+                    input: "1rem",
+                    button: "1rem",
                   },
                 },
               },
