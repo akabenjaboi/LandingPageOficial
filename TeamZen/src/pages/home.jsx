@@ -1,5 +1,6 @@
 import React from "react";
 import useInView from "../hooks/useInView";
+import Navbar from '../components/navbar.jsx';
 import HeroSection from "../components/HeroSection";
 import AboutSection from "../components/AboutSection";
 import ServicesSection from "../components/ServicesSection";
@@ -11,23 +12,25 @@ export default function Home() {
   const [sobreRef, sobreInView] = useInView({ threshold: 0.2 });
 
   return (
-    <main className="min-h-screen bg-[#FAF9F6] flex flex-col items-center pt-28 md:pt-36 px-2 sm:px-4">
-      <a id="top" tabIndex={-1} style={{ position: "absolute", top: 0 }}></a>
-      {/* Hero Section */}
-      <HeroSection />
+    <>
+      <Navbar />
+      <main className="min-h-screen bg-[#FAF9F6] flex flex-col items-center pt-28 md:pt-36 px-2 sm:px-4 font-sans">
+        <a id="top" tabIndex={-1} style={{ position: "absolute", top: 0 }}></a>
+        {/* Hero Section */}
+        <HeroSection />
 
-      {/* Sobre TeamZen */}
-      <AboutSection sobreRef={sobreRef} sobreInView={sobreInView} />
+        {/* Sobre TeamZen */}
+        <AboutSection sobreRef={sobreRef} sobreInView={sobreInView} />
 
-      {/* Servicios */}
-      <ServicesSection />
+        {/* Servicios */}
+        <ServicesSection />
 
-      {/* Equipo */}
-      <TeamSecion />
+        {/* Equipo */}
+        <TeamSecion />
 
-      {/* Footer */}
-      <FooterSection />
-
-    </main>
+        {/* Footer */}
+        <FooterSection />
+      </main>
+    </>
   );
 }
