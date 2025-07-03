@@ -70,36 +70,45 @@ export default function Dashboard() {
 
         // Si es usuario, cargar el equipo al que pertenece y sus miembros
         if (profileData.role === "user") {
-          // Buscar el team_membership del usuario
-          const { data: membership } = await supabase
+          // Buscar todas las membresías del usuario
+          const { data: memberships, error: membershipsError } = await supabase
             .from("team_members")
             .select("team_id")
-            .eq("user_id", currentUser.id)
-            .single();
+            .eq("user_id", currentUser.id);
 
-          if (membership?.team_id) {
-            // Cargar info del equipo
-            const { data: teamData } = await supabase
+          if (membershipsError) {
+            console.error("Error cargando membresías:", membershipsError);
+            setTeams([]);
+            setTeamMembers({});
+          } else if (memberships && memberships.length > 0) {
+            // Obtener todos los equipos a los que pertenece el usuario
+            const teamIds = memberships.map((m) => m.team_id);
+            const { data: teamsData } = await supabase
               .from("teams")
               .select("*")
-              .eq("id", membership.team_id)
-              .single();
-            setTeams(teamData ? [teamData] : []);
+              .in("id", teamIds);
 
-            // Cargar miembros del equipo
+            setTeams(teamsData || []);
+
+            // Cargar miembros de cada equipo
             setMembersLoading(true);
-            const { data: team_members, error } = await supabase
-              .from("team_members")
-              .select("user_id, profiles(first_name, last_name)")
-              .eq("team_id", membership.team_id);
+            const membersObj = {};
+            for (const teamId of teamIds) {
+              const { data: team_members, error } = await supabase
+                .from("team_members")
+                .select("user_id, profiles(first_name, last_name)")
+                .eq("team_id", teamId);
 
-            if (error) {
-              console.error(`Error cargando miembros para equipo ${membership.team_id}:`, error);
+              if (error) {
+                console.error(`Error cargando miembros para equipo ${teamId}:`, error);
+              }
+              membersObj[teamId] = team_members || [];
             }
-            setTeamMembers({ [membership.team_id]: team_members || [] });
+            setTeamMembers(membersObj);
             setMembersLoading(false);
           } else {
             setTeams([]);
+            setTeamMembers({});
           }
         }
       }
@@ -247,34 +256,50 @@ export default function Dashboard() {
           </>
         )}
 
-        {profile?.role === "user" && teams.length > 0 && (
-          <div className="mt-8 text-left w-full">
-            <h2 className="text-xl font-bold mb-2 text-[#2E2E3A]">Tu equipo</h2>
-            <div className="bg-[#F3F0F9] border border-[#DAD5E4] rounded-lg px-4 py-2">
-              <div className="font-semibold">{teams[0].name}</div>
-              <div className="mt-2">
-                <span className="font-bold text-[#2E2E3A]">Miembros:</span>
-                {membersLoading ? (
-                  <div className="text-[#2E2E3A]">Cargando miembros...</div>
-                ) : (
-                  <ul className="ml-4 mt-1 list-disc">
-                    {(teamMembers[teams[0].id] || []).length === 0 ? (
-                      <li className="text-[#9D83C6] text-sm">No hay miembros en este equipo.</li>
-                    ) : (
-                      teamMembers[teams[0].id].map((member) => (
-                        <li key={member.user_id} className="text-[#1F1F1F]">
-                          {member.profiles?.first_name} {member.profiles?.last_name}
-                          {member.user_id === user?.id && (
-                            <span className="ml-2 text-[#55C2A2] font-semibold">(tú)</span>
+        {profile?.role === "user" && (
+          <>
+            <button
+              onClick={() => navigate("/LandingPageOficial/unirse-equipo")}
+              className="mt-4 bg-[#55C2A2] hover:bg-[#9D83C6] text-white px-6 py-2 rounded-full font-semibold transition-colors"
+            >
+              Unirse a un equipo
+            </button>
+
+            {teams.length > 0 && (
+              <div className="mt-8 text-left w-full">
+                <h2 className="text-xl font-bold mb-2 text-[#2E2E3A]">Tus equipos</h2>
+                {teams.map((team) => (
+                  <div
+                    key={team.id}
+                    className="bg-[#F3F0F9] border border-[#DAD5E4] rounded-lg px-4 py-2 mb-4"
+                  >
+                    <div className="font-semibold">{team.name}</div>
+                    <div className="mt-2">
+                      <span className="font-bold text-[#2E2E3A]">Miembros:</span>
+                      {membersLoading ? (
+                        <div className="text-[#2E2E3A]">Cargando miembros...</div>
+                      ) : (
+                        <ul className="ml-4 mt-1 list-disc">
+                          {(teamMembers[team.id] || []).length === 0 ? (
+                            <li className="text-[#9D83C6] text-sm">No hay miembros en este equipo.</li>
+                          ) : (
+                            teamMembers[team.id].map((member) => (
+                              <li key={member.user_id} className="text-[#1F1F1F]">
+                                {member.profiles?.first_name} {member.profiles?.last_name}
+                                {member.user_id === user?.id && (
+                                  <span className="ml-2 text-[#55C2A2] font-semibold">(tú)</span>
+                                )}
+                              </li>
+                            ))
                           )}
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                )}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
 
         {showProfileForm && (
