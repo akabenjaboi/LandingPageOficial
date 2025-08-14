@@ -6,17 +6,23 @@ import LoginPage from './pages/loginpage.jsx'
 import Dashboard from './pages/dashboard.jsx'
 import CrearEquipo from './pages/crear-equipo.jsx';
 import UnirseEquipo from './pages/unirse-equipo.jsx';
+import MBIPage from './pages/mbi.jsx';
+import EvaluacionesPage from './pages/evaluaciones.jsx';
+import ReportesPage from './pages/reportes.jsx';
 
 
 function App() {
   return (
-    <Router>
+    <Router basename="/LandingPageOficial">
       <Routes>
-        <Route path="*" element={<Home />} />
-        <Route path="/LandingPageOficial/login" element={<LoginPage />} />
-        <Route path="/LandingPageOficial/dashboard" element={<Dashboard />} />
-        <Route path="/LandingPageOficial/crear-equipo" element={<CrearEquipo />} />
-        <Route path="/LandingPageOficial/unirse-equipo" element={<UnirseEquipo />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/crear-equipo" element={<CrearEquipo />} />
+        <Route path="/unirse-equipo" element={<UnirseEquipo />} />
+  <Route path="/mbi" element={<MBIPage />} />
+  <Route path="/evaluaciones" element={<EvaluacionesPage />} />
+  <Route path="/reportes" element={<ReportesPage />} />
       </Routes>
       <div className="bg-teamzen-circles">
         <span className="circle-mint"></span>
