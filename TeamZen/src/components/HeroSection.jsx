@@ -30,8 +30,7 @@ export default function HeroSection() {
           <span className="text-[#9D83C6]">productivo</span>
         </h2>
         <Link
-          // to="/LandingPageOficial/login"
-          to="http://3.147.64.83:8000/"
+          to="/login"
           className="inline-block bg-[#55C2A2] hover:bg-[#9D83C6] text-[#2E2E3A] font-bold px-8 py-3 md:px-10 md:py-4 rounded-xl shadow-lg transition-all duration-300 text-lg md:text-xl"
         >
           Comienza ahora

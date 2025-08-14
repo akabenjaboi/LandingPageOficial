@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
+import { Card, Button, Input, Alert } from "../components/UIComponents";
 
 export default function UnirseEquipo() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function UnirseEquipo() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) setUserId(user.id);
-      else navigate("/LandingPageOficial/login");
+      else navigate("/login");
     });
   }, [navigate]);
 
@@ -94,45 +95,139 @@ export default function UnirseEquipo() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAF9F6] p-4">
-      <div className="bg-white rounded-2xl shadow-lg p-10 border border-[#DAD5E4] w-full max-w-md">
-        <h1 className="text-2xl font-bold text-[#2E2E3A] mb-6">Unirse a un equipo</h1>
-        <form onSubmit={handleJoin} className="flex flex-col gap-4">
-          <input
-            type="text"
-            required
-            placeholder="Código de invitación"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            className="border border-[#DAD5E4] rounded-lg px-4 py-2 uppercase tracking-wider"
+    <div className="min-h-screen bg-[#FAF9F6]">
+      {/* Header */}
+      <header className="bg-white border-b border-[#DAD5E4] shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-3">
+              <img 
+                src={`${import.meta.env.BASE_URL}/img/pandalogo.png`} 
+                alt="TeamZen Logo" 
+                className="w-10 h-10"
+              />
+              <h1 className="text-2xl font-bold text-[#2E2E3A]">
+                Team<span className="text-[#55C2A2]">Zen</span>
+              </h1>
+            </div>
+            <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Volver al Dashboard
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center mb-8">
+          <img 
+            src={`${import.meta.env.BASE_URL}/img/formpanda.png`} 
+            alt="Panda buscando" 
+            className="w-32 h-32 mx-auto mb-6"
           />
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-[#55C2A2] hover:bg-[#9D83C6] text-white font-semibold px-6 py-2 rounded-full transition-colors"
-          >
-            {loading ? "Uniéndose..." : "Unirse al equipo"}
-          </button>
-        </form>
+          <h1 className="text-3xl font-bold text-[#2E2E3A] mb-2">Unirse a un Equipo</h1>
+          <p className="text-[#5B5B6B] text-lg">
+            Ingresa el código de invitación que te proporcionó tu líder de equipo
+          </p>
+        </div>
 
-        {success && (
-          <div className="mt-4 p-4 bg-[#F0FFF4] border border-[#C6F6D5] rounded-lg text-[#2F855A]">
-            {success}
+        <Card className="max-w-lg mx-auto">
+          {!success ? (
+            <form onSubmit={handleJoin} className="space-y-6">
+              <div className="space-y-4">
+                <Input
+                  label="Código de Invitación"
+                  type="text"
+                  required
+                  placeholder="Ej: ABC123"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  className="text-center text-2xl font-mono tracking-wider"
+                  maxLength={6}
+                />
+                <div className="text-sm text-[#5B5B6B] text-center">
+                  Los códigos tienen 6 letras (ej: ABC123)
+                </div>
+              </div>
+
+              <Button 
+                type="submit" 
+                loading={loading} 
+                className="w-full" 
+                size="large"
+                disabled={code.length < 6}
+              >
+                {loading ? "Uniéndose al equipo..." : "Unirse al Equipo"}
+              </Button>
+            </form>
+          ) : (
+            <div className="text-center space-y-6">
+              <div className="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              
+              <div>
+                <h2 className="text-2xl font-bold text-[#2E2E3A] mb-2">¡Bienvenido al equipo!</h2>
+                <p className="text-[#5B5B6B]">Te has unido exitosamente al equipo</p>
+              </div>
+
+              <div className="bg-gradient-to-r from-[#55C2A2]/10 to-[#9D83C6]/10 border border-[#55C2A2]/30 rounded-lg p-6">
+                <h3 className="font-semibold text-[#2E2E3A] mb-2">¿Qué sigue?</h3>
+                <ul className="text-sm text-[#5B5B6B] space-y-2 text-left">
+                  <li className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-[#55C2A2]" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    Podrás ver a los demás miembros del equipo
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-[#55C2A2]" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    Próximamente podrás realizar evaluaciones de bienestar
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-[#55C2A2]" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    Recibirás consejos personalizados según tus resultados
+                  </li>
+                </ul>
+              </div>
+
+              <Button onClick={() => navigate("/dashboard")} className="w-full">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v1H8V5z" />
+                </svg>
+                Ir al Dashboard
+              </Button>
+            </div>
+          )}
+
+          {error && (
+            <Alert type="error" title="Error al unirse al equipo" className="mt-4">
+              {error}
+            </Alert>
+          )}
+        </Card>
+
+        {/* Información adicional */}
+        <div className="mt-12 text-center">
+          <h3 className="text-lg font-semibold text-[#2E2E3A] mb-4">¿No tienes un código?</h3>
+          <div className="bg-white rounded-lg border border-[#DAD5E4] p-6 max-w-md mx-auto">
+            <p className="text-[#5B5B6B] text-sm mb-3">
+              Solicita el código de invitación a tu líder de equipo o administrador.
+            </p>
+            <p className="text-[#5B5B6B] text-sm">
+              Los códigos son únicos para cada equipo y se generan automáticamente.
+            </p>
           </div>
-        )}
-
-        {error && (
-          <div className="mt-4 p-4 bg-[#FFF5F5] border border-[#FED7D7] rounded-lg text-[#C53030]">
-            {error}
-          </div>
-        )}
-
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="mt-6 text-[#9D83C6] underline"
-        >
-          Volver al dashboard
-        </button>
+        </div>
       </div>
     </div>
   );
