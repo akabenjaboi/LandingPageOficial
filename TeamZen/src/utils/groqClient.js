@@ -2,7 +2,12 @@
 import { classifyMBI, computeBurnoutStatus, interpretBurnoutLevel } from './mbiClassification';
 
 export async function generateExternalAdvice(mbiData) {
-  const API_KEY = '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';
+  const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+  
+  if (!API_KEY) {
+    console.warn('⚠️ Groq API Key no configurada en variables de entorno');
+    throw new Error('API Key de Groq no disponible');
+  }
   
   try {
     const prompt = buildPrompt(mbiData);
