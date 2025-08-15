@@ -1,30 +1,42 @@
-// Cliente simple para Groq - IA externa gratuita
+// ================================
+// GROQ CLIENT - VERSIÓN SEGURA VIA PROXY
+// ================================
 import { classifyMBI, computeBurnoutStatus, interpretBurnoutLevel } from './mbiClassification';
+import { supabase } from '../../supabaseClient';
 
+// 🔒 SEGURIDAD: Ahora usamos proxy server en lugar de API key directa
+const PROXY_BASE_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3001';
+
+/**
+ * Genera consejos externos usando Groq AI a través de proxy seguro
+ * @param {Object} mbiData - Datos del Maslach Burnout Inventory
+ * @returns {Promise<Object>} - Consejos estructurados
+ */
 export async function generateExternalAdvice(mbiData) {
-  const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+  // ✅ Obtener token de autenticación de Supabase
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
   
-  if (!API_KEY) {
-    console.warn('⚠️ Groq API Key no configurada en variables de entorno');
-    throw new Error('API Key de Groq no disponible');
+  if (sessionError || !session) {
+    console.warn('⚠️ Usuario no autenticado para acceso a IA');
+    throw new Error('Autenticación requerida para acceso a IA externa');
   }
   
   try {
     const prompt = buildPrompt(mbiData);
     
-    console.log('🤖 Conectando con Groq...', { 
+    console.log('🤖 Conectando con Groq via proxy seguro...', { 
       model: 'llama-3.1-8b-instant',
       promptLength: prompt.length 
     });
     
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    // 🔒 CAMBIO CRÍTICO: Llamada a proxy en lugar de Groq directo
+    const response = await fetch(`${PROXY_BASE_URL}/api/groq/chat`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${API_KEY}`,
+        'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
         messages: [
           {
             role: 'system',
@@ -35,48 +47,47 @@ export async function generateExternalAdvice(mbiData) {
             content: prompt
           }
         ],
-        max_tokens: 600,
-        temperature: 0.7
+        model: 'llama-3.1-8b-instant'
       })
     });
 
-    console.log('📡 Respuesta de Groq:', { 
+    console.log('📡 Respuesta del proxy:', { 
       status: response.status, 
       statusText: response.statusText,
       ok: response.ok 
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Error detallado de Groq:', errorText);
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ Error del proxy:', errorData);
       
-      if (response.status === 429) {
+      if (response.status === 401) {
+        throw new Error('Autenticación inválida. Inicia sesión nuevamente.');
+      } else if (response.status === 429) {
         throw new Error('Límite de requests excedido. Espera unos minutos e intenta de nuevo.');
-      } else if (response.status === 401) {
-        throw new Error('API key inválida o expirada.');
       } else if (response.status >= 500) {
-        throw new Error('Servidor de Groq temporalmente no disponible.');
+        throw new Error('Servidor temporalmente no disponible.');
       } else {
-        throw new Error(`Error Groq: ${response.status} - ${errorText.slice(0, 100)}`);
+        throw new Error(errorData.error || `Error del servidor: ${response.status}`);
       }
     }
 
     const result = await response.json();
-    console.log('✅ Respuesta exitosa de Groq');
+    console.log('✅ Respuesta exitosa del proxy');
     
     if (!result.choices || !result.choices[0] || !result.choices[0].message) {
-      throw new Error('Respuesta de Groq incompleta');
+      throw new Error('Respuesta de IA incompleta');
     }
     
     const content = result.choices[0].message.content;
     return parseResponse(content);
     
   } catch (error) {
-    console.error('💥 Error completo en Groq:', error);
+    console.error('💥 Error completo en Groq proxy:', error);
     
     // Errores específicos más informativos
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('Error de conexión. Verifica tu conexión a internet.');
+      throw new Error('Error de conexión con servidor proxy. Verifica que esté ejecutándose.');
     } else if (error.message.includes('JSON')) {
       throw new Error('Error procesando respuesta de IA. Intenta de nuevo.');
     } else {
