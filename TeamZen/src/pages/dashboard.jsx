@@ -1,3 +1,14 @@
+// ===================================================================
+// DASHBOARD PRINCIPAL - CENTRO DE CONTROL DE TEAMZEN
+// ===================================================================
+// Este componente maneja:
+// - Autenticación y perfiles de usuario
+// - Gestión de equipos (crear, editar, eliminar)
+// - Lanzamiento y gestión de ciclos MBI
+// - Dashboard diferenciado por rol (líder vs miembro)
+// - Métricas y estado en tiempo real
+// ===================================================================
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
@@ -9,32 +20,62 @@ import TeamOptionsMenu from "../components/TeamOptionsMenu";
 import EditTeamModal from "../components/EditTeamModal";
 
 export default function Dashboard() {
+  // ===================================================================
+  // ESTADO - NAVEGACIÓN Y USUARIO
+  // ===================================================================
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showProfileForm, setShowProfileForm] = useState(false);
+  
+  // ===================================================================
+  // ESTADO - PERFIL DE USUARIO
+  // ===================================================================
   const [profile, setProfile] = useState(null);
+  const [showProfileForm, setShowProfileForm] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [role, setRole] = useState("");
   const [saving, setSaving] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
+  
+  // ===================================================================
+  // ESTADO - EQUIPOS Y MIEMBROS
+  // ===================================================================
   const [teams, setTeams] = useState([]);
   const [teamsLoading, setTeamsLoading] = useState(false);
-  const [teamMembers, setTeamMembers] = useState({});
+  const [teamMembers, setTeamMembers] = useState({}); // { team_id: [members] }
   const [membersLoading, setMembersLoading] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  
+  // ===================================================================
+  // ESTADO - CICLOS MBI Y RESPUESTAS
+  // ===================================================================
   const [activeCycles, setActiveCycles] = useState({}); // { team_id: cycle_id }
-  const [launchingTeam, setLaunchingTeam] = useState(null);
-  const [endingTeam, setEndingTeam] = useState(null);
   const [respondedCycles, setRespondedCycles] = useState({}); // { cycle_id: true }
   const [respondedMembersByTeam, setRespondedMembersByTeam] = useState({}); // { team_id: Set(user_ids) }
+  const [wellbeingByTeam, setWellbeingByTeam] = useState({}); // { team_id: { avg: number, count: number } }
+  
+  // ===================================================================
+  // ESTADO - OPERACIONES DE EQUIPOS
+  // ===================================================================
+  const [launchingTeam, setLaunchingTeam] = useState(null);
+  const [endingTeam, setEndingTeam] = useState(null);
+  
+  // ===================================================================
+  // ESTADO - MODALES
+  // ===================================================================
+  // ===================================================================
+  // ESTADO - MODALES
+  // ===================================================================
   const [showLaunchModal, setShowLaunchModal] = useState(false);
   const [launchContext, setLaunchContext] = useState(null); // {teamId, teamName, activeCycleId, pendingMembers:[], totalMembers}
-  const [wellbeingByTeam, setWellbeingByTeam] = useState({}); // { team_id: { avg: number, count: number } }
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
   const [showEditTeamModal, setShowEditTeamModal] = useState(false);
   const [editingTeam, setEditingTeam] = useState(null);
+
+  // ===================================================================
+  // EFECTO PRINCIPAL - INICIALIZACIÓN Y CARGA DE DATOS
+  // ===================================================================
 
   useEffect(() => {
     const init = async () => {
@@ -302,11 +343,19 @@ export default function Dashboard() {
     };
   }, [showProfileMenu]);
 
+  // ===================================================================
+  // HANDLERS - AUTENTICACIÓN Y NAVEGACIÓN
+  // ===================================================================
+  
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
   };
 
+  // ===================================================================
+  // HANDLERS - GESTIÓN DE CICLOS MBI
+  // ===================================================================
+  
   const launchMBI = async (teamId) => {
     setLaunchingTeam(teamId);
     try {
@@ -388,6 +437,10 @@ export default function Dashboard() {
     setShowLaunchModal(true);
   };
 
+  // ===================================================================
+  // HANDLERS - GESTIÓN DE EQUIPOS (CREAR, EDITAR, ELIMINAR)
+  // ===================================================================
+  
   const handleTeamCreated = async (newTeam, inviteCode) => {
     // Refrescar la lista de equipos
     try {
@@ -475,6 +528,10 @@ export default function Dashboard() {
     }
   };
 
+  // ===================================================================
+  // HANDLERS - GESTIÓN DE PERFIL DE USUARIO
+  // ===================================================================
+  
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -545,6 +602,11 @@ export default function Dashboard() {
     }
   };
 
+  // ===================================================================
+  // RENDERIZADO PRINCIPAL
+  // ===================================================================
+  
+  // Pantalla de carga inicial
   if (loading) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <LoadingSpinner size="large" message="Cargando tu dashboard..." />
@@ -796,7 +858,11 @@ export default function Dashboard() {
   );
 }
 
-// Sección de equipos para líderes
+// ===================================================================
+// COMPONENTES DE SECCIÓN - VISTAS ESPECIALIZADAS POR ROL
+// ===================================================================
+
+// Sección de equipos para líderes - Gestión completa de equipos
 function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam }) {
   if (teamsLoading) {
     return (
@@ -852,7 +918,7 @@ function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, 
   );
 }
 
-// Sección de equipos para usuarios
+// Sección de equipos para usuarios miembros - Vista de participación
 function UserTeamsSection({ teams, teamMembers, membersLoading, navigate, userId, activeCycles, respondedCycles, respondedMembersByTeam }) {
   if (teams.length === 0) {
     return (
@@ -1136,7 +1202,11 @@ function ProfileFormModal({
   );
 }
 
-// Tarjeta de equipo para líderes
+// ===================================================================
+// COMPONENTES DE TARJETAS - ELEMENTOS DE INTERFAZ ESPECIALIZADOS
+// ===================================================================
+
+// Tarjeta de equipo para líderes - Control completo y métricas
 function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
@@ -1410,7 +1480,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
   );
 }
 
-// Tarjeta de equipo para usuarios
+// Tarjeta de equipo para usuarios miembros - Vista de participación
 function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycleId, respondedCycles, respondedMembers }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();

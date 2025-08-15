@@ -1,5 +1,20 @@
+// ===================================================================
+// COMPONENTES UI REUTILIZABLES - DESIGN SYSTEM DE TEAMZEN
+// ===================================================================
+// Este archivo contiene todos los componentes base de la interfaz:
+// - Card: Contenedores con bordes redondeados y sombras
+// - Button: Botones con variantes y estados
+// - Alert: Notificaciones y mensajes
+// - Badge: Etiquetas informativas
+// - Input: Campos de entrada
+// - LoadingSpinner: Indicadores de carga
+// ===================================================================
+
 import React from 'react';
 
+// ===================================================================
+// COMPONENTE CARD - Contenedor base con estilo unificado
+// ===================================================================
 export function Card({ children, className = "", padding = "p-6" }) {
   return (
     <div className={`bg-white rounded-2xl shadow-lg border border-[#DAD5E4] ${padding} ${className}`}>
@@ -8,6 +23,9 @@ export function Card({ children, className = "", padding = "p-6" }) {
   );
 }
 
+// ===================================================================
+// COMPONENTE BUTTON - Botón reutilizable con múltiples variantes
+// ===================================================================
 export function Button({ 
   children, 
   variant = "primary", 
@@ -17,6 +35,7 @@ export function Button({
   className = "",
   ...props 
 }) {
+  // Variantes de color y estilo
   const variants = {
     primary: "bg-[#55C2A2] hover:bg-[#9D83C6] text-[#2E2E3A]",
     secondary: "bg-[#DAD5E4] hover:bg-[#9D83C6] text-[#2E2E3A] hover:text-white",
@@ -25,6 +44,7 @@ export function Button({
     ghost: "text-[#9D83C6] hover:text-[#55C2A2] hover:bg-[#DAD5E4]/30"
   };
 
+  // Tamaños disponibles
   const sizes = {
     small: "px-4 py-2 text-sm",
     default: "px-6 py-3 text-base",
@@ -52,6 +72,9 @@ export function Button({
   );
 }
 
+// ===================================================================
+// COMPONENTE INPUT - Campo de entrada con label y validación
+// ===================================================================
 export function Input({ 
   label, 
   error, 
@@ -83,7 +106,11 @@ export function Input({
   );
 }
 
+// ===================================================================
+// COMPONENTE ALERT - Notificaciones con diferentes tipos
+// ===================================================================
 export function Alert({ type = "info", title, children, className = "" }) {
+  // Estilos por tipo de alerta
   const types = {
     success: {
       bg: "bg-green-50",
@@ -129,7 +156,11 @@ export function Alert({ type = "info", title, children, className = "" }) {
   );
 }
 
+// ===================================================================
+// COMPONENTE BADGE - Etiquetas informativas con colores
+// ===================================================================
 export function Badge({ children, variant = "default", className = "" }) {
+  // Variantes de color para badges
   const variants = {
     default: "bg-[#DAD5E4] text-[#2E2E3A]",
     success: "bg-green-100 text-green-800",
