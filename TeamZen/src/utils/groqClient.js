@@ -86,13 +86,18 @@ export async function generateExternalAdvice(mbiData) {
 }
 
 function buildPrompt(mbiData) {
-  const { ae, d, rp, wellbeing, previous, history } = mbiData;
+  const { ae, d, rp, wellbeing, previous, history, teamContext } = mbiData;
   
   // Usar EXACTAMENTE la misma lógica de clasificación que el sistema local
   const { catAE, catD, catRP } = classifyMBI(ae, d, rp);
   const burnoutStatus = computeBurnoutStatus({ catAE, catD, catRP });
   
   let prompt = `Analiza estos resultados del Maslach Burnout Inventory:
+
+CONTEXTO DEL EQUIPO:
+- Nombre: ${teamContext?.name || 'Equipo'}${teamContext?.description ? `
+- Descripción/Área: ${teamContext.description}` : ''}
+- Incluye líder en métricas: ${teamContext?.includeLeaderInMetrics ? 'Sí' : 'No'}
 
 ESTADO ACTUAL (último ciclo):
 - Agotamiento Emocional: ${ae}/54 → Nivel de burnout: ${catAE}
@@ -156,7 +161,9 @@ REGLAS CRÍTICAS:
 - Usa exactamente los nombres de campos mostrados arriba
 - El diagnóstico actual es "${burnoutStatus}" - basa todo en esto
 - Si es primer ciclo o sin historia, usa "null" en trend_analysis y prognosis
-- Máximo 4 riesgos, máximo 6 acciones`;
+- Máximo 4 riesgos, máximo 6 acciones
+- Considera el contexto del equipo (${teamContext?.description || 'equipo general'}) para sugerencias específicas
+- Las acciones deben ser prácticas y adaptadas al tipo de trabajo del equipo`;
 
   return prompt;
 }
