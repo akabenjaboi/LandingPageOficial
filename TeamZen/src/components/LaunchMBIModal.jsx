@@ -40,7 +40,13 @@ export default function LaunchMBIModal({ open, context, launching, onClose, onCo
           <h4 className="text-sm font-medium text-gray-800 flex items-center gap-2">
             Participación actual
           </h4>
-          {pendingMembers.length === 0 ? (
+          {totalMembers === 0 ? (
+            <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-xs text-yellow-700">
+                ⚠️ Este equipo no tiene miembros aún. Puedes lanzar el MBI de todas formas, pero recuerda invitar miembros para que participen.
+              </p>
+            </div>
+          ) : pendingMembers.length === 0 ? (
             <p className="text-xs text-green-600 mt-1">Todos los miembros han respondido el ciclo actual.</p>
           ) : (
             <div className="mt-2 max-h-40 overflow-y-auto border rounded p-2 bg-gray-50">

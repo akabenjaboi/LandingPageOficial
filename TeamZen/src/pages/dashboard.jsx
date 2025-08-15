@@ -4,6 +4,9 @@ import { supabase } from "../../supabaseClient";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { Card, Button, Alert, Badge, Input } from "../components/UIComponents";
 import LaunchMBIModal from "../components/LaunchMBIModal";
+import CreateTeamModal from "../components/CreateTeamModal";
+import TeamOptionsMenu from "../components/TeamOptionsMenu";
+import EditTeamModal from "../components/EditTeamModal";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -29,6 +32,9 @@ export default function Dashboard() {
   const [showLaunchModal, setShowLaunchModal] = useState(false);
   const [launchContext, setLaunchContext] = useState(null); // {teamId, teamName, activeCycleId, pendingMembers:[], totalMembers}
   const [wellbeingByTeam, setWellbeingByTeam] = useState({}); // { team_id: { avg: number, count: number } }
+  const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
+  const [showEditTeamModal, setShowEditTeamModal] = useState(false);
+  const [editingTeam, setEditingTeam] = useState(null);
 
   useEffect(() => {
     const init = async () => {
@@ -382,6 +388,93 @@ export default function Dashboard() {
     setShowLaunchModal(true);
   };
 
+  const handleTeamCreated = async (newTeam, inviteCode) => {
+    // Refrescar la lista de equipos
+    try {
+      const { data: leaderTeams } = await supabase
+        .from("teams")
+        .select("*, team_invite_codes(code)")
+        .eq("leader_id", user.id)
+        .order("created_at", { ascending: false });
+      
+      setTeams(leaderTeams || []);
+      
+      // Cerrar el modal después de un breve delay para mostrar el éxito
+      setTimeout(() => {
+        setShowCreateTeamModal(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Error refrescando equipos:", error);
+    }
+  };
+
+  const handleEditTeam = (team) => {
+    setEditingTeam(team);
+    setShowEditTeamModal(true);
+  };
+
+  const handleTeamUpdated = async (updatedTeam) => {
+    // Actualizar el equipo en el estado local
+    setTeams(prevTeams => 
+      prevTeams.map(team => 
+        team.id === updatedTeam.id ? { ...team, ...updatedTeam } : team
+      )
+    );
+    setShowEditTeamModal(false);
+    setEditingTeam(null);
+  };
+
+  const handleDeleteTeam = async (teamId) => {
+    if (!confirm("¿Estás seguro de que deseas eliminar este equipo? Esta acción no se puede deshacer.")) {
+      return;
+    }
+
+    try {
+      // Eliminar el equipo (Supabase debería manejar las referencias en cascada)
+      const { error } = await supabase
+        .from("teams")
+        .delete()
+        .eq("id", teamId)
+        .eq("leader_id", user.id); // Seguridad extra
+
+      if (error) {
+        throw error;
+      }
+
+      // Actualizar la lista de equipos
+      setTeams(prevTeams => prevTeams.filter(team => team.id !== teamId));
+      
+      // Limpiar datos relacionados
+      setTeamMembers(prev => {
+        const newMembers = { ...prev };
+        delete newMembers[teamId];
+        return newMembers;
+      });
+
+      setActiveCycles(prev => {
+        const newCycles = { ...prev };
+        delete newCycles[teamId];
+        return newCycles;
+      });
+
+      setRespondedMembersByTeam(prev => {
+        const newResponded = { ...prev };
+        delete newResponded[teamId];
+        return newResponded;
+      });
+
+      setWellbeingByTeam(prev => {
+        const newWellbeing = { ...prev };
+        delete newWellbeing[teamId];
+        return newWellbeing;
+      });
+
+    } catch (error) {
+      console.error("Error eliminando equipo:", error);
+      alert("Error al eliminar el equipo. Por favor, inténtalo de nuevo.");
+    }
+  };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -601,7 +694,7 @@ export default function Dashboard() {
             {/* Action Button */}
             {profile?.role === "leader" ? (
               <button
-                onClick={() => navigate("/crear-equipo")}
+                onClick={() => setShowCreateTeamModal(true)}
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -639,6 +732,9 @@ export default function Dashboard() {
               onEndCycle={endCycle}
               respondedMembersByTeam={respondedMembersByTeam}
               wellbeingByTeam={wellbeingByTeam}
+              onCreateTeam={() => setShowCreateTeamModal(true)}
+              onEditTeam={handleEditTeam}
+              onDeleteTeam={handleDeleteTeam}
             />
           ) : profile?.role === "user" ? (
             <UserTeamsSection 
@@ -679,13 +775,29 @@ export default function Dashboard() {
           onClose={() => { setShowLaunchModal(false); setLaunchContext(null); }}
           onConfirm={launchMBI}
         />
+        
+        <CreateTeamModal
+          isOpen={showCreateTeamModal}
+          onClose={() => setShowCreateTeamModal(false)}
+          onTeamCreated={handleTeamCreated}
+        />
+
+        <EditTeamModal
+          isOpen={showEditTeamModal}
+          onClose={() => {
+            setShowEditTeamModal(false);
+            setEditingTeam(null);
+          }}
+          team={editingTeam}
+          onTeamUpdated={handleTeamUpdated}
+        />
       </div>
     </div>
   );
 }
 
 // Sección de equipos para líderes
-function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {} }) {
+function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam }) {
   if (teamsLoading) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8 text-center">
@@ -707,7 +819,7 @@ function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, 
           Crea tu primer equipo para comenzar a gestionar el bienestar de tu grupo de trabajo.
         </p>
         <button
-          onClick={() => navigate("/crear-equipo")}
+          onClick={onCreateTeam}
           className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
         >
           Crear mi primer equipo
@@ -731,6 +843,8 @@ function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, 
             onEndCycle={() => onEndCycle(team.id)}
             respondedMembers={respondedMembersByTeam[team.id]}
             wellbeingMetric={wellbeingByTeam[team.id]}
+            onEdit={onEditTeam}
+            onDelete={onDeleteTeam}
           />
         </div>
       ))}
@@ -1023,7 +1137,7 @@ function ProfileFormModal({
 }
 
 // Tarjeta de equipo para líderes
-function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric }) {
+function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -1068,6 +1182,11 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                 Líder excluido
               </span>
             )}
+            <TeamOptionsMenu 
+              team={team}
+              onEdit={() => onEdit && onEdit(team)}
+              onDelete={() => onDelete && onDelete(team.id)}
+            />
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"

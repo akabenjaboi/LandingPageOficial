@@ -8,6 +8,7 @@ export default function CrearEquipo() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState("");
   const [teamName, setTeamName] = useState("");
+  const [description, setDescription] = useState("");
   const [joinPolicy, setJoinPolicy] = useState("code");
   const [loading, setLoading] = useState(false);
   const [inviteCode, setInviteCode] = useState(null);
@@ -45,7 +46,8 @@ export default function CrearEquipo() {
       const { data: newTeam, error: teamError } = await supabase
         .from("teams")
         .insert([{ 
-          name: teamName, 
+          name: teamName,
+          description: description, 
           leader_id: userId, 
           join_policy: joinPolicy,
           include_leader_in_metrics: includeLeader
@@ -125,6 +127,23 @@ export default function CrearEquipo() {
                 onChange={(e) => setTeamName(e.target.value)}
                 className="text-lg"
               />
+
+              <div className="space-y-2">
+                <label className="font-semibold text-[#2E2E3A] text-sm">
+                  Descripción del equipo
+                </label>
+                <textarea
+                  placeholder="Describe brevemente el área, departamento o función del equipo..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full px-4 py-3 border border-[#DAD5E4] rounded-lg focus:ring-2 focus:ring-[#55C2A2] focus:border-[#55C2A2] resize-none"
+                  rows={3}
+                  maxLength={200}
+                />
+                <p className="text-xs text-[#5B5B6B]">
+                  {description.length}/200 caracteres - Esta información ayuda a la IA a generar análisis más precisos
+                </p>
+              </div>
 
               <div className="space-y-2">
                 <label className="font-semibold text-[#2E2E3A] text-sm flex items-center gap-2">
