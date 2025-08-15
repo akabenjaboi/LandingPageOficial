@@ -1,3 +1,14 @@
+// ===================================================================
+// COMPONENTE MODAL - Modal reutilizable con overlay y gestión de estado
+// ===================================================================
+// Modal base que maneja:
+// - Overlay con fondo semitransparente
+// - Cierre con ESC o click fuera
+// - Prevención de scroll del body
+// - Animaciones de entrada/salida
+// - Accesibilidad (ARIA)
+// ===================================================================
+
 import React, { useEffect } from 'react';
 
 export default function Modal({ 
@@ -8,7 +19,11 @@ export default function Modal({
   maxWidth = "max-w-lg",
   preventCloseOnOutsideClick = false 
 }) {
-  // Cerrar modal con ESC
+  // ===================================================================
+  // GESTIÓN DE EVENTOS Y ACCESIBILIDAD
+  // ===================================================================
+  
+  // Cerrar modal con ESC y gestionar scroll del body
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isOpen) {
@@ -18,7 +33,7 @@ export default function Modal({
 
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
-      // Prevenir scroll del body
+      // Prevenir scroll del body cuando modal está abierto
       document.body.style.overflow = 'hidden';
     }
 
@@ -28,14 +43,24 @@ export default function Modal({
     };
   }, [isOpen, onClose]);
 
+  // No renderizar si el modal está cerrado
   if (!isOpen) return null;
 
+  // ===================================================================
+  // HANDLERS DE INTERACCIÓN
+  // ===================================================================
+  
   const handleBackdropClick = (e) => {
+    // Cerrar solo si se hace click en el backdrop (no en el contenido)
     if (e.target === e.currentTarget && !preventCloseOnOutsideClick) {
       onClose();
     }
   };
 
+  // ===================================================================
+  // RENDERIZADO DEL MODAL
+  // ===================================================================
+  
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" 
@@ -44,7 +69,7 @@ export default function Modal({
       onClick={handleBackdropClick}
     >
       <div className={`bg-white rounded-lg shadow-xl ${maxWidth} w-full max-h-[90vh] overflow-y-auto`}>
-        {/* Header */}
+        {/* Header del modal */}
         <div className="flex items-start justify-between p-6 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
             {title}
@@ -60,7 +85,7 @@ export default function Modal({
           </button>
         </div>
 
-        {/* Content */}
+        {/* Contenido del modal */}
         <div className="p-6">
           {children}
         </div>
