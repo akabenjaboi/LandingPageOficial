@@ -9,7 +9,7 @@
 // - Métricas y estado en tiempo real
 // ===================================================================
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -797,6 +797,8 @@ export default function Dashboard() {
               onCreateTeam={() => setShowCreateTeamModal(true)}
               onEditTeam={handleEditTeam}
               onDeleteTeam={handleDeleteTeam}
+              profile={profile}
+              currentUserId={user?.id}
             />
           ) : profile?.role === "user" ? (
             <UserTeamsSection 
@@ -863,7 +865,7 @@ export default function Dashboard() {
 // ===================================================================
 
 // Sección de equipos para líderes - Gestión completa de equipos
-function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam }) {
+function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam, profile, currentUserId }) {
   if (teamsLoading) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8 text-center">
@@ -911,6 +913,8 @@ function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, 
             wellbeingMetric={wellbeingByTeam[team.id]}
             onEdit={onEditTeam}
             onDelete={onDeleteTeam}
+            profile={profile}
+            currentUserId={currentUserId}
           />
         </div>
       ))}
@@ -1207,7 +1211,7 @@ function ProfileFormModal({
 // ===================================================================
 
 // Tarjeta de equipo para líderes - Control completo y métricas
-function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete }) {
+function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete, profile, currentUserId }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -1222,6 +1226,31 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
     // Exclude leader id if present
     respondedCountRaw = respondedCountRaw - (respondedMembers.has(team.leader_id) ? 1 : 0);
   }
+
+  // Para vista de líder: incluir líder si está habilitado en métricas
+  const allMembersForLeader = useMemo(() => {
+    const baseMembers = members || [];
+    
+    // Si el líder debe incluirse y es el usuario actual
+    if (leaderCounts && profile && team.leader_id === currentUserId) {
+      const leaderAsMember = {
+        user_id: currentUserId,
+        profiles: {
+          first_name: profile.first_name,
+          last_name: profile.last_name
+        },
+        isLeader: true
+      };
+      
+      // Evitar duplicados
+      const memberExists = baseMembers.some(m => m.user_id === currentUserId);
+      if (!memberExists) {
+        return [leaderAsMember, ...baseMembers];
+      }
+    }
+    
+    return baseMembers;
+  }, [members, leaderCounts, profile, team.leader_id, currentUserId]);
   const respondedCount = Math.min(Math.max(respondedCountRaw, 0), totalParticipantes);
   const participationPct = activeCycleId ? Math.round((respondedCount / (totalParticipantes || 1)) * 100) : 0;
 
@@ -1282,7 +1311,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
               </svg>
               <div>
                 <p className="text-sm text-gray-600">Miembros</p>
-                <p className="text-lg font-semibold text-gray-900">{members?.length || 0}</p>
+                <p className="text-lg font-semibold text-gray-900">{totalParticipantes}</p>
               </div>
             </div>
           </div>
@@ -1399,14 +1428,15 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
               <div className="flex items-center justify-center py-4">
                 <LoadingSpinner size="small" />
               </div>
-            ) : members?.length > 0 ? (
+            ) : allMembersForLeader?.length > 0 ? (
               <div className="space-y-2">
-                {members.map((member) => {
+                {allMembersForLeader.map((member) => {
                   const hasResponded = !!(respondedMembers && respondedMembers.has(member.user_id));
+                  const isLeaderMember = member.isLeader;
                   return (
                     <div key={member.user_id} className="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg">
-                      <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-gray-700">
+                      <div className={`w-8 h-8 ${isLeaderMember ? 'bg-blue-500' : 'bg-gray-300'} rounded-full flex items-center justify-center`}>
+                        <span className={`text-sm font-medium ${isLeaderMember ? 'text-white' : 'text-gray-700'}`}>
                           {member.profiles?.first_name?.charAt(0) || 'U'}
                         </span>
                       </div>
@@ -1417,7 +1447,9 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                             : 'Usuario sin nombre'
                           }
                         </p>
-                        <p className="text-xs text-gray-500">Miembro del equipo</p>
+                        <p className="text-xs text-gray-500">
+                          {isLeaderMember ? 'Líder del equipo' : 'Miembro del equipo'}
+                        </p>
                       </div>
                       {activeCycleId ? (
                         hasResponded ? (
@@ -1533,7 +1565,7 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
               </svg>
               <div>
                 <p className="text-sm text-gray-600">Miembros</p>
-                <p className="text-lg font-semibold text-gray-900">{members?.length || 0}</p>
+                <p className="text-lg font-semibold text-gray-900">{totalParticipantes}</p>
               </div>
             </div>
           </div>
@@ -1566,19 +1598,20 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
         {/* Miembros expandidos */}
         {isExpanded && (
           <div className="border-t pt-4">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Compañeros de equipo</h4>
+            <h4 className="text-sm font-medium text-gray-900 mb-3">Miembros del equipo</h4>
             {membersLoading ? (
               <div className="flex items-center justify-center py-4">
                 <LoadingSpinner size="small" />
               </div>
             ) : members?.length > 0 ? (
               <div className="space-y-2">
-                {members.filter(m => m.user_id !== currentUserId).map((member) => {
+                {members.map((member) => {
                   const hasResponded = !!(respondedMembers && respondedMembers.has(member.user_id));
+                  const isCurrentUser = member.user_id === currentUserId;
                   return (
                     <div key={member.user_id} className="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg">
-                      <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-gray-700">
+                      <div className={`w-8 h-8 ${isCurrentUser ? 'bg-green-500' : 'bg-gray-300'} rounded-full flex items-center justify-center`}>
+                        <span className={`text-sm font-medium ${isCurrentUser ? 'text-white' : 'text-gray-700'}`}>
                           {member.profiles?.first_name?.charAt(0) || 'U'}
                         </span>
                       </div>
@@ -1588,8 +1621,13 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
                             ? `${member.profiles.first_name} ${member.profiles.last_name}`
                             : 'Usuario sin nombre'
                           }
+                          {isCurrentUser && (
+                            <span className="ml-2 text-xs text-green-600 font-semibold">(Tú)</span>
+                          )}
                         </p>
-                        <p className="text-xs text-gray-500">Miembro del equipo</p>
+                        <p className="text-xs text-gray-500">
+                          {isCurrentUser ? 'Tu participación' : 'Miembro del equipo'}
+                        </p>
                       </div>
                       {activeCycleId ? (
                         hasResponded ? (
