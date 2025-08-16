@@ -13,7 +13,7 @@ import ReportesPage from './pages/reportes.jsx';
 
 function App() {
   return (
-    <Router basename="/LandingPageOficial">
+    <Router>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<LoginPage />} />
