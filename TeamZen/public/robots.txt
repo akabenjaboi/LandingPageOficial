@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /login
+Disallow: /dashboard
+Disallow: /crear-equipo
+Disallow: /unirse-equipo
+Disallow: /mbi
+Disallow: /evaluaciones
+Disallow: /reportes
+
+Sitemap: https://teamzen.cl/sitemap.xml
