@@ -69,11 +69,16 @@ function pick(list, max = 2) {
 }
 
 // Importar cliente de Groq
-import { generateExternalAdvice } from './groqClient';
+import { generateExternalAdvice, generateAdviceWithCache } from './groqClient';
 
-// Función para IA externa (wrapper)
+// Función para IA externa (wrapper legacy)
 export async function getAIAdvice(mbiData) {
   return await generateExternalAdvice(mbiData);
+}
+
+// Nueva función para IA externa con caché inteligente
+export async function getAIAdviceWithCache(mbiData, teamId, analysisId, forceRegenerate = false) {
+  return await generateAdviceWithCache(mbiData, teamId, analysisId, forceRegenerate);
 }
 
 export function generateAdvice({ ae, d, rp, wellbeing, previous }) {
