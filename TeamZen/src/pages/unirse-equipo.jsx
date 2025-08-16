@@ -10,6 +10,11 @@ export default function UnirseEquipo() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [joinedTeamId, setJoinedTeamId] = useState(null);
+  const [privacyPreferences, setPrivacyPreferences] = useState({
+    membersCanSeeResponses: false
+  });
 
   // Obtener usuario autenticado
   useEffect(() => {
@@ -69,10 +74,14 @@ export default function UnirseEquipo() {
         throw new Error("Ya eres miembro de este equipo.");
       }
 
-      // 4. Insertar en team_members
+      // 4. Insertar en team_members con preferencias por defecto
       const { error: insertError } = await supabase
         .from("team_members")
-        .insert([{ team_id: invite.team_id, user_id: userId }]);
+        .insert([{ 
+          team_id: invite.team_id, 
+          user_id: userId,
+          share_results_with_leader: false // Por defecto no compartir
+        }]);
         console.log("Insertando en team_members:", {
           team_id: invite.team_id,
           user_id: userId,
@@ -84,11 +93,39 @@ export default function UnirseEquipo() {
         
       }
 
+      setJoinedTeamId(invite.team_id);
       setSuccess("¡Te uniste al equipo correctamente!");
+      setShowPrivacyModal(true);
       setCode("");
     } catch (err) {
       console.error("Error al unirse al equipo:", err);
       setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePrivacyPreferences = async () => {
+    if (!joinedTeamId || !userId) return;
+    
+    try {
+      setLoading(true);
+      
+      // Actualizar las preferencias de privacidad del miembro individual
+      const { error } = await supabase
+        .from('team_members')
+        .update({
+          share_results_with_leader: privacyPreferences.membersCanSeeResponses
+        })
+        .eq('team_id', joinedTeamId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      setShowPrivacyModal(false);
+    } catch (err) {
+      console.error('Error actualizando preferencias de privacidad:', err);
+      setError('No se pudieron guardar las preferencias de privacidad.');
     } finally {
       setLoading(false);
     }
@@ -234,6 +271,84 @@ export default function UnirseEquipo() {
           </div>
         </div>
       </div>
+
+      {/* Modal de preferencias de privacidad */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto bg-[#845EC2]/10 rounded-full flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-[#845EC2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-[#2E2E3A] mb-2">Configuración de Privacidad</h2>
+                <p className="text-sm text-[#5B5B6B]">
+                  Configura qué información quieres compartir con tu equipo
+                </p>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div className="border border-[#DAD5E4] rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="responses"
+                      checked={privacyPreferences.membersCanSeeResponses}
+                      onChange={(e) => setPrivacyPreferences(prev => ({
+                        ...prev,
+                        membersCanSeeResponses: e.target.checked
+                      }))}
+                      className="mt-1 w-4 h-4 text-[#845EC2] border-gray-300 rounded focus:ring-[#845EC2]"
+                    />
+                    <div className="flex-1">
+                      <label htmlFor="responses" className="text-sm font-medium text-[#2E2E3A] cursor-pointer">
+                        Compartir mis respuestas de evaluación con el líder
+                      </label>
+                      <p className="text-xs text-[#5B5B6B] mt-1">
+                        Permite que el líder del equipo pueda ver tus resultados individuales para brindar mejor apoyo personalizado
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+                <div className="flex gap-2">
+                  <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <p className="text-xs text-blue-800 font-medium">¿Por qué es importante?</p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Estas configuraciones ayudan a los líderes a brindar mejor apoyo y seguimiento sin comprometer tu privacidad.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowPrivacyModal(false)}
+                  className="flex-1 text-sm"
+                  disabled={loading}
+                >
+                  Configurar después
+                </Button>
+                <Button
+                  onClick={handlePrivacyPreferences}
+                  className="flex-1 text-sm"
+                  loading={loading}
+                >
+                  {loading ? "Guardando..." : "Guardar preferencias"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
