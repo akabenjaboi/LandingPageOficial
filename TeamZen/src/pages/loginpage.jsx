@@ -221,7 +221,7 @@ export default function LoginPage() {
       <div
         className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center relative overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(135deg, rgba(85, 194, 162, 0.15) 0%, rgba(157, 131, 198, 0.15) 50%, rgba(85, 194, 162, 0.1) 100%), url(${import.meta.env.BASE_URL}/img/cloud.jpg)`,
+          backgroundImage: `linear-gradient(135deg, rgba(85, 194, 162, 0.15) 0%, rgba(157, 131, 198, 0.15) 50%, rgba(85, 194, 162, 0.1) 100%), url(/img/cloud.jpg)`,
         }}
       >
         {/* Elementos decorativos de fondo */}

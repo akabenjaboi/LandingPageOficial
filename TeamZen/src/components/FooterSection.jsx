@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
           {/* Imagen pequeña y justo arriba de la descripción */}
           <img
-            src={`${import.meta.env.BASE_URL}/img/footerimg.png`}
+            src="/img/footerimg.png"
             alt="Decoración TeamZen"
             className="w-30 h-auto mb-3 pointer-events-none select-none"
             style={{ maxWidth: "300px" }}

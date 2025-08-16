@@ -32,7 +32,7 @@ export default function AboutSection({ sobreRef, sobreInView }) {
       <div className="flex flex-col md:flex-row items-center justify-center w-full gap-4 md:gap-0 relative h-auto md:h-[340px] lg:h-[420px] mb-4">
         {/* Imagen izquierda */}
         <img
-          src={`${import.meta.env.BASE_URL}/img/pandadescansando.png`}
+          src="/img/pandadescansando.png"
           alt="TeamZen inspiración 1"
           className={`rounded-2xl shadow-lg object-cover w-full max-w-[320px] h-[140px] sm:h-[180px] md:h-[220px] lg:h-[260px] aspect-[16/9] opacity-90 transition-all duration-700 hover:scale-105
             ${sobreInView ? "opacity-90 md:absolute md:left-1/2 md:-translate-x-[150%] md:top-1/2 md:-translate-y-1/3 -rotate-8" : "opacity-0 md:absolute md:left-1/2 md:-translate-x-[120%] md:top-1/2 md:-translate-y-1/3 -rotate-8"}
@@ -44,7 +44,7 @@ export default function AboutSection({ sobreRef, sobreInView }) {
         />
         {/* Imagen central */}
         <img
-          src={`${import.meta.env.BASE_URL}/img/pandalogo.png`}
+          src="/img/pandalogo.png"
           alt="TeamZen inspiración 2"
           className={`rounded-2xl shadow-2xl object-cover w-full max-w-[360px] h-[160px] sm:h-[200px] md:h-[270px] lg:h-[340px] aspect-[16/9] transition-all duration-700 hover:scale-105
             ${sobreInView ? "opacity-100 md:relative md:z-20 md:top-1/2 md:-translate-y-1/2" : "opacity-0 translate-y-8"}
@@ -52,7 +52,7 @@ export default function AboutSection({ sobreRef, sobreInView }) {
         />
         {/* Imagen derecha */}
         <img
-          src={`${import.meta.env.BASE_URL}/img/pandapintando.png`}
+          src="/img/pandapintando.png"
           alt="TeamZen inspiración 3"
           className={`rounded-2xl shadow-lg object-cover w-full max-w-[320px] h-[140px] sm:h-[180px] md:h-[220px] lg:h-[260px] aspect-[16/9] opacity-90 transition-all duration-700 hover:scale-105
             ${sobreInView ? "opacity-90 md:absolute md:right-1/2 md:translate-x-[150%] md:top-1/2 md:-translate-y-1/3 rotate-8" : "opacity-0 md:absolute md:right-1/2 md:translate-x-[120%] md:top-1/2 md:-translate-y-1/3 rotate-8"}

@@ -44,7 +44,7 @@ export default function HeroSection() {
         <div className="relative w-full max-w-xs sm:max-w-md md:max-w-lg">
           <div className="absolute -inset-4 sm:-inset-6 bg-[#DAD5E4] rounded-3xl blur-2xl opacity-50 z-0"></div>
           <img
-            src={`${import.meta.env.BASE_URL}/img/formpanda.png`}
+            src="/img/formpanda.png"
             alt="TeamZen dashboard"
             className="relative w-full rounded-2xl border-4 border-[#DAD5E4] bg-white/70 z-10 animate-float"
             style={{ objectFit: "cover" }}
