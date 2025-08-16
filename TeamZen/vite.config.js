@@ -6,5 +6,10 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: "/LandingPageOficial",
+  base: "/", // Cambiar para dominio propio
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'terser'
+  }
 })

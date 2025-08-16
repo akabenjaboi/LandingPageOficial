@@ -1,0 +1,8 @@
+# Redirects para SPA (Single Page Application)
+/*    /index.html   200
+
+# Redirects opcionales
+/login    /login    200
+/dashboard    /dashboard    200
+/evaluaciones    /evaluaciones    200
+/reportes    /reportes    200
