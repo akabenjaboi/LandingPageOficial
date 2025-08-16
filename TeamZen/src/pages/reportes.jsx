@@ -6,6 +6,89 @@ import TrendChart from '../components/TrendChart';
 import { generateAdvice, getAIAdviceWithCache } from '../utils/adviceEngine';
 import { classifyMBI, computeBurnoutStatus, WELLBEING_NORMALIZATION } from '../utils/mbiClassification';
 
+// Helper para obtener estado de burnout de un miembro
+const getMemberBurnoutStatus = async (userId, supabase) => {
+  try {
+    console.log('Buscando estado de burnout para usuario:', userId);
+    
+    // Primero intentemos una consulta más simple para obtener las respuestas del usuario
+    const { data: userResponses, error: responsesError } = await supabase
+      .from('mbi_responses')
+      .select('id, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    console.log('Respuestas del usuario:', { userResponses, responsesError });
+
+    if (responsesError) {
+      console.error('Error al buscar respuestas:', responsesError);
+      return null;
+    }
+
+    if (!userResponses || userResponses.length === 0) {
+      console.log('No se encontraron respuestas para el usuario:', userId);
+      return null;
+    }
+
+    // Ahora obtener los scores para esa respuesta
+    const responseId = userResponses[0].id;
+    const { data: scores, error: scoresError } = await supabase
+      .from('mbi_scores')
+      .select('ae_score, d_score, rp_score')
+      .eq('response_id', responseId)
+      .single();
+
+    console.log('Scores encontrados:', { scores, scoresError });
+
+    if (scoresError) {
+      console.error('Error al buscar scores:', scoresError);
+      return null;
+    }
+
+    if (!scores) {
+      console.log('No se encontraron scores para la respuesta:', responseId);
+      return null;
+    }
+
+    const { ae_score, d_score, rp_score } = scores;
+    console.log('Scores obtenidos:', { ae_score, d_score, rp_score });
+    
+    const classification = classifyMBI(ae_score, d_score, rp_score);
+    console.log('Clasificación MBI:', classification);
+    
+    const status = computeBurnoutStatus(classification);
+    console.log('Estado de burnout calculado:', status);
+    
+    return status;
+  } catch (error) {
+    console.error('Error al obtener estado de burnout:', error);
+    return null;
+  }
+};
+
+// Helper para obtener color del estado de burnout
+const getBurnoutStatusColor = (status) => {
+  switch (status) {
+    case 'Burnout': return 'bg-red-100 text-red-700 border-red-200';
+    case 'Riesgo Alto': return 'bg-orange-100 text-orange-700 border-orange-200';
+    case 'Riesgo': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    case 'Sin indicios': return 'bg-green-100 text-green-700 border-green-200';
+    default: return 'bg-gray-100 text-gray-500 border-gray-200';
+  }
+};
+
+// Helper para obtener emoji del estado
+const getBurnoutStatusEmoji = (status) => {
+  switch (status) {
+    case 'Burnout': return '🔴';
+    case 'Riesgo Alto': return '🟠';
+    case 'Riesgo': return '🟡';
+    case 'Sin indicios': return '🟢';
+    default: return '⚪';
+  }
+};
+
 export default function ReportesPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -20,6 +103,10 @@ export default function ReportesPage() {
   const [error, setError] = useState('');
   const [reloadCount, setReloadCount] = useState(0);
   const [viewMode, setViewMode] = useState('weekly'); // 'cycles' o 'weekly' - weekly por defecto
+  const [teamMembers, setTeamMembers] = useState([]); // Miembros del equipo activo
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [respondedMembers, setRespondedMembers] = useState(new Set()); // IDs de usuarios que respondieron en el ciclo actual
+  const [memberBurnoutStates, setMemberBurnoutStates] = useState(new Map()); // Estados de burnout por user_id
 
   useEffect(() => {
     (async () => {
@@ -32,7 +119,7 @@ export default function ReportesPage() {
       
       if (prof?.role === 'leader') {
         // Cargar equipos para líderes
-        const { data: leaderTeams } = await supabase.from('teams').select('id,name,include_leader_in_metrics').eq('leader_id', currentUser.id).order('created_at',{ascending:true});
+        const { data: leaderTeams } = await supabase.from('teams').select('id,name,include_leader_in_metrics,members_can_see_others,members_can_see_responses').eq('leader_id', currentUser.id).order('created_at',{ascending:true});
         setTeams(leaderTeams || []);
       }
       // Tanto líderes como usuarios pueden acceder a reportes
@@ -81,6 +168,19 @@ export default function ReportesPage() {
           grouped[cId].push({ ae: r.ae_score, d: r.d_score, rp: r.rp_score, user_id: r.mbi_responses?.user_id });
         });
         setScoresByCycle(grouped);
+
+        // 3. Obtener miembros que han respondido en el ciclo actual (más reciente)
+        if (cycles.length > 0) {
+          const currentCycle = cycles[0]; // El más reciente
+          const { data: responses, error: responsesErr } = await supabase
+            .from('mbi_responses')
+            .select('user_id')
+            .eq('cycle_id', currentCycle.id);
+          
+          if (!responsesErr && responses) {
+            setRespondedMembers(new Set(responses.map(r => r.user_id)));
+          }
+        }
       } catch (e) {
         console.error('Error cargando reportes', e);
         setError('No se pudieron cargar los datos del reporte.');
@@ -90,6 +190,76 @@ export default function ReportesPage() {
     };
     loadCyclesAndScores();
   }, [activeTeamId, reloadCount]);
+
+  // Cargar miembros del equipo
+  useEffect(() => {
+    const loadTeamMembers = async () => {
+      if (!activeTeamId) return;
+      setMembersLoading(true);
+      try {
+        const { data: members, error } = await supabase
+          .from('team_members')
+          .select(`
+            user_id,
+            share_results_with_leader,
+            profiles (
+              id,
+              first_name,
+              last_name
+            )
+          `)
+          .eq('team_id', activeTeamId);
+        
+        if (error) throw error;
+        setTeamMembers(members || []);
+      } catch (e) {
+        console.error('Error cargando miembros del equipo', e);
+      } finally {
+        setMembersLoading(false);
+      }
+    };
+    loadTeamMembers();
+  }, [activeTeamId]);
+
+  // Effect para cargar estados de burnout de miembros que comparten resultados
+  useEffect(() => {
+    const loadMemberBurnoutStates = async () => {
+      if (!teamMembers.length) {
+        console.log('No hay miembros del equipo para cargar estados de burnout');
+        return;
+      }
+
+      console.log('Cargando estados de burnout para miembros:', teamMembers.length);
+      const states = new Map();
+      
+      // Solo cargar para miembros que comparten resultados y han respondido
+      const membersToCheck = teamMembers.filter(member => 
+        member.share_results_with_leader === true && 
+        respondedMembers.has(member.user_id)
+      );
+
+      console.log('Miembros que comparten resultados y han respondido:', membersToCheck.length);
+
+      if (membersToCheck.length === 0) {
+        setMemberBurnoutStates(new Map());
+        return;
+      }
+
+      for (const member of membersToCheck) {
+        console.log('Obteniendo estado de burnout para:', member.user_id);
+        const status = await getMemberBurnoutStatus(member.user_id, supabase);
+        console.log('Estado obtenido:', status);
+        if (status) {
+          states.set(member.user_id, status);
+        }
+      }
+
+      console.log('Estados de burnout cargados:', states);
+      setMemberBurnoutStates(states);
+    };
+
+    loadMemberBurnoutStates();
+  }, [teamMembers, respondedMembers]);
 
   const handleRefresh = () => setReloadCount(c => c + 1);
 
@@ -491,6 +661,103 @@ export default function ReportesPage() {
                   />
                 </div>
               )}
+
+              {/* Sección de miembros del equipo */}
+              {(() => {
+                // Obtener configuraciones de privacidad del equipo activo
+                const activeTeam = teams.find(t => t.id === activeTeamId);
+                const canSeeOthers = activeTeam?.members_can_see_others ?? true;
+                const canSeeResponses = activeTeam?.members_can_see_responses ?? true;
+                
+                return (
+                  <div className="bg-white rounded-xl border border-[#DAD5E4] p-4 sm:p-6">
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">
+                      Miembros del equipo
+                      {teamMembers.length > 0 && (
+                        <span className="ml-2 text-sm font-normal text-gray-500">
+                          ({canSeeOthers ? teamMembers.length : 'Privado'} miembro{teamMembers.length !== 1 ? 's' : ''})
+                        </span>
+                      )}
+                    </h2>
+
+                    {membersLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin w-5 h-5 border-2 border-[#845EC2] border-t-transparent rounded-full"></div>
+                        <span className="ml-2 text-sm text-gray-600">Cargando miembros...</span>
+                      </div>
+                    ) : !canSeeOthers ? (
+                      <div className="text-center py-8">
+                        <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.03 8.03m1.848 1.848L14.12 14.12M12 2.252c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21m-6.332-6.332l-1.896-1.896M12 2.252V2" />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-500">La visibilidad de miembros está deshabilitada.</p>
+                        <p className="text-xs text-gray-400 mt-1">El líder del equipo ha configurado los perfiles como privados.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {teamMembers
+                          .filter(member => {
+                            // Mostrar miembro basado en configuraciones del equipo
+                            return canSeeOthers; // Solo filtrar por configuración del líder
+                          })
+                          .map((member) => {
+                            const hasResponded = respondedMembers.has(member.user_id);
+                            const fullName = `${member.profiles?.first_name || ''} ${member.profiles?.last_name || ''}`.trim() || 'Usuario sin nombre';
+                            const sharesResults = member.share_results_with_leader === true;
+                          
+                          return (
+                            <div key={member.user_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-[#845EC2] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                  {fullName.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm font-medium text-gray-900">{fullName}</p>
+                                    {sharesResults && hasResponded && memberBurnoutStates.has(member.user_id) && (
+                                      <span className={`text-xs px-2 py-1 rounded-full border ${getBurnoutStatusColor(memberBurnoutStates.get(member.user_id))}`}>
+                                        {getBurnoutStatusEmoji(memberBurnoutStates.get(member.user_id))} {memberBurnoutStates.get(member.user_id)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-gray-500 space-y-1">
+                                    <p>{hasResponded ? 'Ha respondido el último ciclo' : 'No ha respondido el último ciclo'}</p>
+                                    {sharesResults && hasResponded && (
+                                      <p className="text-blue-600">✓ Resultados compartidos con líder</p>
+                                    )}
+                                    {!sharesResults && hasResponded && (
+                                      <p className="text-gray-400">⚫ Resultados privados</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  hasResponded ? 'bg-green-500' : 'bg-yellow-500'
+                                }`} />
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  hasResponded 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {hasResponded ? 'Activo' : 'Pendiente'}
+                                </span>
+                                {sharesResults && (
+                                  <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                                    Datos visibles
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
           </section>

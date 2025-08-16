@@ -1804,8 +1804,26 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
 // Tarjeta de equipo para usuarios miembros - Vista de participación
 function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycleId, respondedCycles, respondedMembers }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const currentMember = members?.find(m => m.user_id === currentUserId);
+  
+  // Cerrar menú al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showOptionsMenu && !event.target.closest('.options-menu')) {
+        setShowOptionsMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showOptionsMenu]);
   
   // Aplicar configuraciones de privacidad
   const canSeeOthers = team.members_can_see_others ?? true;
@@ -1818,6 +1836,65 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
   
   // Calcular total de participantes (siempre mostrar el total real)
   const totalParticipantes = members?.length || 0;
+
+  // Funciones para manejar las opciones del menú
+  const handleUpdatePrivacy = async (privacySettings) => {
+    try {
+      setLoading(true);
+      
+      console.log('Actualizando preferencias individuales:', {
+        team_id: team.id,
+        user_id: currentUserId,
+        share_results: privacySettings.share_results_with_leader
+      });
+      
+      // Actualizar solo la preferencia individual del usuario
+      const { error, data } = await supabase
+        .from('team_members')
+        .update({
+          share_results_with_leader: privacySettings.share_results_with_leader
+        })
+        .eq('team_id', team.id)
+        .eq('user_id', currentUserId);
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Update successful:', data);
+      setShowPrivacyModal(false);
+      // Recargar la página para reflejar los cambios
+      window.location.reload();
+    } catch (error) {
+      console.error('Error actualizando preferencias:', error);
+      alert(`Error al actualizar las preferencias de privacidad: ${error.message || JSON.stringify(error)}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLeaveTeam = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('team_members')
+        .delete()
+        .eq('team_id', team.id)
+        .eq('user_id', currentUserId);
+
+      if (error) throw error;
+      
+      setShowLeaveModal(false);
+      // Recargar la página para reflejar los cambios
+      window.location.reload();
+    } catch (error) {
+      console.error('Error saliendo del equipo:', error);
+      alert('Error al salir del equipo');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
@@ -1841,6 +1918,51 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
             <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
               Miembro
             </span>
+            
+            {/* Menú de opciones */}
+            <div className="relative options-menu">
+              <button
+                onClick={() => setShowOptionsMenu(!showOptionsMenu)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Opciones"
+              >
+                <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                </svg>
+              </button>
+              
+              {showOptionsMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setShowPrivacyModal(true);
+                        setShowOptionsMenu(false);
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      <svg className="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      Configurar privacidad
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowLeaveModal(true);
+                        setShowOptionsMenu(false);
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      <svg className="w-4 h-4 mr-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Salir del equipo
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -2006,6 +2128,182 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
             Ver Historial
           </button>
         </div>
+      </div>
+
+      {/* Modal de configuración de privacidad */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto bg-[#845EC2]/10 rounded-full flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-[#845EC2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-[#2E2E3A] mb-2">Configuración de Privacidad</h2>
+                <p className="text-sm text-[#5B5B6B]">
+                  Configura qué información quieres compartir en el equipo "{team.name}"
+                </p>
+              </div>
+
+              <PrivacySettingsForm
+                currentSettings={currentMember}
+                teamSettings={team}
+                onSave={handleUpdatePrivacy}
+                onCancel={() => setShowPrivacyModal(false)}
+                loading={loading}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de salir del equipo */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-[#2E2E3A] mb-2">Salir del Equipo</h2>
+                <p className="text-sm text-[#5B5B6B] mb-4">
+                  ¿Estás seguro de que quieres salir del equipo "{team.name}"?
+                </p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                  <p className="text-xs text-red-800">
+                    <strong>Advertencia:</strong> Al salir del equipo perderás acceso a todos los datos y evaluaciones. Esta acción no se puede deshacer.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLeaveModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  disabled={loading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleLeaveTeam}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  disabled={loading}
+                >
+                  {loading ? "Saliendo..." : "Salir del equipo"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Componente para configurar las preferencias de privacidad
+function PrivacySettingsForm({ currentSettings, onSave, onCancel, loading, teamSettings }) {
+  const [settings, setSettings] = useState({
+    share_results_with_leader: currentSettings?.share_results_with_leader ?? false
+  });
+
+  const handleSave = () => {
+    onSave(settings);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+        <div className="flex gap-2">
+          <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-xs text-blue-800 font-medium">Configuración personal</p>
+            <p className="text-xs text-blue-700 mt-1">
+              Solo tú puedes decidir si compartir tus resultados individuales con el líder del equipo.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 mb-6">
+        <div className="border border-[#DAD5E4] rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              id="shareResults"
+              checked={settings.share_results_with_leader}
+              onChange={(e) => setSettings(prev => ({
+                ...prev,
+                share_results_with_leader: e.target.checked
+              }))}
+              className="mt-1 w-4 h-4 text-[#845EC2] border-gray-300 rounded focus:ring-[#845EC2]"
+            />
+            <div className="flex-1">
+              <label htmlFor="shareResults" className="text-sm font-medium text-[#2E2E3A] cursor-pointer">
+                Compartir mis resultados de evaluación con el líder
+              </label>
+              <p className="text-xs text-[#5B5B6B] mt-1">
+                Permite que el líder del equipo pueda ver tus resultados individuales de las evaluaciones MBI para brindar mejor apoyo personalizado
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Información sobre configuraciones del equipo (solo lectura) */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+        <h4 className="text-sm font-medium text-gray-800 mb-3">Configuraciones del equipo (controladas por el líder):</h4>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${teamSettings?.members_can_see_others ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className="text-xs text-gray-600">
+              {teamSettings?.members_can_see_others ? 'Los miembros pueden ver a otros miembros' : 'Los miembros no pueden ver a otros miembros'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${teamSettings?.members_can_see_responses ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className="text-xs text-gray-600">
+              {teamSettings?.members_can_see_responses ? 'El líder puede ver si los miembros han respondido' : 'El líder no puede ver si los miembros han respondido'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
+        <div className="flex gap-2">
+          <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-xs text-green-800 font-medium">¿Por qué es importante?</p>
+            <p className="text-xs text-green-700 mt-1">
+              Compartir tus resultados permite al líder identificar mejor las necesidades del equipo y brindarte apoyo personalizado, pero siempre es tu decisión.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <button
+          onClick={onCancel}
+          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          disabled={loading}
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleSave}
+          className="flex-1 px-4 py-2 bg-[#845EC2] text-white rounded-lg hover:bg-[#7551A6] transition-colors disabled:opacity-50"
+          disabled={loading}
+        >
+          {loading ? "Guardando..." : "Guardar preferencia"}
+        </button>
       </div>
     </div>
   );
