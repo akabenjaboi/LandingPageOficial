@@ -411,7 +411,7 @@ export default function ReportesPage() {
       <nav className="bg-white border-b border-[#DAD5E4] sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <img src={`${import.meta.env.BASE_URL}/img/pandalogo.png`} alt="TeamZen" className="w-6 h-6 sm:w-8 sm:h-8" />
+            <img src="/img/pandalogo.png" alt="TeamZen" className="w-6 h-6 sm:w-8 sm:h-8" />
             <span className="font-semibold text-[#2E2E3A] text-sm sm:text-base">Reportes</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">

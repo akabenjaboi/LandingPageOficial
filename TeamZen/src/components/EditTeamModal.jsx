@@ -85,7 +85,7 @@ export default function EditTeamModal({ isOpen, onClose, team, onTeamUpdated }) 
       <form onSubmit={handleUpdateTeam} className="space-y-6">
         <div className="text-center mb-6">
           <img 
-            src={`${import.meta.env.BASE_URL}/img/pandapintando.png`} 
+            src="/img/pandapintando.png" 
             alt="Panda editando" 
             className="w-20 h-20 mx-auto mb-4"
           />
