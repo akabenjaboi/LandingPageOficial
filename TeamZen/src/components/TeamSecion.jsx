@@ -5,19 +5,19 @@ const team = [
   {
     name: "Sebastian Sepulveda",
     role: "Desarrollador movil",
-    img: `${import.meta.env.BASE_URL}/img/perfil2.jpg`,
+    img: "/img/perfil2.jpg",
     desc: "Desarrolla y optimiza la experiencia móvil de la app.",
   },
   {
     name: "Benjamín Alarcón",
     role: "Product Owner",
-    img: `${import.meta.env.BASE_URL}/img/perfil1.jpg`,
+    img: "/img/perfil1.jpg",
     desc: "Lidera la visión y prioriza el desarrollo del producto.",
   },
   {
     name: "Vicente Aranguiz",
     role: "Backend Developer",
-    img: `${import.meta.env.BASE_URL}/img/perfil3.jpg`,
+    img: "/img/perfil3.jpg",
     desc: "Construye y mantiene la infraestructura backend del sistema.",
   },
 ];
