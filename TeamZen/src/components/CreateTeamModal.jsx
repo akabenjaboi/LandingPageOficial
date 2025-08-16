@@ -275,7 +275,7 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
         <div className="text-center space-y-6">
           <div className="w-24 h-24 mx-auto relative">
             <img 
-              src={`${import.meta.env.BASE_URL}/img/pandalogo.png`} 
+              src="/img/pandalogo.png" 
               alt="TeamZen Success" 
               className="w-full h-full object-contain animate-scale-in"
             />

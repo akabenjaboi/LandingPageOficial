@@ -671,7 +671,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center h-14 sm:h-16">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <img 
-                src={`${import.meta.env.BASE_URL}/img/pandazen_favicon.png`} 
+                src="/img/pandazen_favicon.png" 
                 alt="TeamZen Logo" 
                 className="w-8 h-8 sm:w-10 sm:h-10"
               />
@@ -1105,7 +1105,7 @@ function WelcomeSection({ onSetupProfile }) {
     <div className="bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl shadow-teamzen p-12 text-center">
       <div className="w-20 h-20 bg-gradient-to-br from-[#55C2A2] to-[#9D83C6] rounded-full flex items-center justify-center mx-auto mb-6 shadow-teamzen-glow animate-pulse-glow">
         <img 
-          src={`${import.meta.env.BASE_URL}/img/pandalogo.png`} 
+          src="/img/pandalogo.png" 
           alt="TeamZen Logo" 
           className="w-12 h-12"
         />
@@ -1265,7 +1265,7 @@ function ProfileFormModal({
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <img 
-              src={`${import.meta.env.BASE_URL}/img/pandalogo.png`} 
+              src="/img/pandalogo.png" 
               alt="TeamZen Profile" 
               className="w-10 h-10 object-contain animate-pulse-glow"
             />
