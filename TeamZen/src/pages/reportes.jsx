@@ -271,84 +271,100 @@ export default function ReportesPage() {
     return new Date(d.setDate(diff));
   };
 
-  // Nueva función para obtener datos agrupados por semana
+  // Función helper para calcular estadísticas de la semana
+  const calculateWeekStats = (scores) => {
+    // Calcular promedios de subscalas
+    const aeAvg = Math.round((scores.reduce((a,s)=>a+(s.ae??0),0)/scores.length)*10)/10;
+    const dAvg = Math.round((scores.reduce((a,s)=>a+(s.d??0),0)/scores.length)*10)/10;
+    const rpAvg = Math.round((scores.reduce((a,s)=>a+(s.rp??0),0)/scores.length)*10)/10;
+
+    // Calcular estado dominante y bienestar
+    const statuses = scores.map(s => {
+      const ae=s.ae??0, d=s.d??0, rp=s.rp??0;
+      if (ae >= 27 && d >= 10) return 'Burnout';
+      if (ae >= 16 && d >= 6) return 'Riesgo Alto';
+      if (ae >= 10 || d >= 3) return 'Riesgo';
+      return 'Sin indicios';
+    });
+    const counts = statuses.reduce((acc,st)=>{acc[st]=(acc[st]||0)+1;return acc;},{});
+    const dominant = Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0] || 'Sin indicios';
+
+    // Calcular bienestar global
+    const MIN_AE=0, MAX_AE=54, MIN_D=0, MAX_D=30, MIN_RP=0, MAX_RP=48;
+    const rangeAE=MAX_AE-MIN_AE, rangeD=MAX_D-MIN_D, rangeRP=MAX_RP-MIN_RP;
+    const wbSum = scores.reduce((acc,s)=>{
+      const aeWell = 1-((s.ae-MIN_AE)/(rangeAE||1));
+      const dWell = 1-((s.d-MIN_D)/(rangeD||1));
+      const rpWell = ((s.rp-MIN_RP)/(rangeRP||1));
+      return acc + (aeWell + dWell + rpWell)/3;
+    },0);
+    const wellbeing = Math.round((wbSum / scores.length)*100);
+
+    // Distribución de riesgo
+    const dist = { Burnout:0, 'Riesgo Alto':0, Riesgo:0, 'Sin indicios':0 };
+    statuses.forEach(st => { if(dist[st]!==undefined) dist[st]++; });
+
+    return {
+      count: scores.length,
+      aeAvg, dAvg, rpAvg,
+      dominant, wellbeing, dist
+    };
+  };
+
+  // Nueva función para obtener datos agrupados por semana (mostrando todos los ciclos)
   const getWeeklyData = useMemo(() => {
     if (!teamCycles.length) return [];
     
-    // Obtener todas las respuestas de MBI con fechas
-    const allResponses = [];
+    // Crear una entrada por cada ciclo con sus datos
+    const cycleEntries = [];
+    
     teamCycles.forEach(cycle => {
       const scores = scoresByCycle[cycle.id] || [];
-      scores.forEach(score => {
-        // Usar la fecha de creación del ciclo como aproximación
-        // En una implementación más robusta, deberías tener created_at en las respuestas
-        const responseDate = new Date(cycle.created_at);
-        allResponses.push({
-          ...score,
-          cycle_id: cycle.id,
-          date: responseDate,
-          week: getWeekStartDate(responseDate)
-        });
-      });
-    });
-
-    // Agrupar por semana
-    const weeklyGroups = {};
-    allResponses.forEach(response => {
-      const weekKey = response.week.toISOString().split('T')[0];
-      if (!weeklyGroups[weekKey]) {
-        weeklyGroups[weekKey] = {
-          weekStart: response.week,
-          responses: []
-        };
+      if (scores.length === 0) return; // Skip ciclos sin respuestas
+      
+      const cycleStartDate = new Date(cycle.start_at || cycle.created_at);
+      const cycleEndDate = cycle.end_at ? new Date(cycle.end_at) : null;
+      
+      // Calcular duración real del ciclo
+      let actualDuration;
+      let isSameDay = false;
+      let cycleEndedEarly = false;
+      
+      if (cycleEndDate) {
+        actualDuration = Math.max(1, Math.ceil((cycleEndDate.getTime() - cycleStartDate.getTime()) / (1000 * 60 * 60 * 24)));
+        isSameDay = cycleEndDate.toDateString() === cycleStartDate.toDateString();
+        cycleEndedEarly = true;
+      } else {
+        // Si no hay fecha de fin, asumir que sigue activo (usar fecha actual o 7 días)
+        const now = new Date();
+        actualDuration = Math.max(1, Math.ceil((now.getTime() - cycleStartDate.getTime()) / (1000 * 60 * 60 * 24)));
+        cycleEndedEarly = false;
       }
-      weeklyGroups[weekKey].responses.push(response);
-    });
-
-    // Convertir a array y calcular estadísticas por semana
-    return Object.entries(weeklyGroups).map(([weekKey, data]) => {
-      const scores = data.responses;
-      if (!scores.length) return null;
-
-      // Calcular promedios de subscalas
-      const aeAvg = Math.round((scores.reduce((a,s)=>a+(s.ae??0),0)/scores.length)*10)/10;
-      const dAvg = Math.round((scores.reduce((a,s)=>a+(s.d??0),0)/scores.length)*10)/10;
-      const rpAvg = Math.round((scores.reduce((a,s)=>a+(s.rp??0),0)/scores.length)*10)/10;
-
-      // Calcular estado dominante y bienestar
-      const statuses = scores.map(s => {
-        const ae=s.ae??0, d=s.d??0, rp=s.rp??0;
-        if (ae >= 27 && d >= 10) return 'Burnout';
-        if (ae >= 16 && d >= 6) return 'Riesgo Alto';
-        if (ae >= 10 || d >= 3) return 'Riesgo';
-        return 'Sin indicios';
+      
+      // Determinar fechas de inicio y fin para mostrar
+      const displayStartDate = cycleStartDate;
+      const displayEndDate = cycleEndDate || new Date(cycleStartDate.getTime() + 6 * 24 * 60 * 60 * 1000);
+      
+      // Calcular estadísticas del ciclo
+      const cycleStats = calculateWeekStats(scores);
+      
+      cycleEntries.push({
+        ...cycleStats,
+        weekStart: displayStartDate, // Para mantener compatibilidad con la UI
+        weekEnd: displayEndDate,
+        actualDuration,
+        isSameDay,
+        cycleEndedEarly,
+        cycleInfo: cycle,
+        cycleId: cycle.id,
+        cycleName: `Ciclo ${cycle.id?.slice(0, 8) || 'N/A'}`,
+        friendlyId: cycle.id?.slice(0, 8) || 'N/A',
+        isActiveCycle: !cycleEndDate // true si el ciclo aún está activo
       });
-      const counts = statuses.reduce((acc,st)=>{acc[st]=(acc[st]||0)+1;return acc;},{});
-      const dominant = Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0] || 'Sin indicios';
-
-      // Calcular bienestar global
-      const MIN_AE=0, MAX_AE=54, MIN_D=0, MAX_D=30, MIN_RP=0, MAX_RP=48;
-      const rangeAE=MAX_AE-MIN_AE, rangeD=MAX_D-MIN_D, rangeRP=MAX_RP-MIN_RP;
-      const wbSum = scores.reduce((acc,s)=>{
-        const aeWell = 1-((s.ae-MIN_AE)/(rangeAE||1));
-        const dWell = 1-((s.d-MIN_D)/(rangeD||1));
-        const rpWell = ((s.rp-MIN_RP)/(rangeRP||1));
-        return acc + (aeWell + dWell + rpWell)/3;
-      },0);
-      const wellbeing = Math.round((wbSum / scores.length)*100);
-
-      // Distribución de riesgo
-      const dist = { Burnout:0, 'Riesgo Alto':0, Riesgo:0, 'Sin indicios':0 };
-      statuses.forEach(st => { if(dist[st]!==undefined) dist[st]++; });
-
-      return {
-        weekStart: data.weekStart,
-        weekEnd: new Date(data.weekStart.getTime() + 6 * 24 * 60 * 60 * 1000),
-        count: scores.length,
-        aeAvg, dAvg, rpAvg,
-        dominant, wellbeing, dist
-      };
-    }).filter(Boolean).sort((a, b) => a.weekStart - b.weekStart);
+    });
+    
+    // Ordenar por fecha de inicio (más reciente primero)
+    return cycleEntries.sort((a, b) => b.weekStart - a.weekStart);
   }, [teamCycles, scoresByCycle]);
 
   const aggregated = useMemo(() => {
@@ -591,15 +607,65 @@ export default function ReportesPage() {
                               </tr>
                             );
                           } else {
-                            // Vista semanal
-                            const weekStart = row.weekStart;
-                            const weekEnd = row.weekEnd;
-                            const fmt = (d) => d?.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit' }) || '—';
+                            // Vista semanal (ahora muestra ciclos individuales)
+                            const cycleStart = row.weekStart;
+                            const cycleEnd = row.weekEnd;
+                            const actualDuration = row.actualDuration || 7;
+                            const isSameDay = row.isSameDay || false;
+                            const cycleEndedEarly = row.cycleEndedEarly || false;
+                            const isActiveCycle = row.isActiveCycle || false;
+                            const cycleInfo = row.cycleInfo;
+                            
+                            const formatDate = (d) => d?.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit' }) || '—';
+                            const formatDateTime = (d) => d?.toLocaleString(undefined, { 
+                              day: '2-digit', 
+                              month: '2-digit', 
+                              year: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) || '—';
+                            
+                            let periodText;
+                            let statusText = '';
+                            
+                            if (isActiveCycle) {
+                              // Ciclo aún activo
+                              periodText = `${formatDate(cycleStart)} - Activo`;
+                              statusText = 'En curso';
+                            } else if (cycleEndedEarly && isSameDay) {
+                              // Si terminó el mismo día, mostrar con horas
+                              periodText = `${formatDate(cycleStart)} - ${formatDateTime(cycleEnd)}`;
+                              statusText = 'Cerrado anticipadamente';
+                            } else if (cycleEndedEarly) {
+                              // Si terminó antes pero en diferente día
+                              periodText = `${formatDate(cycleStart)} - ${formatDate(cycleEnd)}`;
+                              statusText = 'Cerrado anticipadamente';
+                            } else {
+                              // Ciclo completado normalmente
+                              periodText = `${formatDate(cycleStart)} - ${formatDate(cycleEnd)}`;
+                              statusText = 'Completado';
+                            }
+                            
                             return (
-                              <tr key={`week-${index}`} className="hover:bg-gray-50">
+                              <tr key={`cycle-${row.cycleId}`} className="hover:bg-gray-50">
                                 <td className="px-2 sm:px-3 py-2">
-                                  <div className="text-[10px] sm:text-xs"><span className="font-semibold text-gray-700">Semana:</span> {fmt(weekStart)} - {fmt(weekEnd)}</div>
-                                  <div className="text-[9px] sm:text-[10px] text-gray-500 mt-1">7 días</div>
+                                  <div className="text-[10px] sm:text-xs">
+                                    <span className="font-semibold text-gray-700">
+                                      Ciclo #{row.friendlyId}:
+                                    </span> {periodText}
+                                  </div>
+                                  <div className="text-[9px] sm:text-[10px] text-gray-500 mt-1">
+                                    {actualDuration} día{actualDuration !== 1 ? 's' : ''}
+                                    {statusText && (
+                                      <span className={`ml-2 ${
+                                        isActiveCycle ? 'text-blue-600' : 
+                                        cycleEndedEarly ? 'text-orange-600' : 
+                                        'text-green-600'
+                                      }`}>
+                                        • {statusText}
+                                      </span>
+                                    )}
+                                  </div>
                                 </td>
                                 <td className="px-2 sm:px-3 py-2 text-center">{row.count}</td>
                                 <td className="px-2 sm:px-3 py-2">{row.aeAvg != null ? `${row.aeAvg}` : '—'}</td>
