@@ -75,7 +75,7 @@ function LoginForm() {
                 },
               }}
               providers={['google']}
-              redirectTo={`${window.location.origin}/LandingPageOficial/dashboard`}
+              redirectTo={`${window.location.origin}/dashboard`}
               socialLayout="horizontal"
               showLinks={true}
               view="sign_in"
