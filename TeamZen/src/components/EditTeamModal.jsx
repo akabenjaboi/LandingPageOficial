@@ -7,6 +7,8 @@ export default function EditTeamModal({ isOpen, onClose, team, onTeamUpdated }) 
   const [teamName, setTeamName] = useState("");
   const [description, setDescription] = useState("");
   const [includeLeader, setIncludeLeader] = useState(true);
+  const [membersCanSeeOthers, setMembersCanSeeOthers] = useState(true);
+  const [membersCanSeeResponses, setMembersCanSeeResponses] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -16,6 +18,8 @@ export default function EditTeamModal({ isOpen, onClose, team, onTeamUpdated }) 
       setTeamName(team.name || "");
       setDescription(team.description || "");
       setIncludeLeader(team.include_leader_in_metrics ?? true);
+      setMembersCanSeeOthers(team.members_can_see_others ?? true);
+      setMembersCanSeeResponses(team.members_can_see_responses ?? true);
       setError(null);
     }
   }, [isOpen, team]);
@@ -34,6 +38,8 @@ export default function EditTeamModal({ isOpen, onClose, team, onTeamUpdated }) 
           name: teamName,
           description: description,
           include_leader_in_metrics: includeLeader,
+          members_can_see_others: membersCanSeeOthers,
+          members_can_see_responses: membersCanSeeResponses,
           updated_at: new Date().toISOString()
         })
         .eq("id", team.id);
@@ -48,7 +54,9 @@ export default function EditTeamModal({ isOpen, onClose, team, onTeamUpdated }) 
           ...team,
           name: teamName,
           description: description,
-          include_leader_in_metrics: includeLeader
+          include_leader_in_metrics: includeLeader,
+          members_can_see_others: membersCanSeeOthers,
+          members_can_see_responses: membersCanSeeResponses
         });
       }
 
@@ -130,6 +138,43 @@ export default function EditTeamModal({ isOpen, onClose, team, onTeamUpdated }) 
           </p>
           <div className="ml-6 mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
             ⚠️ Cambiar esta configuración afectará los cálculos de métricas futuras y reportes.
+          </div>
+        </div>
+
+        {/* Configuraciones de privacidad */}
+        <div className="border border-[#DAD5E4] rounded-lg p-4 bg-[#FAF9F6] space-y-3">
+          <h4 className="font-semibold text-[#2E2E3A] text-sm">Configuración de Privacidad</h4>
+          
+          <div className="space-y-2">
+            <label className="font-medium text-[#2E2E3A] text-sm flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={membersCanSeeOthers}
+                onChange={(e) => setMembersCanSeeOthers(e.target.checked)}
+                disabled={loading}
+                className="w-4 h-4 text-[#55C2A2] focus:ring-[#55C2A2] rounded"
+              />
+              Los miembros pueden ver a otros integrantes
+            </label>
+            <p className="text-xs text-[#5B5B6B] ml-6">
+              Si lo desmarcas, cada miembro solo podrá verse a sí mismo en el equipo.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="font-medium text-[#2E2E3A] text-sm flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={membersCanSeeResponses}
+                onChange={(e) => setMembersCanSeeResponses(e.target.checked)}
+                disabled={loading}
+                className="w-4 h-4 text-[#55C2A2] focus:ring-[#55C2A2] rounded"
+              />
+              Los miembros pueden ver si otros ya respondieron
+            </label>
+            <p className="text-xs text-[#5B5B6B] ml-6">
+              Si lo desmarcas, cada miembro solo verá su propio estado de respuesta.
+            </p>
           </div>
         </div>
 

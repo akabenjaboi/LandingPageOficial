@@ -154,7 +154,7 @@ export default function EvaluacionesPage() {
             <span className="font-semibold">Evaluaciones</span>
           </div>
           <div className="flex items-center gap-4 text-sm">
-            <button onClick={() => navigate('/dashboard')} className="text-gray-600 hover:text-gray-900">Dashboard</button>
+            <button onClick={() => navigate('/dashboard')} className="text-gray-600 hover:text-gray-900">Volver al Dashboard</button>
             <button onClick={() => navigate('/mbi')} className="text-gray-600 hover:text-gray-900">Responder MBI</button>
           </div>
         </div>
@@ -166,6 +166,23 @@ export default function EvaluacionesPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Lanzar MBI a un equipo</h2>
             </div>
+            
+            {/* Información importante sobre duración de ciclos */}
+            <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-xs font-medium text-blue-800 mb-1">ℹ️ Gestión de ciclos</p>
+                  <p className="text-xs text-blue-700">
+                    Los ciclos MBI duran <strong>7 días calendario</strong> desde su inicio y se cierran automáticamente. 
+                    Puedes ver el progreso y generar reportes en cualquier momento durante este período.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {teams.length === 0 && (
               <p className="text-sm text-gray-500">No tienes equipos. Crea uno primero.</p>
             )}
@@ -176,7 +193,7 @@ export default function EvaluacionesPage() {
                     <h3 className="font-medium text-gray-800">{t.name}</h3>
                   </div>
                   <button
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded disabled:opacity-50"
+                    className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] disabled:from-[#55C2A2]/50 disabled:to-[#7DDFC7]/50 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
                     disabled={launching}
                     onClick={() => prepareLaunch(t)}
                   >
@@ -230,7 +247,7 @@ export default function EvaluacionesPage() {
               <p>RP se invierte solo para evaluar riesgo (puntajes bajos en RP reflejan mayor riesgo).</p>
             </div>
             <div className="mt-6 flex justify-end">
-              <button onClick={() => navigate('/mbi')} className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Responder MBI</button>
+              <button onClick={() => navigate('/mbi')} className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] text-white px-5 py-2 rounded-xl text-sm font-medium transition-all duration-300 ease-out transform hover:scale-105 shadow-lg hover:shadow-teamzen-glow">Responder MBI</button>
             </div>
         </section>
       </main>

@@ -246,7 +246,7 @@ export default function MBIPage() {
                     {SCALE.map((s) => {
                       const disabled = alreadyAnswered || (teamId ? !activeCycle : false);
                       return (
-                        <label key={s.value} className={`cursor-pointer px-3 py-1 rounded border ${answers[it.id] === s.value ? 'bg-blue-600 text-white border-blue-600' : disabled ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                        <label key={s.value} className={`cursor-pointer px-3 py-1 rounded-xl border transition-all duration-300 ${answers[it.id] === s.value ? 'bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] text-white border-[#55C2A2] shadow-lg' : disabled ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-[#55C2A2]/30'}`}>
                           <input
                             type="radio"
                             name={`item-${it.id}`}
@@ -285,10 +285,29 @@ export default function MBIPage() {
               </button>
               <button
                 type="submit"
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+                className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] disabled:from-[#55C2A2]/50 disabled:to-[#7DDFC7]/50 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center justify-center gap-2"
                 disabled={submitting || !allAnswered || (teamId && !activeCycle) || alreadyAnswered}
               >
-                {alreadyAnswered ? 'Ya enviado' : submitting ? 'Enviando…' : 'Enviar respuestas'}
+                {alreadyAnswered ? (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Ya enviado
+                  </>
+                ) : submitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Enviando…
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                    Enviar respuestas
+                  </>
+                )}
               </button>
             </div>
           </form>

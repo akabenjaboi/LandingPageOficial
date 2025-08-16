@@ -28,21 +28,30 @@ function generateDataHash(mbiData) {
 /**
  * Busca análisis de IA en cache
  * @param {string} teamId - ID del equipo
- * @param {string} cycleId - ID del ciclo actual
+ * @param {string} analysisId - ID del ciclo o identificador semanal
  * @param {object} mbiData - Datos MBI para verificar si cambió
+ * @param {string} analysisType - Tipo de análisis: 'cycle' o 'weekly'
  * @returns {object|null} - Análisis cacheado o null si no existe/expiró
  */
-export async function getCachedAnalysis(teamId, cycleId, mbiData) {
+export async function getCachedAnalysis(teamId, analysisId, mbiData, analysisType = 'cycle') {
   try {
-    console.log('🔍 Buscando análisis en cache...', { teamId, cycleId });
+    console.log('🔍 Buscando análisis en cache...', { teamId, analysisId, analysisType });
     
-    const { data, error } = await supabase
+    let query = supabase
       .from('ai_analysis_cache')
       .select('*')
       .eq('team_id', teamId)
-      .eq('cycle_id', cycleId)
-      .gt('expires_at', new Date().toISOString()) // Solo no expirados
-      .single();
+      .eq('analysis_type', analysisType)
+      .gt('expires_at', new Date().toISOString()); // Solo no expirados
+    
+    // Agregar condición específica según el tipo
+    if (analysisType === 'cycle') {
+      query = query.eq('cycle_id', analysisId);
+    } else if (analysisType === 'weekly') {
+      query = query.eq('period_identifier', analysisId);
+    }
+    
+    const { data, error } = await query.single();
     
     if (error) {
       if (error.code === 'PGRST116') {
@@ -66,7 +75,8 @@ export async function getCachedAnalysis(teamId, cycleId, mbiData) {
     
     console.log('✅ Cache válido encontrado', { 
       createdAt: data.created_at,
-      expiresAt: data.expires_at 
+      expiresAt: data.expires_at,
+      analysisType: data.analysis_type
     });
     
     return {
@@ -84,35 +94,59 @@ export async function getCachedAnalysis(teamId, cycleId, mbiData) {
 /**
  * Guarda análisis de IA en cache
  * @param {string} teamId - ID del equipo
- * @param {string} cycleId - ID del ciclo
+ * @param {string} analysisId - ID del ciclo o identificador semanal
  * @param {object} analysis - Análisis de IA a guardar
  * @param {object} mbiData - Datos MBI originales
+ * @param {string} analysisType - Tipo de análisis: 'cycle' o 'weekly'
  * @param {number} ttlDays - Días hasta expiración (default: 7)
  */
-export async function saveCachedAnalysis(teamId, cycleId, analysis, mbiData, ttlDays = 7) {
+export async function saveCachedAnalysis(teamId, analysisId, analysis, mbiData, analysisType = 'cycle', ttlDays = 7) {
   try {
-    console.log('💾 Guardando análisis en cache...', { teamId, cycleId, ttlDays });
+    console.log('💾 Guardando análisis en cache...', { teamId, analysisId, analysisType, ttlDays });
     
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + ttlDays);
     
     const cacheData = {
       team_id: teamId,
-      cycle_id: cycleId,
+      analysis_type: analysisType,
       analysis_data: analysis,
       mbi_data_hash: generateDataHash(mbiData),
       expires_at: expiresAt.toISOString()
     };
     
+    // Agregar campos específicos según el tipo
+    if (analysisType === 'cycle') {
+      cacheData.cycle_id = analysisId;
+      cacheData.period_identifier = null;
+    } else if (analysisType === 'weekly') {
+      cacheData.cycle_id = null;
+      cacheData.period_identifier = analysisId;
+    }
+    
+    // Estrategia simple: eliminar cualquier entrada existente para este team+analysis
+    let deleteQuery = supabase
+      .from('ai_analysis_cache')
+      .delete()
+      .eq('team_id', teamId)
+      .eq('analysis_type', analysisType);
+    
+    if (analysisType === 'cycle') {
+      deleteQuery = deleteQuery.eq('cycle_id', analysisId);
+    } else if (analysisType === 'weekly') {
+      deleteQuery = deleteQuery.eq('period_identifier', analysisId);
+    }
+    
+    await deleteQuery;
+    
+    // Insertar nueva entrada
     const { error } = await supabase
       .from('ai_analysis_cache')
-      .upsert(cacheData, { 
-        onConflict: 'team_id,cycle_id' // Actualizar si ya existe
-      });
+      .insert(cacheData);
     
     if (error) throw error;
     
-    console.log('✅ Análisis guardado en cache hasta:', expiresAt);
+    console.log('✅ Análisis guardado en cache hasta:', expiresAt, { analysisType, analysisId });
     
   } catch (error) {
     console.error('❌ Error guardando cache:', error);

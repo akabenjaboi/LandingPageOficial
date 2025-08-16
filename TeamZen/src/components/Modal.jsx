@@ -2,14 +2,15 @@
 // COMPONENTE MODAL - Modal reutilizable con overlay y gestión de estado
 // ===================================================================
 // Modal base que maneja:
-// - Overlay con fondo semitransparente
+// - Overlay con fondo transparente y animaciones
 // - Cierre con ESC o click fuera
 // - Prevención de scroll del body
-// - Animaciones de entrada/salida
+// - Animaciones de entrada/salida fluidas
 // - Accesibilidad (ARIA)
+// - Paleta de colores TeamZen
 // ===================================================================
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 export default function Modal({ 
   isOpen, 
@@ -19,11 +20,31 @@ export default function Modal({
   maxWidth = "max-w-lg",
   preventCloseOnOutsideClick = false 
 }) {
+  const [isVisible, setIsVisible] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+
   // ===================================================================
   // GESTIÓN DE EVENTOS Y ACCESIBILIDAD
   // ===================================================================
   
-  // Cerrar modal con ESC y gestionar scroll del body
+  // Gestionar animaciones de apertura/cierre
+  useEffect(() => {
+    if (isOpen) {
+      setIsVisible(true);
+      setTimeout(() => setIsAnimating(true), 10);
+      document.body.style.overflow = 'hidden';
+    } else {
+      setIsAnimating(false);
+      setTimeout(() => setIsVisible(false), 200);
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  // Cerrar modal con ESC
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isOpen) {
@@ -33,18 +54,15 @@ export default function Modal({
 
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
-      // Prevenir scroll del body cuando modal está abierto
-      document.body.style.overflow = 'hidden';
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
 
   // No renderizar si el modal está cerrado
-  if (!isOpen) return null;
+  if (!isVisible) return null;
 
   // ===================================================================
   // HANDLERS DE INTERACCIÓN
@@ -63,20 +81,22 @@ export default function Modal({
   
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" 
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ease-out
+        ${isAnimating ? 'backdrop-blur-sm bg-white/10' : 'backdrop-blur-none bg-white/0'}`}
       role="dialog" 
       aria-modal="true"
       onClick={handleBackdropClick}
     >
-      <div className={`bg-white rounded-lg shadow-xl ${maxWidth} w-full max-h-[90vh] overflow-y-auto`}>
+      <div className={`bg-[#FAF9F6] border border-[#DAD5E4] rounded-xl shadow-2xl ${maxWidth} w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out
+        ${isAnimating ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
         {/* Header del modal */}
-        <div className="flex items-start justify-between p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="flex items-start justify-between p-6 border-b border-[#DAD5E4]">
+          <h3 className="text-lg font-semibold text-[#2E2E3A]">
             {title}
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-[#5B5B6B] hover:text-[#2E2E3A] transition-colors duration-200 p-1 rounded-lg hover:bg-[#DAD5E4]/30"
             aria-label="Cerrar modal"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

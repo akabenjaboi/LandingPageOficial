@@ -120,6 +120,49 @@ app.post('/api/groq/analyze', authenticateUser, async (req, res) => {
   }
 });
 
+/**
+ * Endpoint para análisis personal de usuarios MBI
+ * POST /api/groq
+ */
+app.post('/api/groq', authenticateUser, async (req, res) => {
+  try {
+    const { messages, model = 'llama3-8b-8192', max_tokens = 2048 } = req.body;
+
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'Messages array requerido' });
+    }
+
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages,
+        model,
+        max_tokens,
+        temperature: 0.7
+      })
+    });
+
+    if (!groqResponse.ok) {
+      const errorData = await groqResponse.json().catch(() => ({}));
+      throw new Error(`Groq API error: ${groqResponse.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await groqResponse.json();
+    res.json(data);
+
+  } catch (error) {
+    console.error('Error en Groq proxy (análisis personal):', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Error procesando solicitud'
+    });
+  }
+});
+
 // ================================
 // HEALTH CHECK
 // ================================

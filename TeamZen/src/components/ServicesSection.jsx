@@ -3,7 +3,7 @@ import ServiceCard from "./ServiceCard";
 import useInView from "../hooks/useInView";
 import useIsMobile from "../hooks/useIsMobile";
 
-// El array de servicios puede importarse o pasarse como prop si prefieres
+// Servicios con paleta de colores TeamZen aplicada
 const servicios = [
   {
     icon: "🧠",
@@ -12,8 +12,8 @@ const servicios = [
     description: "Diagnóstico rápido del bienestar emocional y burnout en tu equipo.",
     badgeIcon: "📊",
     badgeText: "Estado emocional real",
-    badgeBg: "bg-[#F3F8F6]",
-    badgeColor: "text-[#55C2A2]",
+    badgeBg: "bg-gradient-to-r from-[#55C2A2]/10 to-[#55C2A2]/5",
+    badgeColor: "text-[#2E2E3A]",
     animationDelay: "0.1s",
   },
   {
@@ -23,30 +23,30 @@ const servicios = [
     description: "Visualiza tendencias y riesgos con datos anónimos y toma mejores decisiones.",
     badgeIcon: "📈",
     badgeText: "Liderazgo con datos",
-    badgeBg: "bg-[#F6F3FA]",
-    badgeColor: "text-[#9D83C6]",
+    badgeBg: "bg-gradient-to-r from-[#9D83C6]/10 to-[#DAD5E4]/20",
+    badgeColor: "text-[#2E2E3A]",
     animationDelay: "0.2s",
   },
   {
     icon: "🧘",
-    iconColor: "text-[#F7B801]",
+    iconColor: "text-[#55C2A2]",
     title: "Recomendaciones Personalizadas",
     description: "Sugerencias prácticas y personalizadas para mejorar el bienestar diario.",
     badgeIcon: "🌿",
     badgeText: "Bienestar diario",
-    badgeBg: "bg-[#F9F7F2]",
-    badgeColor: "text-[#F7B801]",
+    badgeBg: "bg-gradient-to-r from-[#DAD5E4]/30 to-[#FAF9F6]",
+    badgeColor: "text-[#2E2E3A]",
     animationDelay: "0.3s",
   },
   {
     icon: "🤖",
-    iconColor: "text-[#55C2A2]",
+    iconColor: "text-[#9D83C6]",
     title: "Prevención de Burnout con IA",
     description: "Detecta señales de burnout y recibe alertas tempranas gracias a la IA.",
     badgeIcon: "💡",
     badgeText: "IA para tu bienestar",
-    badgeBg: "bg-[#E6F7F3]",
-    badgeColor: "text-[#55C2A2]",
+    badgeBg: "bg-gradient-to-r from-[#55C2A2]/10 to-[#9D83C6]/10",
+    badgeColor: "text-[#2E2E3A]",
     animationDelay: "0.4s",
   },
   {

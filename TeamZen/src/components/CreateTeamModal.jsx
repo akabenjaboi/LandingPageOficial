@@ -9,6 +9,8 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
   const [description, setDescription] = useState("");
   const [joinPolicy, setJoinPolicy] = useState("code");
   const [includeLeader, setIncludeLeader] = useState(true);
+  const [membersCanSeeOthers, setMembersCanSeeOthers] = useState(true);
+  const [membersCanSeeResponses, setMembersCanSeeResponses] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -30,6 +32,8 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
       setDescription("");
       setJoinPolicy("code");
       setIncludeLeader(true);
+      setMembersCanSeeOthers(true);
+      setMembersCanSeeResponses(true);
       setLoading(false);
       setError(null);
       setSuccess(false);
@@ -65,7 +69,9 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
           description: description, 
           leader_id: userId, 
           join_policy: joinPolicy,
-          include_leader_in_metrics: includeLeader
+          include_leader_in_metrics: includeLeader,
+          members_can_see_others: membersCanSeeOthers,
+          members_can_see_responses: membersCanSeeResponses
         }])
         .select()
         .single();
@@ -116,7 +122,7 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
     <Modal 
       isOpen={isOpen} 
       onClose={handleClose} 
-      title={success ? "¡Equipo Creado!" : "Crear Nuevo Equipo"}
+      title={success ? "¡Equipo Creado!" : "Crea un nuevo equipo"}
       maxWidth="max-w-2xl"
       preventCloseOnOutsideClick={loading}
     >
@@ -124,11 +130,6 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
         // Formulario de creación
         <form onSubmit={handleCreateTeam} className="space-y-6">
           <div className="text-center mb-6">
-            <img 
-              src={`${import.meta.env.BASE_URL}/img/pandapintando.png`} 
-              alt="Panda creativo" 
-              className="w-24 h-24 mx-auto mb-4"
-            />
             <p className="text-[#5B5B6B]">
               Crea un espacio colaborativo para monitorear el bienestar de tu equipo
             </p>
@@ -178,6 +179,43 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
             </p>
           </div>
 
+          {/* Configuraciones de privacidad */}
+          <div className="border border-[#DAD5E4] rounded-lg p-4 bg-[#FAF9F6] space-y-3">
+            <h4 className="font-semibold text-[#2E2E3A] text-sm">Configuración de Privacidad</h4>
+            
+            <div className="space-y-2">
+              <label className="font-medium text-[#2E2E3A] text-sm flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={membersCanSeeOthers}
+                  onChange={(e) => setMembersCanSeeOthers(e.target.checked)}
+                  disabled={loading}
+                  className="w-4 h-4 text-[#55C2A2] focus:ring-[#55C2A2] rounded"
+                />
+                Los miembros pueden ver a otros integrantes
+              </label>
+              <p className="text-xs text-[#5B5B6B] ml-6">
+                Si lo desmarcas, cada miembro solo podrá verse a sí mismo en el equipo.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="font-medium text-[#2E2E3A] text-sm flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={membersCanSeeResponses}
+                  onChange={(e) => setMembersCanSeeResponses(e.target.checked)}
+                  disabled={loading}
+                  className="w-4 h-4 text-[#55C2A2] focus:ring-[#55C2A2] rounded"
+                />
+                Los miembros pueden ver si otros ya respondieron
+              </label>
+              <p className="text-xs text-[#5B5B6B] ml-6">
+                Si lo desmarcas, cada miembro solo verá su propio estado de respuesta.
+              </p>
+            </div>
+          </div>
+
           <div className="space-y-3">
             <label className="font-semibold text-[#2E2E3A] text-sm">
               ¿Cómo se unirán los miembros? <span className="text-red-500">*</span>
@@ -212,26 +250,40 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
               type="button"
               onClick={handleClose}
               disabled={loading}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 disabled:opacity-50"
+              className="flex-1 px-4 py-2 text-sm font-medium text-[#5B5B6B] hover:text-[#2E2E3A] hover:bg-[#DAD5E4]/30 disabled:opacity-50 rounded-xl transition-all duration-200"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading || !teamName.trim()}
-              className="flex-1 bg-[#55C2A2] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#4AA690] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white px-6 py-2 rounded-xl font-medium hover:from-[#4AA690] hover:to-[#8B6FB8] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              {loading ? "Creando equipo..." : "Crear Equipo"}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Creando equipo...
+                </span>
+              ) : "Crear Equipo"}
             </button>
           </div>
         </form>
       ) : (
         // Pantalla de éxito
         <div className="text-center space-y-6">
-          <div className="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+          <div className="w-24 h-24 mx-auto relative">
+            <img 
+              src={`${import.meta.env.BASE_URL}/img/pandalogo.png`} 
+              alt="TeamZen Success" 
+              className="w-full h-full object-contain animate-scale-in"
+            />
+            <div className="absolute -top-1 -right-1 w-8 h-8 bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
           </div>
           
           <div>
@@ -254,7 +306,7 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
           <div className="flex gap-3">
             <button 
               onClick={copyToClipboard}
-              className="flex-1 border border-[#55C2A2] text-[#55C2A2] px-4 py-2 rounded-lg font-medium hover:bg-[#55C2A2]/5 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 border-2 border-[#55C2A2] text-[#55C2A2] px-4 py-2 rounded-xl font-medium hover:bg-[#55C2A2] hover:text-white transition-all duration-300 flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -263,7 +315,7 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
             </button>
             <button 
               onClick={handleClose}
-              className="flex-1 bg-[#55C2A2] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#4AA690] transition-colors flex items-center justify-center gap-2"
+              className="flex-1 bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white px-4 py-2 rounded-xl font-medium hover:from-[#4AA690] hover:to-[#8B6FB8] transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

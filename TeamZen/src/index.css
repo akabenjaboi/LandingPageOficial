@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
-/* Animaciones personalizadas para TeamZen */
+/* ===================================================================
+   ANIMACIONES PERSONALIZADAS PARA TEAMZEN - Paleta de colores aplicada
+   =================================================================== */
+
+/* Animaciones flotantes */
 @keyframes float {
   0%, 100% {
     transform: translateY(0px);
@@ -19,6 +23,41 @@
   }
 }
 
+/* Animaciones de entrada para modales */
+@keyframes modalFadeIn {
+  0% {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+@keyframes modalSlideUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalSlideDown {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+}
+
+/* Animaciones de deslizamiento */
 @keyframes slideInFromLeft {
   0% {
     transform: translateX(-100%);
@@ -63,7 +102,30 @@
   }
 }
 
-/* Clases de utilidad personalizadas */
+/* Animación de rotación suave */
+@keyframes gentleRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Efectos de resplandor con colores TeamZen */
+@keyframes glowTeamzen {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(85, 194, 162, 0.3), 0 0 10px rgba(157, 131, 198, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(85, 194, 162, 0.6), 0 0 30px rgba(157, 131, 198, 0.4);
+  }
+}
+
+/* ===================================================================
+   CLASES DE UTILIDAD PERSONALIZADAS
+   =================================================================== */
+
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
@@ -88,54 +150,119 @@
   animation: scaleIn 0.5s ease-out;
 }
 
-/* Hover effects mejorados */
+.animate-modal-enter {
+  animation: modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-modal-exit {
+  animation: modalSlideDown 0.2s ease-in-out;
+}
+
+.animate-gentle-rotate {
+  animation: gentleRotate 20s linear infinite;
+}
+
+.animate-glow-teamzen {
+  animation: glowTeamzen 3s ease-in-out infinite;
+}
+
+/* ===================================================================
+   EFECTOS HOVER MEJORADOS CON PALETA TEAMZEN
+   =================================================================== */
+
 .card-hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 25px 50px -12px rgba(46, 46, 58, 0.15), 
+              0 0 20px rgba(85, 194, 162, 0.1);
 }
 
-/* Gradiente de fondo personalizado */
+.button-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(85, 194, 162, 0.3);
+}
+
+/* ===================================================================
+   GRADIENTES Y FONDOS TEAMZEN
+   =================================================================== */
+
 .bg-teamzen-gradient {
   background: linear-gradient(135deg, #FAF9F6 0%, #DAD5E4 100%);
+}
+
+.bg-teamzen-gradient-primary {
+  background: linear-gradient(135deg, #55C2A2 0%, #9D83C6 100%);
+}
+
+.bg-teamzen-gradient-soft {
+  background: linear-gradient(135deg, rgba(85, 194, 162, 0.1) 0%, rgba(157, 131, 198, 0.1) 100%);
 }
 
 .bg-teamzen-gradient-dark {
   background: linear-gradient(135deg, #2E2E3A 0%, #55C2A2 100%);
 }
 
-/* Efectos de vidrio */
-.glass-effect {
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+.bg-modal-backdrop {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
 }
 
-/* Scrollbar personalizada */
+/* ===================================================================
+   EFECTOS DE VIDRIO Y TRANSPARENCIAS
+   =================================================================== */
+
+.glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(250, 249, 246, 0.8);
+  border: 1px solid rgba(218, 213, 228, 0.3);
+}
+
+.glass-effect-strong {
+  backdrop-filter: blur(20px);
+  background: rgba(250, 249, 246, 0.9);
+  border: 1px solid rgba(218, 213, 228, 0.5);
+}
+
+/* ===================================================================
+   SCROLLBAR PERSONALIZADA TEAMZEN
+   =================================================================== */
+
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #FAF9F6;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #55C2A2;
+  background: linear-gradient(135deg, #55C2A2, #9D83C6);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9D83C6;
+  background: linear-gradient(135deg, #4AA690, #8B6FB8);
 }
 
-/* Estados de carga */
+::-webkit-scrollbar-corner {
+  background: #FAF9F6;
+}
+
+/* ===================================================================
+   ESTADOS DE CARGA CON COLORES TEAMZEN
+   =================================================================== */
+
 .loading-shimmer {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, #FAF9F6 25%, #DAD5E4 50%, #FAF9F6 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -149,10 +276,77 @@
   }
 }
 
-/* Efectos de texto */
+.loading-pulse {
+  background: linear-gradient(90deg, rgba(85, 194, 162, 0.1), rgba(157, 131, 198, 0.1));
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ===================================================================
+   EFECTOS DE TEXTO CON GRADIENTES TEAMZEN
+   =================================================================== */
+
 .text-gradient {
   background: linear-gradient(135deg, #55C2A2, #9D83C6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.text-gradient-alt {
+  background: linear-gradient(135deg, #2E2E3A, #55C2A2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===================================================================
+   BORDES Y SOMBRAS MEJORADAS
+   =================================================================== */
+
+.border-gradient {
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, #55C2A2, #9D83C6) border-box;
+}
+
+.shadow-teamzen {
+  box-shadow: 0 10px 25px rgba(85, 194, 162, 0.15),
+              0 4px 10px rgba(157, 131, 198, 0.1);
+}
+
+.shadow-teamzen-strong {
+  box-shadow: 0 25px 50px rgba(85, 194, 162, 0.25),
+              0 10px 20px rgba(157, 131, 198, 0.15);
+}
+
+/* ===================================================================
+   UTILIDADES PARA ACCESIBILIDAD Y UX
+   =================================================================== */
+
+.focus-teamzen:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(85, 194, 162, 0.3);
+}
+
+.transition-teamzen {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reducir movimiento para usuarios con preferencias de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-pulse-glow,
+  .animate-slide-in-left,
+  .animate-slide-in-right,
+  .animate-fade-in-up,
+  .animate-scale-in,
+  .animate-gentle-rotate,
+  .animate-glow-teamzen {
+    animation: none;
+  }
+  
+  .card-hover:hover,
+  .button-hover:hover {
+    transform: none;
+  }
 }
