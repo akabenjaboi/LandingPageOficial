@@ -1,8 +1,2 @@
-# Redirects para SPA (Single Page Application)
+# SPA fallback - debe ser la última regla
 /*    /index.html   200
-
-# Redirects opcionales
-/login    /login    200
-/dashboard    /dashboard    200
-/evaluaciones    /evaluaciones    200
-/reportes    /reportes    200
