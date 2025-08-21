@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom"
+import { Link } from "react-router-dom";
+import LazyImage from "./LazyImage";
 export default function HeroSection() {
   const [showText, setShowText] = useState(false);
   const [showImage, setShowImage] = useState(false);
@@ -43,11 +44,14 @@ export default function HeroSection() {
       >
         <div className="relative w-full max-w-xs sm:max-w-md md:max-w-lg">
           <div className="absolute -inset-4 sm:-inset-6 bg-[#DAD5E4] rounded-3xl blur-2xl opacity-50 z-0"></div>
-          <img
+          <LazyImage
             src="/img/formpanda.png"
             alt="TeamZen dashboard"
             className="relative w-full rounded-2xl border-4 border-[#DAD5E4] bg-white/70 z-10 animate-float"
             style={{ objectFit: "cover" }}
+            placeholder={
+              <div className="relative w-full h-64 rounded-2xl border-4 border-[#DAD5E4] bg-gradient-to-br from-[#55C2A2]/20 to-[#9D83C6]/20 animate-pulse z-10" />
+            }
           />
         </div>
       </div>

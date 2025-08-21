@@ -1,5 +1,6 @@
 import React from "react";
 import useInView from "../hooks/useInView";
+import LazyImage from "./LazyImage";
 
 const team = [
   {
@@ -33,11 +34,13 @@ function TeamCard({ member, show, animationDelay }) {
       style={{ animationDelay }}
     >
       <div className="w-28 h-28 rounded-full overflow-hidden mb-4 border-4 border-[#DAD5E4] flex items-center justify-center transition-all duration-300 bg-opacity-80">
-        <img
+        <LazyImage
           src={member.img}
           alt={member.name}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-          loading="lazy"
+          placeholder={
+            <div className="w-full h-full bg-gradient-to-br from-[#55C2A2]/30 to-[#9D83C6]/30 animate-pulse rounded-full" />
+          }
         />
       </div>
       <h4 className="text-lg md:text-xl font-semibold mb-1 text-[#2E2E3A] text-center">
