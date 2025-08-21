@@ -1,4 +1,5 @@
 import React from "react";
+import LazyImage from "./LazyImage";
 
 export default function Footer() {
   return (
@@ -7,11 +8,14 @@ export default function Footer() {
         {/* Descripción con imagen arriba */}
         <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
           {/* Imagen pequeña y justo arriba de la descripción */}
-          <img
+          <LazyImage
             src="/img/footerimg.png"
             alt="Decoración TeamZen"
             className="w-30 h-auto mb-3 pointer-events-none select-none"
             style={{ maxWidth: "300px" }}
+            placeholder={
+              <div className="w-30 h-20 mb-3 bg-gradient-to-r from-[#55C2A2]/20 to-[#9D83C6]/20 animate-pulse rounded-lg" />
+            }
           />
           <p className="text-base md:text-lg text-[#5B5B6B] max-w-sm mx-auto md:mx-0">
             La primera plataforma digital hecha en Chile en prevenir el burnout e impulsar el bienestar y la
