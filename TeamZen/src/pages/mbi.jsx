@@ -40,6 +40,19 @@ const SCALE = [
   { value: 6, label: 'Todos los días' },
 ];
 
+
+/* Escala adaptada para reportes semanales
+const AGREEMENT_SCALE_SHORT = [
+  { value: 0, label: 'Totalmente en desacuerdo' },
+  { value: 1, label: 'En desacuerdo' },
+  { value: 2, label: 'Algo en desacuerdo' },
+  { value: 3, label: 'Neutral' },
+  { value: 4, label: 'Algo de acuerdo' },
+  { value: 5, label: 'De acuerdo' },
+  { value: 6, label: 'Totalmente de acuerdo' },
+];
+*/
+
 export default function MBIPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
