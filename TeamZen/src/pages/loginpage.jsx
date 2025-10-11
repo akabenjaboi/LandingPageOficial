@@ -89,7 +89,7 @@ function LoginForm() {
                     button_label: 'Crear cuenta',
                     loading_button_label: 'Creando cuenta...',
                     social_provider_text: 'Continuar con {{provider}}',
-                    link_text: '¿Ya tienes cuenta? Inicia sesión aquí',
+                    link_text: '¿No tienes cuenta? Crea una aquí',
                     confirmation_text: 'Revisa tu email para confirmar tu cuenta'
                   },
                   sign_in: {
@@ -100,7 +100,7 @@ function LoginForm() {
                     button_label: 'Iniciar sesión',
                     loading_button_label: 'Iniciando sesión...',
                     social_provider_text: 'Continuar con {{provider}}',
-                    link_text: '¿No tienes cuenta? Crea una aquí'
+                    link_text: '¿Ya tienes una cuenta? Inicia sesión aquí'
                   },
                   magic_link: {
                     email_input_label: 'Correo electrónico',
