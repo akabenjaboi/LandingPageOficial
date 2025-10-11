@@ -52,7 +52,7 @@ export default function Footer() {
           {/* Redes sociales debajo del form */}
           <div className="flex items-center gap-4 mt-4">
             <a
-              href="https://www.instagram.com/"
+              href="https://www.instagram.com/teamzen.cl/"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
@@ -63,7 +63,7 @@ export default function Footer() {
               </svg>
             </a>
             <a
-              href="https://www.linkedin.com/"
+              href="https://www.linkedin.com/company/teamzenchile/"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn"
