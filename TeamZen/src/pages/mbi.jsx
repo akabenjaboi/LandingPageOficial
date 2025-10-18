@@ -250,16 +250,16 @@ export default function MBIPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {ITEMS.map((it) => (
               <div key={it.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div className="flex flex-col gap-4">
                   <div>
                     <p className="font-medium text-gray-900">{it.id}. {it.text}</p>
                     <p className="text-xs text-gray-500">Subescala: {it.sub}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
                     {SCALE.map((s) => {
                       const disabled = alreadyAnswered || (teamId ? !activeCycle : false);
                       return (
-                        <label key={s.value} className={`cursor-pointer px-3 py-1 rounded-xl border transition-all duration-300 ${answers[it.id] === s.value ? 'bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] text-white border-[#55C2A2] shadow-lg' : disabled ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-[#55C2A2]/30'}`}>
+                        <label key={s.value} className={`cursor-pointer px-2 py-2 rounded-xl border transition-all duration-300 text-center ${answers[it.id] === s.value ? 'bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] text-white border-[#55C2A2] shadow-lg' : disabled ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-[#55C2A2]/30'}`}>
                           <input
                             type="radio"
                             name={`item-${it.id}`}
@@ -269,7 +269,7 @@ export default function MBIPage() {
                             checked={answers[it.id] === s.value}
                             onChange={() => !disabled && setAnswers((a) => ({ ...a, [it.id]: s.value }))}
                           />
-                          <span className="text-sm">{s.label}</span>
+                          <span className="text-xs sm:text-sm leading-tight">{s.label}</span>
                         </label>
                       );
                     })}

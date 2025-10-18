@@ -1529,47 +1529,47 @@ function UserPersonalReports({ user, profile }) {
 
       {/* Estadísticas rápidas */}
       {mbiHistory.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Evaluaciones</p>
-                <p className="text-2xl font-bold text-gray-900">{mbiHistory.length}</p>
+              <div className="ml-3 sm:ml-4 min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Evaluaciones</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{mbiHistory.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Última Evaluación</p>
-                <p className="text-lg font-bold text-gray-900">
+              <div className="ml-3 sm:ml-4 min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Última Evaluación</p>
+                <p className="text-sm sm:text-lg font-bold text-gray-900">
                   {new Date(mbiHistory[0]?.created_at).toLocaleDateString()}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Cargo Actual</p>
-                <p className="text-lg font-bold text-gray-900">
+              <div className="ml-3 sm:ml-4 min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Cargo Actual</p>
+                <p className="text-sm sm:text-lg font-bold text-gray-900 truncate">
                   {profile?.job_title || 'No especificado'}
                 </p>
               </div>
@@ -1580,20 +1580,20 @@ function UserPersonalReports({ user, profile }) {
 
       {/* Mensaje si no hay evaluaciones */}
       {mbiHistory.length === 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8 lg:p-12 text-center">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Sin evaluaciones aún</h3>
-          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Sin evaluaciones aún</h3>
+          <p className="text-sm sm:text-base text-gray-600 mb-6 max-w-sm sm:max-w-md mx-auto leading-relaxed">
             Para ver tu análisis personal, necesitas completar al menos una evaluación MBI. 
             Esto nos permitirá generar insights específicos sobre tu bienestar laboral.
           </p>
           <button
             onClick={() => window.location.href = '/mbi'}
-            className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow"
+            className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] text-white px-4 py-2 sm:px-6 sm:py-3 rounded-xl font-medium text-sm sm:text-base transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow"
           >
             Completar primera evaluación
           </button>
@@ -1603,41 +1603,43 @@ function UserPersonalReports({ user, profile }) {
       {/* Análisis Personal */}
       {mbiHistory.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Análisis Inteligente</h3>
-                  <p className="text-sm text-gray-600">
-                    Basado en {mbiHistory.length} evaluación{mbiHistory.length !== 1 ? 'es' : ''} MBI y tu información laboral
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">Análisis Inteligente</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                    <p className="text-xs sm:text-sm text-gray-600">
+                      Basado en {mbiHistory.length} evaluación{mbiHistory.length !== 1 ? 'es' : ''} MBI
+                    </p>
                     {analysis?.fromCache ? (
-                      <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                      <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs mt-1 sm:mt-0 w-fit">
                         📋 Desde caché
                       </span>
                     ) : (
-                      <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                      <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs mt-1 sm:mt-0 w-fit">
                         ✨ Recién generado
                       </span>
                     )}
-                  </p>
+                  </div>
                 </div>
               </div>
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 justify-end sm:justify-start">
                 <button
                   onClick={() => setExpanded(!expanded)}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   {expanded ? 'Contraer' : 'Ver Detalles'}
                 </button>
                 <button
                   onClick={() => generateAnalysis(true)}
                   disabled={loading}
-                  className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                  className="px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
                 >
                   {loading ? 'Analizando...' : 'Actualizar'}
                 </button>
@@ -1645,12 +1647,12 @@ function UserPersonalReports({ user, profile }) {
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {loading && (
-              <div className="flex items-center justify-center py-8">
-                <div className="flex items-center space-x-3">
-                  <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-gray-600">Generando análisis personalizado con IA...</span>
+              <div className="flex items-center justify-center py-6 sm:py-8">
+                <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm sm:text-base text-gray-600 text-center sm:text-left">Generando análisis personalizado con IA...</span>
                 </div>
               </div>
             )}
@@ -1728,17 +1730,17 @@ function UserPersonalReports({ user, profile }) {
 
                 {/* Fortalezas y Áreas de Riesgo */}
                 {expanded && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     {analysis.strengths && analysis.strengths.length > 0 && (
                       <div>
-                        <h4 className="text-md font-semibold text-green-800 mb-3">Tus Fortalezas</h4>
+                        <h4 className="text-sm sm:text-md font-semibold text-green-800 mb-3">Tus Fortalezas</h4>
                         <ul className="space-y-2">
                           {analysis.strengths.map((strength, index) => (
                             <li key={index} className="flex items-start">
-                              <svg className="w-4 h-4 text-green-500 mt-1 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <svg className="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                               </svg>
-                              <span className="text-sm text-gray-700">{strength}</span>
+                              <span className="text-xs sm:text-sm text-gray-700 leading-relaxed">{strength}</span>
                             </li>
                           ))}
                         </ul>
@@ -1747,14 +1749,14 @@ function UserPersonalReports({ user, profile }) {
 
                     {analysis.risk_areas && analysis.risk_areas.length > 0 && (
                       <div>
-                        <h4 className="text-md font-semibold text-orange-800 mb-3">Áreas de Atención</h4>
+                        <h4 className="text-sm sm:text-md font-semibold text-orange-800 mb-3">Áreas de Atención</h4>
                         <ul className="space-y-2">
                           {analysis.risk_areas.map((risk, index) => (
                             <li key={index} className="flex items-start">
-                              <svg className="w-4 h-4 text-orange-500 mt-1 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <svg className="w-4 h-4 text-orange-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                               </svg>
-                              <span className="text-sm text-gray-700">{risk}</span>
+                              <span className="text-xs sm:text-sm text-gray-700 leading-relaxed">{risk}</span>
                             </li>
                           ))}
                         </ul>
@@ -1766,12 +1768,12 @@ function UserPersonalReports({ user, profile }) {
                 {/* Recomendaciones Personalizadas */}
                 {analysis.personalized_recommendations && analysis.personalized_recommendations.length > 0 && (
                   <div>
-                    <h4 className="text-md font-semibold text-gray-900 mb-4">Recomendaciones Personalizadas</h4>
-                    <div className="space-y-4">
+                    <h4 className="text-sm sm:text-md font-semibold text-gray-900 mb-3 sm:mb-4">Recomendaciones Personalizadas</h4>
+                    <div className="space-y-3 sm:space-y-4">
                       {analysis.personalized_recommendations.map((rec, index) => (
-                        <div key={index} className="border border-gray-200 rounded-lg p-4">
-                          <div className="flex items-center mb-2">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mr-3 ${
+                        <div key={index} className="border border-gray-200 rounded-lg p-3 sm:p-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center mb-2 gap-2">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium w-fit ${
                               rec.category === 'Inmediato' ? 'bg-red-100 text-red-800' :
                               rec.category === 'Corto plazo' ? 'bg-yellow-100 text-yellow-800' :
                               'bg-blue-100 text-blue-800'
@@ -1779,8 +1781,8 @@ function UserPersonalReports({ user, profile }) {
                               {rec.category}
                             </span>
                           </div>
-                          <h5 className="font-medium text-gray-900 mb-1">{rec.action}</h5>
-                          <p className="text-sm text-gray-600">{rec.why}</p>
+                          <h5 className="font-medium text-gray-900 mb-1 text-sm sm:text-base">{rec.action}</h5>
+                          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{rec.why}</p>
                         </div>
                       ))}
                     </div>
