@@ -7,7 +7,7 @@ const team = [
     name: "Sebastian Sepulveda",
     role: "Desarrollador movil",
     img: "/img/perfil2.jpg",
-    desc: "Desarrolla y optimiza la experiencia móvil de la app.",
+    desc: "Desarrolla y optimiza la experiencia móvil de la plataforma.",
   },
   {
     name: "Benjamín Alarcón",
