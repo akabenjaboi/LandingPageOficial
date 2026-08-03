@@ -18,6 +18,7 @@ import LaunchMBIModal from "../components/LaunchMBIModal";
 import CreateTeamModal from "../components/CreateTeamModal";
 import TeamOptionsMenu from "../components/TeamOptionsMenu";
 import EditTeamModal from "../components/EditTeamModal";
+import TransferLeadershipModal from "../components/TransferLeadershipModal";
 
 export default function Dashboard() {
   // ===================================================================
@@ -77,6 +78,8 @@ export default function Dashboard() {
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
   const [showEditTeamModal, setShowEditTeamModal] = useState(false);
   const [editingTeam, setEditingTeam] = useState(null);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferringTeam, setTransferringTeam] = useState(null);
 
   // ===================================================================
   // EFECTO PRINCIPAL - INICIALIZACIÓN Y CARGA DE DATOS
@@ -623,6 +626,24 @@ export default function Dashboard() {
     }
   };
 
+  const handleOpenTransfer = (team) => {
+    setTransferringTeam(team);
+    setShowTransferModal(true);
+  };
+
+  const handleTransferred = () => {
+    setShowTransferModal(false);
+    setTransferringTeam(null);
+    // Leadership of this team just changed hands — the transferring user's
+    // view flips from leader to member, which touches enough state
+    // (teams, teamMembers, activeCycles, respondedMembersByTeam,
+    // wellbeingByTeam) that a full reload is simpler and safer than
+    // hand-patching every piece of derived state. This mirrors the existing
+    // "Dashboard" mobile nav button at line ~936, which already reloads
+    // the page rather than re-running init() piecemeal.
+    window.location.reload();
+  };
+
   // ===================================================================
   // HANDLERS - GESTIÓN DE PERFIL DE USUARIO
   // ===================================================================
@@ -912,6 +933,7 @@ export default function Dashboard() {
               onDeleteTeam={handleDeleteTeam}
               onRegenerateCode={handleRegenerateCode}
               onKickMember={handleKickMember}
+              onTransferLeadership={handleOpenTransfer}
               profile={profile}
               currentUserId={user?.id}
             />
@@ -979,6 +1001,14 @@ export default function Dashboard() {
           }}
           team={editingTeam}
           onTeamUpdated={handleTeamUpdated}
+        />
+
+        <TransferLeadershipModal
+          isOpen={showTransferModal}
+          onClose={() => { setShowTransferModal(false); setTransferringTeam(null); }}
+          team={transferringTeam}
+          members={transferringTeam ? (teamMembers[transferringTeam.id] || []) : []}
+          onTransferred={handleTransferred}
         />
 
         {/* Navegación móvil inferior */}
@@ -1052,7 +1082,7 @@ export default function Dashboard() {
 // ===================================================================
 
 // Sección de equipos para líderes - Gestión completa de equipos
-function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam, onRegenerateCode, onKickMember, profile, currentUserId }) {
+function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam, onRegenerateCode, onKickMember, onTransferLeadership, profile, currentUserId }) {
   if (teamsLoading) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8 text-center">
@@ -1102,6 +1132,7 @@ function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, 
             onDelete={onDeleteTeam}
             onRegenerateCode={onRegenerateCode}
             onKickMember={onKickMember}
+            onTransferLeadership={onTransferLeadership}
             profile={profile}
             currentUserId={currentUserId}
           />
@@ -1542,7 +1573,7 @@ function ProfileFormModal({
 // ===================================================================
 
 // Tarjeta de equipo para líderes - Control completo y métricas
-function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete, onRegenerateCode, onKickMember, profile, currentUserId }) {
+function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete, onRegenerateCode, onKickMember, onTransferLeadership, profile, currentUserId }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -1612,10 +1643,11 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                 Líder excluido
               </span>
             )}
-            <TeamOptionsMenu 
+            <TeamOptionsMenu
               team={team}
               onEdit={() => onEdit && onEdit(team)}
               onDelete={() => onDelete && onDelete(team.id)}
+              onTransferLeadership={onTransferLeadership}
             />
             <button
               onClick={() => setIsExpanded(!isExpanded)}
