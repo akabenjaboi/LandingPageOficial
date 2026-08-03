@@ -41,10 +41,6 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
     }
   }, [isOpen]);
 
-  const generateCode = (length = 6) => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  };
 
   const handleCreateTeam = async (e) => {
     e.preventDefault();
@@ -80,21 +76,20 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
         throw new Error("Error al crear el equipo.");
       }
 
-      const code = generateCode();
-      const { error: codeError } = await supabase
-        .from("team_invite_codes")
-        .insert([{ code, team_id: newTeam.id }]);
+      const { data: codeResult, error: codeError } = await supabase
+        .rpc("regenerate_team_invite_code", { p_team_id: newTeam.id })
+        .single();
 
-      if (codeError) {
+      if (codeError || !codeResult?.code) {
         throw new Error("Equipo creado, pero ocurrió un error al generar el código.");
       }
 
-      setInviteCode(code);
+      setInviteCode(codeResult.code);
       setSuccess(true);
-      
+
       // Notificar al componente padre que se creó un equipo
       if (onTeamCreated) {
-        onTeamCreated(newTeam, code);
+        onTeamCreated(newTeam, codeResult.code);
       }
     } catch (err) {
       setError(err.message);
