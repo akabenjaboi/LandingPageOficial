@@ -31,69 +31,17 @@ export default function UnirseEquipo() {
     setError(null);
 
     try {
-      // 1. Buscar código
-      const { data: invites, error: inviteError } = await supabase
-        .from("team_invite_codes")
-        .select("team_id")
-        .eq("code", code.toUpperCase());
-
-      if (inviteError || !invites || invites.length === 0) {
-        throw new Error("Código inválido o no encontrado.");
-      }
-
-      const invite = invites[0];
-
-      // 2. Verificar que el equipo permita unirse
-      const { data: team, error: teamError } = await supabase
-        .from("teams")
-        .select("join_policy")
-        .eq("id", invite.team_id)
+      // Validación de código + verificación de membresía + insert ocurren
+      // atómicamente en la base de datos (join_team_with_code), no en el cliente.
+      const { data, error: joinError } = await supabase
+        .rpc("join_team_with_code", { p_code: code.toUpperCase() })
         .single();
 
-      if (teamError || !team) {
-        throw new Error("No se encontró el equipo.");
+      if (joinError) {
+        throw new Error(joinError.message || "No se pudo unir al equipo.");
       }
 
-      if (team.join_policy !== "code") {
-        throw new Error("Este equipo no permite unirse directamente.");
-      }
-
-      // 3. Verificar si ya es miembro
-      const { data: existing, error: existingError } = await supabase
-        .from("team_members")
-        .select("id")
-        .eq("team_id", invite.team_id)
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (existingError) {
-        throw new Error("Error verificando membresía previa.");
-      }
-
-      if (existing) {
-        throw new Error("Ya eres miembro de este equipo.");
-      }
-
-      // 4. Insertar en team_members con preferencias por defecto
-      const { error: insertError } = await supabase
-        .from("team_members")
-        .insert([{ 
-          team_id: invite.team_id, 
-          user_id: userId,
-          share_results_with_leader: false // Por defecto no compartir
-        }]);
-        console.log("Insertando en team_members:", {
-          team_id: invite.team_id,
-          user_id: userId,
-        });
-
-
-      if (insertError) {
-        throw new Error("No se pudo unir al equipo.");
-        
-      }
-
-      setJoinedTeamId(invite.team_id);
+      setJoinedTeamId(data.team_id);
       setSuccess("¡Te uniste al equipo correctamente!");
       setShowPrivacyModal(true);
       setCode("");

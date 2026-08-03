@@ -5,8 +5,17 @@ import { classifyMBI, computeBurnoutStatus, interpretBurnoutLevel } from './mbiC
 import { supabase } from '../../supabaseClient';
 import { getCachedAnalysis, saveCachedAnalysis } from './aiCacheManager';
 
-// 🔒 SEGURIDAD: Ahora usamos proxy server en lugar de API key directa
-const PROXY_BASE_URL = import.meta.env.VITE_PROXY_URL || 'http://localhost:3001';
+// 🔒 SEGURIDAD: llamadas a Groq pasan por la Edge Function "groq-proxy" de
+// Supabase (nunca directo desde el navegador). supabase.functions.invoke()
+// adjunta el token de sesión automáticamente.
+
+function extractFunctionError(error) {
+  const status = error?.context?.status;
+  if (status === 401) return 'Autenticación inválida. Inicia sesión nuevamente.';
+  if (status === 429) return 'Límite de requests excedido. Espera unos minutos e intenta de nuevo.';
+  if (status >= 500) return 'Servidor temporalmente no disponible.';
+  return error?.message || 'Error desconocido conectando con IA externa.';
+}
 
 /**
  * Genera consejos externos usando Groq AI con sistema de caché inteligente
@@ -100,14 +109,8 @@ export async function generateExternalAdvice(mbiData) {
       promptLength: prompt.length 
     });
     
-    // 🔒 CAMBIO CRÍTICO: Llamada a proxy en lugar de Groq directo
-    const response = await fetch(`${PROXY_BASE_URL}/api/groq/chat`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+    const { data: result, error } = await supabase.functions.invoke('groq-proxy/chat', {
+      body: {
         messages: [
           {
             role: 'system',
@@ -119,47 +122,25 @@ export async function generateExternalAdvice(mbiData) {
           }
         ],
         model: 'llama-3.1-8b-instant'
-      })
-    });
-
-    console.log('📡 Respuesta del proxy:', { 
-      status: response.status, 
-      statusText: response.statusText,
-      ok: response.ok 
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('❌ Error del proxy:', errorData);
-      
-      if (response.status === 401) {
-        throw new Error('Autenticación inválida. Inicia sesión nuevamente.');
-      } else if (response.status === 429) {
-        throw new Error('Límite de requests excedido. Espera unos minutos e intenta de nuevo.');
-      } else if (response.status >= 500) {
-        throw new Error('Servidor temporalmente no disponible.');
-      } else {
-        throw new Error(errorData.error || `Error del servidor: ${response.status}`);
       }
+    });
+
+    if (error) {
+      console.error('❌ Error de la función groq-proxy:', error);
+      throw new Error(extractFunctionError(error));
     }
 
-    const result = await response.json();
-    console.log('✅ Respuesta exitosa del proxy');
-    
     if (!result.choices || !result.choices[0] || !result.choices[0].message) {
       throw new Error('Respuesta de IA incompleta');
     }
-    
+
     const content = result.choices[0].message.content;
     return parseResponse(content);
-    
+
   } catch (error) {
     console.error('💥 Error completo en Groq proxy:', error);
-    
-    // Errores específicos más informativos
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('Error de conexión con servidor proxy. Verifica que esté ejecutándose.');
-    } else if (error.message.includes('JSON')) {
+
+    if (error.message.includes('JSON')) {
       throw new Error('Error procesando respuesta de IA. Intenta de nuevo.');
     } else {
       throw new Error(error.message || 'Error desconocido conectando con IA externa.');
@@ -392,27 +373,20 @@ async function generatePersonalAdvice(userData) {
   console.log('📝 Prompt generado para análisis personal:', prompt.substring(0, 200) + '...');
 
   try {
-    const response = await fetch(`${PROXY_BASE_URL}/api/groq`, {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json' 
-      },
-      body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke('groq-proxy', {
+      body: {
         messages: [{ role: 'user', content: prompt }],
         model: 'llama-3.1-8b-instant',
         temperature: 0.3
-      })
+      }
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Error del proxy (${response.status}): ${errorText}`);
+    if (error) {
+      throw new Error(extractFunctionError(error));
     }
 
-    const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
-    
+
     if (!content) {
       throw new Error('Respuesta vacía de la IA');
     }

@@ -267,20 +267,19 @@ export default function Dashboard() {
                 const leaderAlreadyInMembers = finalMembers.some(m => m.user_id === currentTeam.leader_id);
                 
                 if (!leaderAlreadyInMembers) {
-                  // Obtener información del líder
-                  const { data: leaderProfile } = await supabase
-                    .from("profiles")
-                    .select("id, first_name, last_name")
-                    .eq("id", currentTeam.leader_id)
+                  // Obtener información del líder (vía RPC: RLS no expone el
+                  // perfil completo del líder a sus miembros, solo su nombre)
+                  const { data: leaderInfo } = await supabase
+                    .rpc("get_team_leader_name", { p_team_id: teamId })
                     .single();
-                  
-                  if (leaderProfile) {
+
+                  if (leaderInfo) {
                     // Agregar al líder con formato consistente
                     finalMembers.push({
-                      user_id: leaderProfile.id,
+                      user_id: leaderInfo.leader_id,
                       profiles: {
-                        first_name: leaderProfile.first_name,
-                        last_name: leaderProfile.last_name
+                        first_name: leaderInfo.first_name,
+                        last_name: leaderInfo.last_name
                       },
                       is_leader: true // Marcador especial para identificar al líder
                     });
