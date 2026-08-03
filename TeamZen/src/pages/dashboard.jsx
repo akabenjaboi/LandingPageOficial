@@ -110,229 +110,204 @@ export default function Dashboard() {
         setStartDate(profileData.start_date || "");
         setJobDescription(profileData.job_description || "");
 
-        // Si es líder, cargar equipos creados, códigos y miembros
-        if (profileData.role === "leader") {
-          setTeamsLoading(true);
+        // Cargar equipos que lidera y equipos de los que es miembro SIEMPRE,
+        // sin importar profileData.role — profiles.role ya no indica de forma
+        // confiable el único tipo de relación que este usuario tiene con
+        // equipos, porque transferir liderazgo (transfer_team_leadership) no
+        // modifica profiles.role a propósito. Cada bloque corre siempre; si
+        // no aplica, su propia consulta simplemente devuelve vacío.
+        setTeamsLoading(true);
+        setMembersLoading(true);
+
+        // --- Equipos que lidera ---
+        const { data: leaderTeamsData } = await supabase
+          .from("teams")
+          .select("*, team_invite_codes(code, expires_at)")
+          .eq("leader_id", currentUser.id);
+
+        if (leaderTeamsData && leaderTeamsData.length > 0) {
+          try {
+            const teamIds = leaderTeamsData.map(t => t.id);
+            const { data: cycles } = await supabase
+              .from('mbi_evaluation_cycles')
+              .select('id, team_id, status')
+              .in('team_id', teamIds)
+              .eq('status', 'active');
+            const cycleMap = {};
+            (cycles || []).forEach(c => { cycleMap[c.team_id] = c.id; });
+            setActiveCycles(prev => ({ ...prev, ...cycleMap }));
+
+            const activeCycleIds = Object.values(cycleMap);
+            if (activeCycleIds.length > 0) {
+              const { data: allResponses } = await supabase
+                .from('mbi_responses')
+                .select('cycle_id, user_id')
+                .in('cycle_id', activeCycleIds);
+
+              const respMap = {};
+              (allResponses || []).filter(r => r.user_id === currentUser.id).forEach(r => {
+                if (r.cycle_id) respMap[r.cycle_id] = true;
+              });
+
+              const teamResponded = {};
+              (allResponses || []).forEach(r => {
+                const teamId = Object.keys(cycleMap).find(tid => cycleMap[tid] === r.cycle_id);
+                if (teamId && r.user_id) {
+                  if (!teamResponded[teamId]) teamResponded[teamId] = new Set();
+                  teamResponded[teamId].add(r.user_id);
+                }
+              });
+
+              setRespondedCycles(prev => ({ ...prev, ...respMap }));
+              setRespondedMembersByTeam(prev => ({ ...prev, ...teamResponded }));
+
+              const { data: scoreRows, error: scoreErr } = await supabase
+                .from('mbi_scores')
+                .select('response_id, ae_score, d_score, rp_score, mbi_responses (cycle_id, team_id)')
+                .in('mbi_responses.cycle_id', activeCycleIds);
+              if (scoreErr) {
+                console.warn('Error obteniendo scores para wellbeing', scoreErr);
+              }
+
+              const wb = {};
+              const MIN_AE = 0, MAX_AE = 54, MIN_D = 0, MAX_D = 30, MIN_RP = 0, MAX_RP = 48;
+              const rangeAE = MAX_AE - MIN_AE, rangeD = MAX_D - MIN_D, rangeRP = MAX_RP - MIN_RP;
+              (scoreRows || []).forEach(row => {
+                const cycleId = row.mbi_responses?.cycle_id;
+                const teamId = row.mbi_responses?.team_id;
+                if (!teamId || !cycleId) return;
+                const ae = row.ae_score ?? MIN_AE;
+                const d = row.d_score ?? MIN_D;
+                const rp = row.rp_score ?? MIN_RP;
+                const aeWell = 1 - ((ae - MIN_AE) / (rangeAE || 1));
+                const dWell = 1 - ((d - MIN_D) / (rangeD || 1));
+                const rpWell = (rp - MIN_RP) / (rangeRP || 1);
+                const wellbeing = (aeWell + dWell + rpWell) / 3;
+                if (!wb[teamId]) wb[teamId] = { sum: 0, count: 0 };
+                wb[teamId].sum += wellbeing;
+                wb[teamId].count += 1;
+              });
+              const formatted = {};
+              Object.keys(wb).forEach(tid => {
+                formatted[tid] = { avg: Math.round((wb[tid].sum / wb[tid].count) * 100), count: wb[tid].count };
+              });
+              setWellbeingByTeam(prev => ({ ...prev, ...formatted }));
+            }
+          } catch (e) {
+            console.warn('Tabla mbi_evaluation_cycles no disponible aún', e);
+          }
+
+          const leaderMembersObj = {};
+          for (const team of leaderTeamsData) {
+            const { data: team_members, error } = await supabase
+              .from("team_members")
+              .select("user_id, profiles(first_name, last_name)")
+              .eq("team_id", team.id);
+
+            if (error) {
+              console.error(`Error cargando miembros para equipo ${team.id}:`, error);
+            }
+            leaderMembersObj[team.id] = team_members || [];
+          }
+          setTeamMembers(prev => ({ ...prev, ...leaderMembersObj }));
+        }
+
+        // --- Equipos de los que es miembro ---
+        const { data: memberships, error: membershipsError } = await supabase
+          .from("team_members")
+          .select("team_id")
+          .eq("user_id", currentUser.id);
+
+        let memberTeamsData = [];
+        if (membershipsError) {
+          console.error("Error cargando membresías:", membershipsError);
+        } else if (memberships && memberships.length > 0) {
+          const teamIds = memberships.map((m) => m.team_id);
           const { data: teamsData } = await supabase
             .from("teams")
-            .select("*, team_invite_codes(code, expires_at)")
-            .eq("leader_id", currentUser.id);
-          setTeams(teamsData || []);
-          setTeamsLoading(false);
+            .select("*")
+            .in("id", teamIds);
 
-          // Fetch active cycles (one per team) and responses of leader (for optional display)
-          if (teamsData && teamsData.length > 0) {
-            try {
-              const teamIds = teamsData.map(t => t.id);
-              const { data: cycles } = await supabase
-                .from('mbi_evaluation_cycles')
-                .select('id, team_id, status')
-                .in('team_id', teamIds)
-                .eq('status', 'active');
-              const cycleMap = {};
-              (cycles || []).forEach(c => { cycleMap[c.team_id] = c.id; });
-              setActiveCycles(cycleMap);
+          memberTeamsData = teamsData || [];
 
-              // Fetch responses this user has already submitted for active cycles
-              const activeCycleIds = Object.values(cycleMap);
-              if (activeCycleIds.length > 0) {
-                // Fetch all responses for these active cycles
-                const { data: allResponses } = await supabase
-                  .from('mbi_responses')
-                  .select('cycle_id, user_id')
-                  .in('cycle_id', activeCycleIds);
+          const memberMembersObj = {};
+          for (const teamId of teamIds) {
+            const currentTeam = memberTeamsData.find(t => t.id === teamId);
 
-                // Map showing if the leader already answered each cycle
-                const respMap = {};
-                (allResponses || []).filter(r => r.user_id === currentUser.id).forEach(r => {
-                  if (r.cycle_id) respMap[r.cycle_id] = true;
-                });
+            const { data: team_members, error } = await supabase
+              .from("team_members")
+              .select("user_id, profiles(first_name, last_name)")
+              .eq("team_id", teamId);
 
-                // Build per-team sets of responded member user_ids
-                const teamResponded = {};
-                (allResponses || []).forEach(r => {
-                  const teamId = Object.keys(cycleMap).find(tid => cycleMap[tid] === r.cycle_id);
-                  if (teamId && r.user_id) {
-                    if (!teamResponded[teamId]) teamResponded[teamId] = new Set();
-                    teamResponded[teamId].add(r.user_id);
-                  }
-                });
+            if (error) {
+              console.error(`Error cargando miembros para equipo ${teamId}:`, error);
+              memberMembersObj[teamId] = [];
+              continue;
+            }
 
-                setRespondedCycles(respMap);
-                setRespondedMembersByTeam(teamResponded);
+            let finalMembers = team_members || [];
 
-                // Fetch scores for wellbeing metric
-                const { data: scoreRows, error: scoreErr } = await supabase
-                  .from('mbi_scores')
-                  .select('response_id, ae_score, d_score, rp_score, mbi_responses (cycle_id, team_id)')
-                  .in('mbi_responses.cycle_id', activeCycleIds);
-                if (scoreErr) {
-                  console.warn('Error obteniendo scores para wellbeing', scoreErr);
+            if (currentTeam && currentTeam.include_leader_in_metrics && currentTeam.leader_id) {
+              const leaderAlreadyInMembers = finalMembers.some(m => m.user_id === currentTeam.leader_id);
+
+              if (!leaderAlreadyInMembers) {
+                const { data: leaderInfo } = await supabase
+                  .rpc("get_team_leader_name", { p_team_id: teamId })
+                  .single();
+
+                if (leaderInfo) {
+                  finalMembers.push({
+                    user_id: leaderInfo.leader_id,
+                    profiles: {
+                      first_name: leaderInfo.first_name,
+                      last_name: leaderInfo.last_name
+                    },
+                    is_leader: true
+                  });
                 }
-
-                const wb = {}; // team -> {sum: number, count: number}
-                // Nueva escala 0–6 por ítem => rangos máximos oficiales
-                const MIN_AE = 0, MAX_AE = 54, MIN_D = 0, MAX_D = 30, MIN_RP = 0, MAX_RP = 48;
-                const rangeAE = MAX_AE - MIN_AE, rangeD = MAX_D - MIN_D, rangeRP = MAX_RP - MIN_RP;
-                (scoreRows || []).forEach(row => {
-                  const cycleId = row.mbi_responses?.cycle_id;
-                  const teamId = row.mbi_responses?.team_id;
-                  if (!teamId || !cycleId) return;
-                  // Normalize subscales (AE,D inverted; RP direct)
-                  const ae = row.ae_score ?? MIN_AE;
-                  const d = row.d_score ?? MIN_D;
-                  const rp = row.rp_score ?? MIN_RP;
-                  const aeWell = 1 - ((ae - MIN_AE) / (rangeAE || 1));
-                  const dWell = 1 - ((d - MIN_D) / (rangeD || 1));
-                  const rpWell = (rp - MIN_RP) / (rangeRP || 1);
-                  // Equal weights
-                  const wellbeing = (aeWell + dWell + rpWell) / 3; // 0..1
-                  if (!wb[teamId]) wb[teamId] = { sum: 0, count: 0 };
-                  wb[teamId].sum += wellbeing;
-                  wb[teamId].count += 1;
-                });
-                const formatted = {};
-                Object.keys(wb).forEach(tid => {
-                  formatted[tid] = { avg: Math.round((wb[tid].sum / wb[tid].count) * 100), count: wb[tid].count };
-                });
-                setWellbeingByTeam(formatted);
               }
-            } catch (e) {
-              console.warn('Tabla mbi_evaluation_cycles no disponible aún', e);
             }
+
+            memberMembersObj[teamId] = finalMembers;
           }
+          setTeamMembers(prev => ({ ...prev, ...memberMembersObj }));
 
-          // Cargar miembros de cada equipo
-          if (teamsData && teamsData.length > 0) {
-            setMembersLoading(true);
-            const membersObj = {};
-            for (const team of teamsData) {
-              const { data: team_members, error } = await supabase
-                .from("team_members")
-                .select("user_id, profiles(first_name, last_name)")
-                .eq("team_id", team.id);
-
-              if (error) {
-                console.error(`Error cargando miembros para equipo ${team.id}:`, error);
-              }
-              membersObj[team.id] = team_members || [];
+          try {
+            const { data: cycles } = await supabase
+              .from('mbi_evaluation_cycles')
+              .select('id, team_id, status')
+              .in('team_id', teamIds)
+              .eq('status', 'active');
+            const cycleMap = {};
+            (cycles || []).forEach(c => { cycleMap[c.team_id] = c.id; });
+            setActiveCycles(prev => ({ ...prev, ...cycleMap }));
+            const cycleIds = Object.values(cycleMap);
+            if (cycleIds.length > 0) {
+              const { data: respRows } = await supabase
+                .from('mbi_responses')
+                .select('cycle_id, user_id')
+                .in('cycle_id', cycleIds);
+              const respMap = {};
+              (respRows || []).filter(r => r.user_id === currentUser.id).forEach(r => { if (r.cycle_id) respMap[r.cycle_id] = true; });
+              setRespondedCycles(prev => ({ ...prev, ...respMap }));
+              const teamResponded = {};
+              (respRows || []).forEach(r => {
+                const teamId = Object.keys(cycleMap).find(tid => cycleMap[tid] === r.cycle_id);
+                if (teamId) {
+                  if (!teamResponded[teamId]) teamResponded[teamId] = new Set();
+                  teamResponded[teamId].add(r.user_id);
+                }
+              });
+              setRespondedMembersByTeam(prev => ({ ...prev, ...teamResponded }));
             }
-            setTeamMembers(membersObj);
-            setMembersLoading(false);
+          } catch (e) {
+            console.warn('Tabla mbi_evaluation_cycles no disponible para miembros', e);
           }
         }
 
-        // Si es usuario, cargar el equipo al que pertenece y sus miembros
-  if (profileData.role === "user") {
-          // Buscar todas las membresías del usuario
-          const { data: memberships, error: membershipsError } = await supabase
-            .from("team_members")
-            .select("team_id")
-            .eq("user_id", currentUser.id);
-
-          if (membershipsError) {
-            console.error("Error cargando membresías:", membershipsError);
-            setTeams([]);
-            setTeamMembers({});
-          } else if (memberships && memberships.length > 0) {
-            // Obtener todos los equipos a los que pertenece el usuario
-            const teamIds = memberships.map((m) => m.team_id);
-            const { data: teamsData } = await supabase
-              .from("teams")
-              .select("*")
-              .in("id", teamIds);
-
-            setTeams(teamsData || []);
-
-            // Cargar miembros de cada equipo
-            setMembersLoading(true);
-            const membersObj = {};
-            for (const teamId of teamIds) {
-              // Obtener el equipo para saber si incluir al líder
-              const currentTeam = teamsData.find(t => t.id === teamId);
-              
-              const { data: team_members, error } = await supabase
-                .from("team_members")
-                .select("user_id, profiles(first_name, last_name)")
-                .eq("team_id", teamId);
-
-              if (error) {
-                console.error(`Error cargando miembros para equipo ${teamId}:`, error);
-                membersObj[teamId] = [];
-                continue;
-              }
-              
-              let finalMembers = team_members || [];
-              
-              // Si el equipo incluye al líder en métricas, agregar al líder a la lista
-              if (currentTeam && currentTeam.include_leader_in_metrics && currentTeam.leader_id) {
-                // Verificar si el líder ya está en la lista de miembros
-                const leaderAlreadyInMembers = finalMembers.some(m => m.user_id === currentTeam.leader_id);
-                
-                if (!leaderAlreadyInMembers) {
-                  // Obtener información del líder (vía RPC: RLS no expone el
-                  // perfil completo del líder a sus miembros, solo su nombre)
-                  const { data: leaderInfo } = await supabase
-                    .rpc("get_team_leader_name", { p_team_id: teamId })
-                    .single();
-
-                  if (leaderInfo) {
-                    // Agregar al líder con formato consistente
-                    finalMembers.push({
-                      user_id: leaderInfo.leader_id,
-                      profiles: {
-                        first_name: leaderInfo.first_name,
-                        last_name: leaderInfo.last_name
-                      },
-                      is_leader: true // Marcador especial para identificar al líder
-                    });
-                  }
-                }
-              }
-              
-              membersObj[teamId] = finalMembers;
-            }
-            setTeamMembers(membersObj);
-            setMembersLoading(false);
-
-            // Fetch active cycles and which user responded
-            try {
-              const { data: cycles } = await supabase
-                .from('mbi_evaluation_cycles')
-                .select('id, team_id, status')
-                .in('team_id', teamIds)
-                .eq('status', 'active');
-              const cycleMap = {};
-              (cycles || []).forEach(c => { cycleMap[c.team_id] = c.id; });
-              setActiveCycles(cycleMap);
-              const cycleIds = Object.values(cycleMap);
-              if (cycleIds.length > 0) {
-                const { data: respRows } = await supabase
-                  .from('mbi_responses')
-                  .select('cycle_id, user_id')
-                  .in('cycle_id', cycleIds);
-                // Map user responded for current user only for respondedCycles
-                const respMap = {};
-                (respRows || []).filter(r => r.user_id === currentUser.id).forEach(r => { if (r.cycle_id) respMap[r.cycle_id] = true; });
-                setRespondedCycles(respMap);
-                const teamResponded = {};
-                (respRows || []).forEach(r => {
-                  const teamId = Object.keys(cycleMap).find(tid => cycleMap[tid] === r.cycle_id);
-                  if (teamId) {
-                    if (!teamResponded[teamId]) teamResponded[teamId] = new Set();
-                    teamResponded[teamId].add(r.user_id);
-                  }
-                });
-                setRespondedMembersByTeam(teamResponded);
-              }
-            } catch (e) {
-              console.warn('Tabla mbi_evaluation_cycles no disponible para miembros', e);
-            }
-          } else {
-            setTeams([]);
-            setTeamMembers({});
-          }
-        }
+        setTeams([...(leaderTeamsData || []), ...memberTeamsData]);
+        setTeamsLoading(false);
+        setMembersLoading(false);
       }
       setLoading(false);
     };
@@ -606,20 +581,18 @@ export default function Dashboard() {
     }
 
     try {
-      const { error, count } = await supabase
+      const { error } = await supabase
         .from("team_members")
-        .delete({ count: "exact" })
+        .delete()
         .eq("team_id", teamId)
         .eq("user_id", memberUserId);
 
       if (error) throw error;
 
-      if (count && count > 0) {
-        setTeamMembers(prev => ({
-          ...prev,
-          [teamId]: (prev[teamId] || []).filter(m => m.user_id !== memberUserId)
-        }));
-      }
+      setTeamMembers(prev => ({
+        ...prev,
+        [teamId]: (prev[teamId] || []).filter(m => m.user_id !== memberUserId)
+      }));
     } catch (error) {
       console.error("Error expulsando miembro:", error);
       alert("No se pudo expulsar al miembro. Inténtalo de nuevo.");
@@ -733,6 +706,16 @@ export default function Dashboard() {
       <LoadingSpinner size="large" message="Cargando tu dashboard..." />
     </div>
   );
+
+  // Separar los equipos por la relación real del usuario con cada uno
+  // (teams.leader_id), no por profiles.role: transferir liderazgo no cambia
+  // profiles.role, así que el rol no sirve para decidir qué secciones mostrar.
+  // profile.role solo se usa como respaldo para el estado vacío de onboarding,
+  // y únicamente cuando no hay ninguna otra relación con equipos que mostrar.
+  const myLeaderTeams = teams.filter(t => t.leader_id === user?.id);
+  const myMemberTeams = teams.filter(t => t.leader_id !== user?.id);
+  const showLeaderSection = myLeaderTeams.length > 0 || (profile?.role === "leader" && myMemberTeams.length === 0);
+  const showMemberSection = myMemberTeams.length > 0 || (profile?.role === "user" && myLeaderTeams.length === 0);
 
   return (
     <div className="min-h-screen bg-[#FAF9F6]">
@@ -914,9 +897,9 @@ export default function Dashboard() {
 
         {/* Teams Section */}
         <div className="space-y-6">
-          {profile?.role === "leader" ? (
-            <LeaderTeamsSection 
-              teams={teams} 
+          {showLeaderSection && (
+            <LeaderTeamsSection
+              teams={myLeaderTeams}
               teamsLoading={teamsLoading}
               teamMembers={teamMembers}
               membersLoading={membersLoading}
@@ -937,9 +920,10 @@ export default function Dashboard() {
               profile={profile}
               currentUserId={user?.id}
             />
-          ) : profile?.role === "user" ? (
-            <UserTeamsSection 
-              teams={teams} 
+          )}
+          {showMemberSection && (
+            <UserTeamsSection
+              teams={myMemberTeams}
               teamMembers={teamMembers}
               membersLoading={membersLoading}
               navigate={navigate}
@@ -948,7 +932,8 @@ export default function Dashboard() {
               respondedCycles={respondedCycles}
               respondedMembersByTeam={respondedMembersByTeam}
             />
-          ) : (
+          )}
+          {!showLeaderSection && !showMemberSection && (
             <WelcomeSection onSetupProfile={() => setShowProfileForm(true)} />
           )}
         </div>
