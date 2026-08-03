@@ -597,6 +597,32 @@ export default function Dashboard() {
     }
   };
 
+  const handleKickMember = async (teamId, memberUserId) => {
+    if (!confirm("¿Estás seguro de que quieres expulsar a este miembro del equipo? Su historial de evaluaciones se conserva, pero perderá el acceso al equipo.")) {
+      return;
+    }
+
+    try {
+      const { error, count } = await supabase
+        .from("team_members")
+        .delete({ count: "exact" })
+        .eq("team_id", teamId)
+        .eq("user_id", memberUserId);
+
+      if (error) throw error;
+
+      if (count && count > 0) {
+        setTeamMembers(prev => ({
+          ...prev,
+          [teamId]: (prev[teamId] || []).filter(m => m.user_id !== memberUserId)
+        }));
+      }
+    } catch (error) {
+      console.error("Error expulsando miembro:", error);
+      alert("No se pudo expulsar al miembro. Inténtalo de nuevo.");
+    }
+  };
+
   // ===================================================================
   // HANDLERS - GESTIÓN DE PERFIL DE USUARIO
   // ===================================================================
@@ -885,6 +911,7 @@ export default function Dashboard() {
               onEditTeam={handleEditTeam}
               onDeleteTeam={handleDeleteTeam}
               onRegenerateCode={handleRegenerateCode}
+              onKickMember={handleKickMember}
               profile={profile}
               currentUserId={user?.id}
             />
@@ -1025,7 +1052,7 @@ export default function Dashboard() {
 // ===================================================================
 
 // Sección de equipos para líderes - Gestión completa de equipos
-function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam, onRegenerateCode, profile, currentUserId }) {
+function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam, onRegenerateCode, onKickMember, profile, currentUserId }) {
   if (teamsLoading) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8 text-center">
@@ -1074,6 +1101,7 @@ function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, 
             onEdit={onEditTeam}
             onDelete={onDeleteTeam}
             onRegenerateCode={onRegenerateCode}
+            onKickMember={onKickMember}
             profile={profile}
             currentUserId={currentUserId}
           />
@@ -1514,7 +1542,7 @@ function ProfileFormModal({
 // ===================================================================
 
 // Tarjeta de equipo para líderes - Control completo y métricas
-function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete, onRegenerateCode, profile, currentUserId }) {
+function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete, onRegenerateCode, onKickMember, profile, currentUserId }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -1782,6 +1810,18 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                         )
                       ) : (
                         <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full">Sin ciclo</span>
+                      )}
+                      {!isLeaderMember && (
+                        <button
+                          onClick={() => onKickMember && onKickMember(team.id, member.user_id)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                          aria-label="Expulsar miembro"
+                          title="Expulsar del equipo"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
                       )}
                     </div>
                   );
