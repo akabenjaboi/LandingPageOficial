@@ -112,7 +112,7 @@ export default function Dashboard() {
           setTeamsLoading(true);
           const { data: teamsData } = await supabase
             .from("teams")
-            .select("*, team_invite_codes(code)")
+            .select("*, team_invite_codes(code, expires_at)")
             .eq("leader_id", currentUser.id);
           setTeams(teamsData || []);
           setTeamsLoading(false);
@@ -490,7 +490,7 @@ export default function Dashboard() {
     try {
       const { data: leaderTeams } = await supabase
         .from("teams")
-        .select("*, team_invite_codes(code)")
+        .select("*, team_invite_codes(code, expires_at)")
         .eq("leader_id", user.id)
         .order("created_at", { ascending: false });
       
@@ -569,6 +569,31 @@ export default function Dashboard() {
     } catch (error) {
       console.error("Error eliminando equipo:", error);
       alert("Error al eliminar el equipo. Por favor, inténtalo de nuevo.");
+    }
+  };
+
+  const handleRegenerateCode = async (teamId) => {
+    if (!confirm("¿Seguro que quieres generar un nuevo código? El código actual dejará de funcionar de inmediato.")) {
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .rpc("regenerate_team_invite_code", { p_team_id: teamId })
+        .single();
+
+      if (error) throw error;
+
+      setTeams(prevTeams =>
+        prevTeams.map(team =>
+          team.id === teamId
+            ? { ...team, team_invite_codes: [{ code: data.code, expires_at: data.expires_at }] }
+            : team
+        )
+      );
+    } catch (error) {
+      console.error("Error regenerando código:", error);
+      alert("No se pudo regenerar el código. Inténtalo de nuevo.");
     }
   };
 
@@ -859,6 +884,7 @@ export default function Dashboard() {
               onCreateTeam={() => setShowCreateTeamModal(true)}
               onEditTeam={handleEditTeam}
               onDeleteTeam={handleDeleteTeam}
+              onRegenerateCode={handleRegenerateCode}
               profile={profile}
               currentUserId={user?.id}
             />
@@ -999,7 +1025,7 @@ export default function Dashboard() {
 // ===================================================================
 
 // Sección de equipos para líderes - Gestión completa de equipos
-function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam, profile, currentUserId }) {
+function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam, onRegenerateCode, profile, currentUserId }) {
   if (teamsLoading) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8 text-center">
@@ -1047,6 +1073,7 @@ function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, 
             wellbeingMetric={wellbeingByTeam[team.id]}
             onEdit={onEditTeam}
             onDelete={onDeleteTeam}
+            onRegenerateCode={onRegenerateCode}
             profile={profile}
             currentUserId={currentUserId}
           />
@@ -1487,7 +1514,7 @@ function ProfileFormModal({
 // ===================================================================
 
 // Tarjeta de equipo para líderes - Control completo y métricas
-function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete, profile, currentUserId }) {
+function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete, onRegenerateCode, profile, currentUserId }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -1684,18 +1711,35 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                   showInvite ? team.team_invite_codes[0].code : '••••••••'
                 ) : 'Sin código'}
               </p>
-              {copied && <span className="text-[10px] text-green-700 font-medium">Copiado</span>}
+              {team.team_invite_codes?.length > 0 && team.team_invite_codes[0].expires_at && (
+                new Date(team.team_invite_codes[0].expires_at) <= new Date() ? (
+                  <span className="text-[10px] sm:text-xs text-red-600 font-medium">Expirado — genera uno nuevo</span>
+                ) : (
+                  <span className="text-[10px] sm:text-xs text-[#5B5B6B]">
+                    Expira el {new Date(team.team_invite_codes[0].expires_at).toLocaleDateString()}
+                  </span>
+                )
+              )}
+              {copied && <span className="text-[10px] text-green-700 font-medium block">Copiado</span>}
             </div>
-            <button
-              onClick={async () => {
-                if (team.team_invite_codes?.length > 0) {
-                  try { await navigator.clipboard.writeText(team.team_invite_codes[0].code); setCopied(true); setTimeout(()=>setCopied(false), 2000);} catch(e){}
-                }
-              }}
-              className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] text-white px-3 py-1.5 sm:py-1 rounded-lg text-xs sm:text-sm transition-all duration-300 ease-out transform hover:scale-105 shadow-md hover:shadow-lg flex-shrink-0 mt-6 sm:mt-0"
-            >
-              Copiar
-            </button>
+            <div className="flex flex-col gap-1.5 flex-shrink-0 mt-6 sm:mt-0">
+              <button
+                onClick={async () => {
+                  if (team.team_invite_codes?.length > 0) {
+                    try { await navigator.clipboard.writeText(team.team_invite_codes[0].code); setCopied(true); setTimeout(()=>setCopied(false), 2000);} catch(e){}
+                  }
+                }}
+                className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] text-white px-3 py-1.5 sm:py-1 rounded-lg text-xs sm:text-sm transition-all duration-300 ease-out transform hover:scale-105 shadow-md hover:shadow-lg"
+              >
+                Copiar
+              </button>
+              <button
+                onClick={() => onRegenerateCode && onRegenerateCode(team.id)}
+                className="border border-[#9D83C6]/50 text-[#9D83C6] px-3 py-1.5 sm:py-1 rounded-lg text-xs sm:text-sm hover:bg-[#9D83C6]/10 transition-all duration-200"
+              >
+                Regenerar
+              </button>
+            </div>
           </div>
         </div>
 
