@@ -41,7 +41,6 @@ export default function ReportesPage() {
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState('');
   const [reloadCount, setReloadCount] = useState(0);
-  const [viewMode, setViewMode] = useState('weekly'); // 'cycles' o 'weekly' - weekly por defecto
   const [teamMembers, setTeamMembers] = useState([]); // Miembros del equipo activo
   const [membersLoading, setMembersLoading] = useState(false);
   const [respondedMembers, setRespondedMembers] = useState(new Set()); // IDs de usuarios que respondieron en el ciclo actual
@@ -209,116 +208,18 @@ export default function ReportesPage() {
 
   const handleRefresh = () => setReloadCount(c => c + 1);
 
-  // Función auxiliar para obtener el inicio de la semana (lunes)
-  const getWeekStartDate = (date) => {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Ajustar para que lunes sea día 1
-    return new Date(d.setDate(diff));
-  };
-
-  // Función helper para calcular estadísticas de la semana
-  const calculateWeekStats = (scores) => {
-    // Calcular promedios de subscalas
-    const aeAvg = Math.round((scores.reduce((a,s)=>a+(s.ae??0),0)/scores.length)*10)/10;
-    const dAvg = Math.round((scores.reduce((a,s)=>a+(s.d??0),0)/scores.length)*10)/10;
-    const rpAvg = Math.round((scores.reduce((a,s)=>a+(s.rp??0),0)/scores.length)*10)/10;
-
-    // Calcular estado dominante y bienestar
-    // Usa la misma clasificación oficial (classifyMBI/computeBurnoutStatus)
-    // que la vista "Por Ciclos" (ver `aggregated` más abajo) — antes esta
-    // vista tenía su propio umbral ad-hoc que ignoraba RP y podía mostrar
-    // un riesgo distinto para los mismos datos según la vista.
-    const statuses = scores.map(s => {
-      const cls = classifyMBI(s.ae, s.d, s.rp);
-      return computeBurnoutStatus(cls);
-    }).filter(Boolean);
-    const counts = statuses.reduce((acc,st)=>{acc[st]=(acc[st]||0)+1;return acc;},{});
-    const dominant = Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0] || 'Sin indicios';
-
-    // Calcular bienestar global
-    const MIN_AE=0, MAX_AE=54, MIN_D=0, MAX_D=30, MIN_RP=0, MAX_RP=48;
-    const rangeAE=MAX_AE-MIN_AE, rangeD=MAX_D-MIN_D, rangeRP=MAX_RP-MIN_RP;
-    const wbSum = scores.reduce((acc,s)=>{
-      const aeWell = 1-((s.ae-MIN_AE)/(rangeAE||1));
-      const dWell = 1-((s.d-MIN_D)/(rangeD||1));
-      const rpWell = ((s.rp-MIN_RP)/(rangeRP||1));
-      return acc + (aeWell + dWell + rpWell)/3;
-    },0);
-    const wellbeing = Math.round((wbSum / scores.length)*100);
-
-    // Distribución de riesgo
-    const dist = { Burnout:0, 'Riesgo Alto':0, Riesgo:0, 'Sin indicios':0 };
-    statuses.forEach(st => { if(dist[st]!==undefined) dist[st]++; });
-
-    return {
-      count: scores.length,
-      aeAvg, dAvg, rpAvg,
-      dominant, wellbeing, dist
-    };
-  };
-
-  // Nueva función para obtener datos agrupados por semana (mostrando todos los ciclos)
-  const getWeeklyData = useMemo(() => {
-    if (!teamCycles.length) return [];
-    
-    // Crear una entrada por cada ciclo con sus datos
-    const cycleEntries = [];
-    
-    teamCycles.forEach(cycle => {
-      const scores = scoresByCycle[cycle.id] || [];
-      if (scores.length === 0) return; // Skip ciclos sin respuestas
-      
-      const cycleStartDate = new Date(cycle.start_at || cycle.created_at);
-      const cycleEndDate = cycle.end_at ? new Date(cycle.end_at) : null;
-      
-      // Calcular duración real del ciclo
-      let actualDuration;
-      let isSameDay = false;
-      let cycleEndedEarly = false;
-      
-      if (cycleEndDate) {
-        actualDuration = Math.max(1, Math.ceil((cycleEndDate.getTime() - cycleStartDate.getTime()) / (1000 * 60 * 60 * 24)));
-        isSameDay = cycleEndDate.toDateString() === cycleStartDate.toDateString();
-        cycleEndedEarly = true;
-      } else {
-        // Si no hay fecha de fin, asumir que sigue activo (usar fecha actual o 7 días)
-        const now = new Date();
-        actualDuration = Math.max(1, Math.ceil((now.getTime() - cycleStartDate.getTime()) / (1000 * 60 * 60 * 24)));
-        cycleEndedEarly = false;
-      }
-      
-      // Determinar fechas de inicio y fin para mostrar
-      const displayStartDate = cycleStartDate;
-      const displayEndDate = cycleEndDate || new Date(cycleStartDate.getTime() + 6 * 24 * 60 * 60 * 1000);
-      
-      // Calcular estadísticas del ciclo
-      const cycleStats = calculateWeekStats(scores);
-      
-      cycleEntries.push({
-        ...cycleStats,
-        weekStart: displayStartDate, // Para mantener compatibilidad con la UI
-        weekEnd: displayEndDate,
-        actualDuration,
-        isSameDay,
-        cycleEndedEarly,
-        cycleInfo: cycle,
-        cycleId: cycle.id,
-        cycleName: `Ciclo ${cycle.id?.slice(0, 8) || 'N/A'}`,
-        friendlyId: cycle.id?.slice(0, 8) || 'N/A',
-        isActiveCycle: !cycleEndDate // true si el ciclo aún está activo
-      });
-    });
-    
-    // Ordenar por fecha de inicio (más reciente primero)
-    return cycleEntries.sort((a, b) => b.weekStart - a.weekStart);
-  }, [teamCycles, scoresByCycle]);
-
   const aggregated = useMemo(() => {
     if (!teamCycles.length) return [];
     return teamCycles.map(cycle => {
       const scores = scoresByCycle[cycle.id] || [];
-      if (!scores.length) return { cycle, count:0 };
+      const cycleStartDate = new Date(cycle.start_at || cycle.created_at);
+      const cycleEndDate = cycle.end_at ? new Date(cycle.end_at) : null;
+      const isActiveCycle = !cycleEndDate;
+      const cycleEndedEarly = !!cycleEndDate;
+      const actualDuration = cycleEndDate
+        ? Math.max(1, Math.ceil((cycleEndDate.getTime() - cycleStartDate.getTime()) / (1000 * 60 * 60 * 24)))
+        : Math.max(1, Math.ceil((new Date().getTime() - cycleStartDate.getTime()) / (1000 * 60 * 60 * 24)));
+      if (!scores.length) return { cycle, count:0, isActiveCycle, cycleEndedEarly, actualDuration };
       // Aggregate subscale means (ya en escala 0–6 por ítem -> sumas reales)
       const aeAvg = Math.round((scores.reduce((a,s)=>a+(s.ae??0),0)/scores.length)*10)/10;
       const dAvg = Math.round((scores.reduce((a,s)=>a+(s.d??0),0)/scores.length)*10)/10;
@@ -345,7 +246,7 @@ export default function ReportesPage() {
       // Risk distribution
       const dist = { Burnout:0, 'Riesgo Alto':0, Riesgo:0, 'Sin indicios':0 };
       statuses.forEach(st => { if(dist[st]!==undefined) dist[st]++; });
-      return { cycle, count: scores.length, aeAvg, dAvg, rpAvg, dominant, wellbeing, dist };
+      return { cycle, count: scores.length, aeAvg, dAvg, rpAvg, dominant, wellbeing, dist, isActiveCycle, cycleEndedEarly, actualDuration };
     });
   }, [teamCycles, scoresByCycle]);
 
@@ -415,29 +316,6 @@ export default function ReportesPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2 sm:gap-4">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                     <h2 className="text-base sm:text-lg font-semibold text-[#2E2E3A]">Análisis de evaluaciones</h2>
-                    {/* Toggle entre vista por ciclos y vista semanal */}
-                    <div className="flex items-center gap-1 sm:gap-2 bg-[#DAD5E4]/30 p-1 rounded-xl w-fit">
-                      <button
-                        onClick={() => setViewMode('cycles')}
-                        className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-lg transition-all duration-200 ${
-                          viewMode === 'cycles' 
-                            ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white shadow-lg' 
-                            : 'text-[#2E2E3A] hover:text-[#55C2A2]'
-                        }`}
-                      >
-                        Por Ciclos
-                      </button>
-                      <button
-                        onClick={() => setViewMode('weekly')}
-                        className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-lg transition-all duration-200 ${
-                          viewMode === 'weekly' 
-                            ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white shadow-lg' 
-                            : 'text-[#2E2E3A] hover:text-[#55C2A2]'
-                        }`}
-                      >
-                        Semanal
-                      </button>
-                    </div>
                   </div>
                   <div className="flex items-center gap-2 justify-end">
                     <button 
@@ -459,46 +337,33 @@ export default function ReportesPage() {
                   <div className="py-8 flex justify-center">
                     <LoadingSpinner size="small" message="Cargando ciclos..."/>
                   </div>
-                ) : (viewMode === 'cycles' ? aggregated : getWeeklyData).length === 0 ? (
-                  viewMode === 'cycles' ? (
-                    teamCycles.length === 0 ? (
-                      <div className="text-sm text-[#5B5B6B] flex items-center gap-2">
-                        <span>Sin ciclos creados todavía.</span>
-                        <button 
-                          onClick={handleRefresh} 
-                          className="text-[#55C2A2] hover:text-[#2E2E3A] underline hover:no-underline 
-                                     transition-colors duration-200"
-                        >
-                          Actualizar
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="text-sm text-[#5B5B6B] flex flex-col gap-2">
-                        <span>Hay {teamCycles.length} ciclo(s) pero aún sin respuestas con puntajes.</span>
-                        <div className="flex items-center gap-3">
-                          <button 
-                            onClick={handleRefresh} 
-                            className="text-[#55C2A2] hover:text-[#2E2E3A] underline hover:no-underline 
-                                       transition-colors duration-200"
-                          >
-                            Reintentar
-                          </button>
-                          <span className="text-[11px] text-[#9D83C6]">
-                            (Si ya respondieron hace segundos, espera y refresca)
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  ) : (
+                ) : aggregated.length === 0 ? (
+                  teamCycles.length === 0 ? (
                     <div className="text-sm text-[#5B5B6B] flex items-center gap-2">
-                      <span>No hay datos suficientes para mostrar vista semanal.</span>
-                      <button 
-                        onClick={handleRefresh} 
-                        className="text-[#55C2A2] hover:text-[#2E2E3A] underline hover:no-underline 
+                      <span>Sin rondas creadas todavía.</span>
+                      <button
+                        onClick={handleRefresh}
+                        className="text-[#55C2A2] hover:text-[#2E2E3A] underline hover:no-underline
                                    transition-colors duration-200"
                       >
                         Actualizar
                       </button>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-[#5B5B6B] flex flex-col gap-2">
+                      <span>Hay {teamCycles.length} ronda(s) pero aún sin respuestas con puntajes.</span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={handleRefresh}
+                          className="text-[#55C2A2] hover:text-[#2E2E3A] underline hover:no-underline
+                                     transition-colors duration-200"
+                        >
+                          Reintentar
+                        </button>
+                        <span className="text-[11px] text-[#9D83C6]">
+                          (Si ya respondieron hace segundos, espera y refresca)
+                        </span>
+                      </div>
                     </div>
                   )
                 ) : (
@@ -507,7 +372,7 @@ export default function ReportesPage() {
                       <thead>
                         <tr className="bg-gray-100 text-gray-700">
                           <th className="text-left px-2 sm:px-3 py-2 font-medium text-[10px] sm:text-sm">
-                            {viewMode === 'cycles' ? 'Inicio / Fin / Duración' : 'Semana'}
+                            Inicio / Fin / Duración
                           </th>
                           <th className="text-left px-2 sm:px-3 py-2 font-medium text-[10px] sm:text-sm">Resp.</th>
                           <th className="text-left px-2 sm:px-3 py-2 font-medium text-[10px] sm:text-sm">AE (0–54)</th>
@@ -519,130 +384,52 @@ export default function ReportesPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {(viewMode === 'cycles' ? aggregated : getWeeklyData).map((row, index) => {
-                          if (viewMode === 'cycles') {
-                            // Vista por ciclos (código original)
-                            const started = row.cycle.start_at || row.cycle.created_at;
-                            const ended = row.cycle.end_at;
-                            const startDate = started ? new Date(started) : null;
-                            const endDate = ended ? new Date(ended) : null;
-                            const fmt = (d) => d?.toLocaleString(undefined,{ dateStyle:'short', timeStyle:'short'}) || '—';
-                            const duration = startDate && endDate ? formatDuration(endDate - startDate) : (endDate ? '—' : 'En curso');
-                            return (
-                              <tr key={row.cycle.id} className="hover:bg-gray-50">
-                                <td className="px-2 sm:px-3 py-2">
-                                  <div className="text-[10px] sm:text-xs"><span className="font-semibold text-gray-700">Inicio:</span> {fmt(startDate)}</div>
-                                  <div className="text-[10px] sm:text-xs"><span className="font-semibold text-gray-700">Fin:</span> {endDate ? fmt(endDate) : 'En curso'}</div>
-                                  <div className="text-[9px] sm:text-[10px] text-gray-500 mt-1">Duración: {duration}</div>
-                                </td>
-                                <td className="px-2 sm:px-3 py-2 text-center">{row.count}</td>
-                                <td className="px-2 sm:px-3 py-2">{row.aeAvg != null ? `${row.aeAvg}` : '—'}</td>
-                                <td className="px-2 sm:px-3 py-2">{row.dAvg != null ? `${row.dAvg}` : '—'}</td>
-                                <td className="px-2 sm:px-3 py-2">{row.rpAvg != null ? `${row.rpAvg}` : '—'}</td>
-                                <td className="px-2 sm:px-3 py-2">
-                                  {row.wellbeing != null ? (
-                                    <div className="flex items-center gap-1 sm:gap-2">
-                                      <div className="w-12 sm:w-20 h-1.5 sm:h-2 bg-gray-200 rounded-full overflow-hidden">
-                                        <div className="h-full rounded-full" style={{ width: `${row.wellbeing}%`, background: row.wellbeing>=70?'#16a34a':row.wellbeing>=40?'#f59e0b':'#dc2626' }} />
-                                      </div>
-                                      <span className="text-[10px] sm:text-xs">{row.wellbeing}</span>
+                        {aggregated.map((row) => {
+                          const started = row.cycle.start_at || row.cycle.created_at;
+                          const ended = row.cycle.end_at;
+                          const startDate = started ? new Date(started) : null;
+                          const endDate = ended ? new Date(ended) : null;
+                          const fmt = (d) => d?.toLocaleString(undefined,{ dateStyle:'short', timeStyle:'short'}) || '—';
+                          const duration = startDate && endDate ? formatDuration(endDate - startDate) : (endDate ? '—' : 'En curso');
+                          const statusText = row.isActiveCycle
+                            ? 'En curso'
+                            : (row.actualDuration < 7 ? 'Cerrado anticipadamente' : 'Completado');
+                          const statusColor = row.isActiveCycle
+                            ? 'text-blue-600'
+                            : (row.actualDuration < 7 ? 'text-orange-600' : 'text-green-600');
+                          return (
+                            <tr key={row.cycle.id} className="hover:bg-gray-50">
+                              <td className="px-2 sm:px-3 py-2">
+                                <div className="text-[10px] sm:text-xs"><span className="font-semibold text-gray-700">Inicio:</span> {fmt(startDate)}</div>
+                                <div className="text-[10px] sm:text-xs"><span className="font-semibold text-gray-700">Fin:</span> {endDate ? fmt(endDate) : 'En curso'}</div>
+                                <div className="text-[9px] sm:text-[10px] text-gray-500 mt-1">
+                                  Duración: {duration}
+                                  <span className={`ml-2 ${statusColor}`}>• {statusText}</span>
+                                </div>
+                              </td>
+                              <td className="px-2 sm:px-3 py-2 text-center">{row.count}</td>
+                              <td className="px-2 sm:px-3 py-2">{row.aeAvg != null ? `${row.aeAvg}` : '—'}</td>
+                              <td className="px-2 sm:px-3 py-2">{row.dAvg != null ? `${row.dAvg}` : '—'}</td>
+                              <td className="px-2 sm:px-3 py-2">{row.rpAvg != null ? `${row.rpAvg}` : '—'}</td>
+                              <td className="px-2 sm:px-3 py-2">
+                                {row.wellbeing != null ? (
+                                  <div className="flex items-center gap-1 sm:gap-2">
+                                    <div className="w-12 sm:w-20 h-1.5 sm:h-2 bg-gray-200 rounded-full overflow-hidden">
+                                      <div className="h-full rounded-full" style={{ width: `${row.wellbeing}%`, background: row.wellbeing>=70?'#16a34a':row.wellbeing>=40?'#f59e0b':'#dc2626' }} />
                                     </div>
-                                  ) : '—'}
-                                </td>
-                                <td className="px-2 sm:px-3 py-2 hidden sm:table-cell text-[10px] sm:text-xs">{row.dominant || '—'}</td>
-                                <td className="px-2 sm:px-3 py-2 text-[9px] sm:text-[10px] leading-tight hidden md:table-cell">
-                                  <div>Burnout: {row.dist?.Burnout ?? 0}</div>
-                                  <div>Riesgo Alto: {row.dist?.['Riesgo Alto'] ?? 0}</div>
-                                  <div>Riesgo: {row.dist?.Riesgo ?? 0}</div>
-                                  <div>Sin indicios: {row.dist?.['Sin indicios'] ?? 0}</div>
-                                </td>
-                              </tr>
-                            );
-                          } else {
-                            // Vista semanal (ahora muestra ciclos individuales)
-                            const cycleStart = row.weekStart;
-                            const cycleEnd = row.weekEnd;
-                            const actualDuration = row.actualDuration || 7;
-                            const isSameDay = row.isSameDay || false;
-                            const cycleEndedEarly = row.cycleEndedEarly || false;
-                            const isActiveCycle = row.isActiveCycle || false;
-                            const cycleInfo = row.cycleInfo;
-                            
-                            const formatDate = (d) => d?.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit' }) || '—';
-                            const formatDateTime = (d) => d?.toLocaleString(undefined, { 
-                              day: '2-digit', 
-                              month: '2-digit', 
-                              year: '2-digit',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            }) || '—';
-                            
-                            let periodText;
-                            let statusText = '';
-                            
-                            if (isActiveCycle) {
-                              // Ciclo aún activo
-                              periodText = `${formatDate(cycleStart)} - Activo`;
-                              statusText = 'En curso';
-                            } else if (cycleEndedEarly && isSameDay) {
-                              // Si terminó el mismo día, mostrar con horas
-                              periodText = `${formatDate(cycleStart)} - ${formatDateTime(cycleEnd)}`;
-                              statusText = 'Cerrado anticipadamente';
-                            } else if (cycleEndedEarly) {
-                              // Si terminó antes pero en diferente día
-                              periodText = `${formatDate(cycleStart)} - ${formatDate(cycleEnd)}`;
-                              statusText = 'Cerrado anticipadamente';
-                            } else {
-                              // Ciclo completado normalmente
-                              periodText = `${formatDate(cycleStart)} - ${formatDate(cycleEnd)}`;
-                              statusText = 'Completado';
-                            }
-                            
-                            return (
-                              <tr key={`cycle-${row.cycleId}`} className="hover:bg-gray-50">
-                                <td className="px-2 sm:px-3 py-2">
-                                  <div className="text-[10px] sm:text-xs">
-                                    <span className="font-semibold text-gray-700">
-                                      Ciclo #{row.friendlyId}:
-                                    </span> {periodText}
+                                    <span className="text-[10px] sm:text-xs">{row.wellbeing}</span>
                                   </div>
-                                  <div className="text-[9px] sm:text-[10px] text-gray-500 mt-1">
-                                    {actualDuration} día{actualDuration !== 1 ? 's' : ''}
-                                    {statusText && (
-                                      <span className={`ml-2 ${
-                                        isActiveCycle ? 'text-blue-600' : 
-                                        cycleEndedEarly ? 'text-orange-600' : 
-                                        'text-green-600'
-                                      }`}>
-                                        • {statusText}
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="px-2 sm:px-3 py-2 text-center">{row.count}</td>
-                                <td className="px-2 sm:px-3 py-2">{row.aeAvg != null ? `${row.aeAvg}` : '—'}</td>
-                                <td className="px-2 sm:px-3 py-2">{row.dAvg != null ? `${row.dAvg}` : '—'}</td>
-                                <td className="px-2 sm:px-3 py-2">{row.rpAvg != null ? `${row.rpAvg}` : '—'}</td>
-                                <td className="px-2 sm:px-3 py-2">
-                                  {row.wellbeing != null ? (
-                                    <div className="flex items-center gap-1 sm:gap-2">
-                                      <div className="w-12 sm:w-20 h-1.5 sm:h-2 bg-gray-200 rounded-full overflow-hidden">
-                                        <div className="h-full rounded-full" style={{ width: `${row.wellbeing}%`, background: row.wellbeing>=70?'#16a34a':row.wellbeing>=40?'#f59e0b':'#dc2626' }} />
-                                      </div>
-                                      <span className="text-[10px] sm:text-xs">{row.wellbeing}</span>
-                                    </div>
-                                  ) : '—'}
-                                </td>
-                                <td className="px-2 sm:px-3 py-2 hidden sm:table-cell text-[10px] sm:text-xs">{row.dominant || '—'}</td>
-                                <td className="px-2 sm:px-3 py-2 text-[9px] sm:text-[10px] leading-tight hidden md:table-cell">
-                                  <div>Burnout: {row.dist?.Burnout ?? 0}</div>
-                                  <div>Riesgo Alto: {row.dist?.['Riesgo Alto'] ?? 0}</div>
-                                  <div>Riesgo: {row.dist?.Riesgo ?? 0}</div>
-                                  <div>Sin indicios: {row.dist?.['Sin indicios'] ?? 0}</div>
-                                </td>
-                              </tr>
-                            );
-                          }
+                                ) : '—'}
+                              </td>
+                              <td className="px-2 sm:px-3 py-2 hidden sm:table-cell text-[10px] sm:text-xs">{row.dominant || '—'}</td>
+                              <td className="px-2 sm:px-3 py-2 text-[9px] sm:text-[10px] leading-tight hidden md:table-cell">
+                                <div>Burnout: {row.dist?.Burnout ?? 0}</div>
+                                <div>Riesgo Alto: {row.dist?.['Riesgo Alto'] ?? 0}</div>
+                                <div>Riesgo: {row.dist?.Riesgo ?? 0}</div>
+                                <div>Sin indicios: {row.dist?.['Sin indicios'] ?? 0}</div>
+                              </td>
+                            </tr>
+                          );
                         })}
                       </tbody>
                     </table>
@@ -667,15 +454,14 @@ export default function ReportesPage() {
                 )}
               </div>
 
-              {(viewMode === 'cycles' ? aggregated : getWeeklyData).length > 0 && (
+              {aggregated.length > 0 && (
                 <div>
                   <h2 className="text-lg font-semibold text-gray-800 mb-3">
-                    Sugerencias personalizadas ({viewMode === 'cycles' ? 'por ciclos' : 'por semana'})
+                    Sugerencias personalizadas
                   </h2>
-                  <AdvicePanel 
-                    data={viewMode === 'cycles' ? aggregated : getWeeklyData} 
-                    teamId={activeTeamId} 
-                    viewMode={viewMode}
+                  <AdvicePanel
+                    data={aggregated}
+                    teamId={activeTeamId}
                   />
                 </div>
               )}
@@ -1134,7 +920,7 @@ function InsightsPanel({ data }) {
   );
 }
 
-function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
+function AdvicePanel({ data, teamId }) {
   const [mode, setMode] = React.useState('ai'); // 'local' | 'ai' - IA por defecto
   const [loading, setLoading] = React.useState(false);
   const [aiAdvice, setAiAdvice] = React.useState(null);
@@ -1155,11 +941,9 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
       d: item.dAvg,
       rp: item.rpAvg,
       wellbeing: item.wellbeing,
-      date: viewMode === 'cycles' 
-        ? (item.cycle.start_at || item.cycle.created_at)
-        : item.weekStart.toISOString()
+      date: item.cycle.start_at || item.cycle.created_at
     }));
-    
+
     const mbiPayload = {
       ae: current.aeAvg,
       d: current.dAvg,
@@ -1167,26 +951,23 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
       wellbeing: current.wellbeing,
       previous: prev ? { ae: prev.aeAvg, d: prev.dAvg, rp: prev.rpAvg, wellbeing: prev.wellbeing } : null,
       history: historyData,
-      meta: { 
-        latestId: viewMode === 'cycles' ? current.cycle.id : `week-${current.weekStart.toISOString().split('T')[0]}`,
+      meta: {
+        latestId: current.cycle.id,
         totalPeriods: valid.length,
-        viewMode: viewMode,
-        analysisScope: viewMode === 'cycles' ? 'Análisis por ciclos de evaluación' : 'Análisis semanal granular'
+        analysisScope: 'Análisis por ciclos de evaluación'
       }
     };
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       // Timeout de 15 segundos para evitar esperas largas
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Timeout: IA externa tardó más de 15 segundos')), 15000)
       );
-      
-      const analysisId = viewMode === 'cycles' 
-        ? current.cycle.id 
-        : `weekly-${current.weekStart.toISOString().split('T')[0]}`;
+
+      const analysisId = current.cycle.id;
       
       const result = await Promise.race([
         getAIAdviceWithCache(mbiPayload, teamId, analysisId, forceRegenerate),
@@ -1202,16 +983,7 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
     } finally {
       setLoading(false);
     }
-  }, [loading, data, viewMode, teamId]);
-
-  // Limpiar análisis de IA cuando cambie el modo de vista
-  React.useEffect(() => {
-    if (aiAdvice) {
-      setAiAdvice(null);
-      setMode('ai'); // Mantener en modo IA para regenerar automáticamente
-      setError('');
-    }
-  }, [viewMode]);
+  }, [loading, data, teamId]);
 
   // Auto-generar análisis de IA cuando hay datos válidos
   React.useEffect(() => {
@@ -1219,7 +991,7 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
     if (valid.length > 0 && !aiAdvice && !loading && mode === 'ai') {
       handleAIFetch(false);
     }
-  }, [data, teamId, viewMode, aiAdvice, loading, mode, handleAIFetch]);
+  }, [data, teamId, aiAdvice, loading, mode, handleAIFetch]);
 
   if (!data.length) return null;
   
@@ -1236,11 +1008,9 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
     d: item.dAvg,
     rp: item.rpAvg,
     wellbeing: item.wellbeing,
-    date: viewMode === 'cycles' 
-      ? (item.cycle.start_at || item.cycle.created_at)
-      : item.weekStart.toISOString()
+    date: item.cycle.start_at || item.cycle.created_at
   }));
-  
+
   const mbiPayload = {
     ae: current.aeAvg,
     d: current.dAvg,
@@ -1248,11 +1018,10 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
     wellbeing: current.wellbeing,
     previous: prev ? { ae: prev.aeAvg, d: prev.dAvg, rp: prev.rpAvg, wellbeing: prev.wellbeing } : null,
     history: historyData,
-    meta: { 
-      latestId: viewMode === 'cycles' ? current.cycle.id : `week-${current.weekStart.toISOString().split('T')[0]}`,
+    meta: {
+      latestId: current.cycle.id,
       totalPeriods: valid.length,
-      viewMode: viewMode,
-      analysisScope: viewMode === 'cycles' ? 'Análisis por ciclos de evaluación' : 'Análisis semanal granular'
+      analysisScope: 'Análisis por ciclos de evaluación'
     }
   };
 
@@ -1304,7 +1073,7 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
 
       {/* Status indicator */}
       <div className="text-xs text-gray-500 -mt-2">
-        {loading && `🔄 Analizando ${viewMode === 'cycles' ? 'evolución por ciclos' : 'tendencias semanales'} del equipo...`}
+        {loading && `🔄 Analizando evolución por ciclos del equipo...`}
         {error && <span className="text-red-600">❌ {error} (mostrando sugerencias locales)</span>}
         {mode === 'ai' && aiAdvice && !loading && (
           <div className="flex items-center gap-2">
@@ -1318,12 +1087,12 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
               </span>
             )}
             <span className="text-gray-400">
-              • {historyData.length} {viewMode === 'cycles' ? 'ciclo(s)' : 'semana(s)'} de historia
+              • {historyData.length} ciclo(s) de historia
             </span>
           </div>
         )}
         {mode === 'local' && !loading && !error && (
-          <span>🧠 Sugerencias {viewMode === 'cycles' ? 'por ciclos' : 'semanales'} basadas en reglas heurísticas</span>
+          <span>🧠 Sugerencias por ciclos basadas en reglas heurísticas</span>
         )}
       </div>
 
