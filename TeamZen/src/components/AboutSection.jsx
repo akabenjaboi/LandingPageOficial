@@ -1,5 +1,6 @@
 import React from "react";
 import SplitText from "./ReactBits/SplitText/SplitText";
+import LazyImage from "./LazyImage";
 
 const handleAnimationComplete = () => {
   console.log("All letters have animated!");
@@ -31,7 +32,7 @@ export default function AboutSection({ sobreRef, sobreInView }) {
       {/* Responsive collage */}
       <div className="flex flex-col md:flex-row items-center justify-center w-full gap-4 md:gap-0 relative h-auto md:h-[340px] lg:h-[420px] mb-4">
         {/* Imagen izquierda */}
-        <img
+        <LazyImage
           src="/img/pandadescansando.png"
           alt="TeamZen inspiración 1"
           className={`rounded-2xl shadow-lg object-cover w-full max-w-[320px] h-[140px] sm:h-[180px] md:h-[220px] lg:h-[260px] aspect-[16/9] opacity-90 transition-all duration-700 hover:scale-105
@@ -43,7 +44,7 @@ export default function AboutSection({ sobreRef, sobreInView }) {
           }}
         />
         {/* Imagen central */}
-        <img
+        <LazyImage
           src="/img/pandalogo.png"
           alt="TeamZen inspiración 2"
           className={`rounded-2xl shadow-2xl object-cover w-full max-w-[360px] h-[160px] sm:h-[200px] md:h-[270px] lg:h-[340px] aspect-[16/9] transition-all duration-700 hover:scale-105
@@ -51,7 +52,7 @@ export default function AboutSection({ sobreRef, sobreInView }) {
           `}
         />
         {/* Imagen derecha */}
-        <img
+        <LazyImage
           src="/img/pandapintando.png"
           alt="TeamZen inspiración 3"
           className={`rounded-2xl shadow-lg object-cover w-full max-w-[320px] h-[140px] sm:h-[180px] md:h-[220px] lg:h-[260px] aspect-[16/9] opacity-90 transition-all duration-700 hover:scale-105
