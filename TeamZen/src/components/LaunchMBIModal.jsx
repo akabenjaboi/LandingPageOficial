@@ -41,7 +41,7 @@ export default function LaunchMBIModal({ open, context, launching, onClose, onCo
         ${isAnimating ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-lg font-semibold text-[#2E2E3A]">
-            {activeCycleId ? 'Iniciar nuevo ciclo MBI' : 'Lanzar MBI'}
+            {activeCycleId ? 'Iniciar nueva ronda' : 'Iniciar ronda'}
           </h3>
           <button
             onClick={onClose}
@@ -65,10 +65,10 @@ export default function LaunchMBIModal({ open, context, launching, onClose, onCo
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <p className="text-sm font-medium text-[#2E2E3A] mb-1">⏰ Duración del ciclo</p>
+              <p className="text-sm font-medium text-[#2E2E3A] mb-1">⏰ Duración de la ronda</p>
               <p className="text-sm text-[#5B5B6B]">
-                El ciclo se <strong className="text-[#2E2E3A]">cerrará automáticamente después de 7 días</strong> desde su inicio. 
-                Los miembros que no respondan en este período no podrán participar hasta el próximo ciclo.
+                La ronda se <strong className="text-[#2E2E3A]">cerrará automáticamente después de 7 días</strong> desde su inicio.
+                Los miembros que no respondan en este período no podrán participar hasta la próxima ronda.
               </p>
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function LaunchMBIModal({ open, context, launching, onClose, onCo
 
         {activeCycleId && (
           <div className="mb-4 bg-gradient-to-r from-[#9D83C6]/10 to-[#DAD5E4]/20 border border-[#9D83C6]/30 rounded-xl p-4 text-sm text-[#2E2E3A]">
-            Ya existe un ciclo activo. Crear uno nuevo cerrará el ciclo actual y permitirá que todos respondan nuevamente.
+            Ya existe una ronda activa. Iniciar una nueva cerrará la ronda actual y permitirá que todos respondan nuevamente.
           </div>
         )}
         
@@ -87,11 +87,11 @@ export default function LaunchMBIModal({ open, context, launching, onClose, onCo
           {totalMembers === 0 ? (
             <div className="p-4 bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-xl">
               <p className="text-sm text-orange-700">
-                ⚠️ Este equipo no tiene miembros aún. Puedes lanzar el MBI de todas formas, pero recuerda invitar miembros para que participen.
+                ⚠️ Este equipo no tiene miembros aún. Puedes iniciar la ronda de todas formas, pero recuerda invitar miembros para que participen.
               </p>
             </div>
           ) : pendingMembers.length === 0 ? (
-            <p className="text-sm text-[#55C2A2] font-medium">✅ Todos los miembros han respondido el ciclo actual.</p>
+            <p className="text-sm text-[#55C2A2] font-medium">✅ Todos los miembros han respondido la ronda actual.</p>
           ) : (
             <div className="max-h-40 overflow-y-auto border border-[#DAD5E4] rounded-xl p-3 bg-gradient-to-br from-[#FAF9F6] to-[#DAD5E4]/20">
               <p className="text-sm text-[#5B5B6B] mb-2 font-medium">Miembros que aún no han respondido ({pendingMembers.length} / {totalMembers}):</p>
@@ -127,9 +127,9 @@ export default function LaunchMBIModal({ open, context, launching, onClose, onCo
                 <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                Lanzando...
+                Iniciando...
               </span>
-            ) : (activeCycleId ? 'Crear nuevo ciclo' : 'Lanzar ahora')}
+            ) : (activeCycleId ? 'Iniciar nueva ronda' : 'Iniciar ahora')}
           </button>
         </div>
       </div>

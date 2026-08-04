@@ -69,7 +69,7 @@ export default function EvaluacionesPage() {
                 .eq('status', 'active');
               if (cyclesError) {
                 console.warn('No se pudieron cargar ciclos activos', cyclesError);
-                setError('No se pudieron cargar los ciclos activos de tus equipos.');
+                setError('No se pudieron cargar las rondas activas de tus equipos.');
               } else {
                 const map = {};
                 (cycles || []).forEach(c => { map[c.team_id] = c.id; });
@@ -77,7 +77,7 @@ export default function EvaluacionesPage() {
               }
             } catch (e) {
               console.warn('No se pudieron cargar ciclos activos', e);
-              setError('No se pudieron cargar los ciclos activos de tus equipos.');
+              setError('No se pudieron cargar las rondas activas de tus equipos.');
             }
           }
         }
@@ -149,7 +149,7 @@ export default function EvaluacionesPage() {
         .eq('team_id', teamId)
         .eq('status', 'active');
       if (closeError) {
-        setError('No se pudo cerrar el ciclo anterior. Intenta lanzar el MBI de nuevo.');
+        setError('No se pudo cerrar la ronda anterior. Intenta iniciar el MBI de nuevo.');
         return;
       }
       // Crear nuevo
@@ -160,11 +160,11 @@ export default function EvaluacionesPage() {
         .single();
       if (error) throw error;
       setActiveCycles(prev => ({ ...prev, [teamId]: newCycle.id }));
-      setSuccess('Nuevo ciclo MBI creado correctamente.');
+      setSuccess('Nueva ronda MBI creada correctamente.');
       setShowLaunchModal(false);
       setLaunchContext(null);
     } catch (e) {
-      setError(e.message || 'Error al lanzar MBI');
+      setError(e.message || 'Error al iniciar la ronda MBI');
     } finally {
       setLaunching(false);
     }
@@ -207,7 +207,7 @@ export default function EvaluacionesPage() {
         {profile?.role === 'leader' && (
           <section className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Lanzar MBI a un equipo</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Iniciar ronda MBI en un equipo</h2>
             </div>
             
             {/* Información importante sobre duración de ciclos */}
@@ -217,9 +217,9 @@ export default function EvaluacionesPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <p className="text-xs font-medium text-blue-800 mb-1">ℹ️ Gestión de ciclos</p>
+                  <p className="text-xs font-medium text-blue-800 mb-1">ℹ️ Gestión de rondas</p>
                   <p className="text-xs text-blue-700">
-                    Los ciclos MBI duran <strong>7 días calendario</strong> desde su inicio y se cierran automáticamente. 
+                    Las rondas MBI duran <strong>7 días calendario</strong> desde su inicio y se cierran automáticamente.
                     Puedes ver el progreso y generar reportes en cualquier momento durante este período.
                   </p>
                 </div>
@@ -240,7 +240,7 @@ export default function EvaluacionesPage() {
                     disabled={launching}
                     onClick={() => prepareLaunch(t)}
                   >
-                    {activeCycles[t.id] ? (launching ? 'Lanzando...' : 'Nuevo ciclo MBI') : (launching ? 'Lanzando...' : 'Lanzar MBI')}
+                    {activeCycles[t.id] ? (launching ? 'Iniciando...' : 'Nueva ronda MBI') : (launching ? 'Iniciando...' : 'Iniciar ronda MBI')}
                   </button>
                   <button
                     className="text-blue-600 text-xs underline"

@@ -159,7 +159,7 @@ export default function Dashboard() {
               .eq('status', 'active');
             if (cyclesError) {
               console.warn('Error cargando ciclos activos (líder):', cyclesError);
-              setDataError('No se pudieron cargar los ciclos de evaluación. Algunos datos podrían faltar.');
+              setDataError('No se pudieron cargar las rondas de evaluación. Algunos datos podrían faltar.');
             }
             const cycleMap = {};
             (cycles || []).forEach(c => { cycleMap[c.team_id] = c.id; });
@@ -320,7 +320,7 @@ export default function Dashboard() {
                 .eq('status', 'active');
               if (cyclesError) {
                 console.warn('Error cargando ciclos activos (miembro):', cyclesError);
-                setDataError('No se pudieron cargar los ciclos de evaluación. Algunos datos podrían faltar.');
+                setDataError('No se pudieron cargar las rondas de evaluación. Algunos datos podrían faltar.');
               }
               const cycleMap = {};
               (cycles || []).forEach(c => { cycleMap[c.team_id] = c.id; });
@@ -437,7 +437,7 @@ export default function Dashboard() {
         .eq('status', 'active');
       if (closeError) {
         console.error('Error cerrando ciclo anterior:', closeError);
-        setDataError('No se pudo cerrar el ciclo anterior. Intenta lanzar el MBI de nuevo.');
+        setDataError('No se pudo cerrar la ronda anterior. Intenta iniciar el MBI de nuevo.');
         return;
       }
       const { data: newCycle, error } = await supabase
@@ -454,7 +454,7 @@ export default function Dashboard() {
       setShowLaunchModal(false);
       setLaunchContext(null);
     } catch (e) {
-      alert('Error lanzando MBI: ' + (e.message || ''));
+      alert('Error iniciando la ronda: ' + (e.message || ''));
     } finally {
       setLaunchingTeam(null);
     }
@@ -477,7 +477,7 @@ export default function Dashboard() {
         return clone;
       });
     } catch (e) {
-      alert('Error terminando ciclo: ' + (e.message || ''));
+      alert('Error terminando ronda: ' + (e.message || ''));
     } finally {
       setEndingTeam(null);
     }
@@ -1903,7 +1903,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                           <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full">Pendiente</span>
                         )
                       ) : (
-                        <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full">Sin ciclo</span>
+                        <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full">Sin ronda</span>
                       )}
                       {!isLeaderMember && (
                         <button
@@ -1935,7 +1935,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
               onClick={onEndCycle}
               disabled={ending}
             >
-              {ending ? 'Terminando...' : 'Terminar ciclo'}
+              {ending ? 'Terminando...' : 'Terminar ronda'}
             </button>
           ) : (
             <button 
@@ -1946,10 +1946,10 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
               {launching ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Lanzando...
+                  Iniciando...
                 </span>
               ) : (
-                'Lanzar MBI'
+                'Iniciar ronda'
               )}
             </button>
           )}
@@ -1961,7 +1961,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                 </div>
               ) : (
                 <div className="w-full flex items-center justify-center px-4 py-2 rounded-lg bg-green-50 text-green-700 text-xs font-medium border border-green-200">
-                  Ciclo activo
+                  Ronda activa
                 </div>
               )}
             </div>
@@ -2262,7 +2262,7 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
                       ) : activeCycleId ? (
                         <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full">Privado</span>
                       ) : (
-                        <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full">Sin ciclo</span>
+                        <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full">Sin ronda</span>
                       )}
                     </div>
                   );
@@ -2290,7 +2290,7 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
         {/* Acciones */}
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t">
           {!activeCycleId ? (
-            <div className="w-full sm:flex-1 flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-lg bg-gray-100 text-gray-500 text-sm font-medium border border-gray-200">Sin ciclo activo</div>
+            <div className="w-full sm:flex-1 flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-lg bg-gray-100 text-gray-500 text-sm font-medium border border-gray-200">Sin ronda activa</div>
           ) : respondedCycles[activeCycleId] ? (
             <div className="w-full sm:flex-1 flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-lg bg-green-50 text-green-600 text-sm font-medium border border-green-200">Respondido</div>
           ) : (

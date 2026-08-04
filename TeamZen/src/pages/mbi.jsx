@@ -98,7 +98,7 @@ export default function MBIPage() {
             .maybeSingle();
 
           if (cycleErr) {
-            setError('No se pudo verificar el ciclo de evaluación activo. Intenta de nuevo.');
+            setError('No se pudo verificar la ronda de evaluación activa. Intenta de nuevo.');
             return;
           }
 
@@ -124,7 +124,7 @@ export default function MBIPage() {
               setAlreadyAnswered(true);
             }
         } catch (e) {
-          setError('Error verificando ciclo activo.');
+          setError('Error verificando ronda activa.');
         }
       }
     };
@@ -169,7 +169,7 @@ export default function MBIPage() {
       // Re-validar ciclo activo para evitar FK roto (ciclo borrado o reiniciada DB)
       let cycleId = null;
       if (teamId) {
-        if (!activeCycle) throw new Error('No hay ciclo activo.');
+        if (!activeCycle) throw new Error('No hay ronda activa.');
         // Comprobar que el ciclo todavía existe en la BD
         const { data: cycleExists, error: cycleCheckErr } = await supabase
           .from('mbi_evaluation_cycles')
@@ -178,7 +178,7 @@ export default function MBIPage() {
           .maybeSingle();
         if (cycleCheckErr) throw cycleCheckErr;
         if (!cycleExists || cycleExists.status !== 'active') {
-          throw new Error('El ciclo activo ya no existe o fue cerrado. Refresca e inténtalo de nuevo.');
+          throw new Error('La ronda activa ya no existe o fue cerrada. Refresca e inténtalo de nuevo.');
         }
         cycleId = cycleExists.id;
       }
@@ -253,7 +253,7 @@ export default function MBIPage() {
 
           {teamId && !activeCycle && !error && (
             <div className="mb-6 p-4 rounded border border-amber-300 bg-amber-50 text-amber-700 text-sm">
-              No hay un ciclo activo en este momento para este equipo.
+              No hay una ronda activa en este momento para este equipo.
             </div>
           )}
           {alreadyAnswered && (

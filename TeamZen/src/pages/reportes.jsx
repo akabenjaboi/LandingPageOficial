@@ -290,7 +290,7 @@ export default function ReportesPage() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-[#2E2E3A]">Reportes estratégicos</h1>
-                <p className="text-[#5B5B6B] text-sm mt-1">Visualiza tendencias por ciclo y distribución de riesgo de burnout.</p>
+                <p className="text-[#5B5B6B] text-sm mt-1">Visualiza tendencias por ronda y distribución de riesgo de burnout.</p>
               </div>
               {!!teams.length && (
                 <div className="flex items-center gap-2">
@@ -335,7 +335,7 @@ export default function ReportesPage() {
                 )}
                 {fetching ? (
                   <div className="py-8 flex justify-center">
-                    <LoadingSpinner size="small" message="Cargando ciclos..."/>
+                    <LoadingSpinner size="small" message="Cargando rondas..."/>
                   </div>
                 ) : aggregated.length === 0 ? (
                   teamCycles.length === 0 ? (
@@ -443,7 +443,7 @@ export default function ReportesPage() {
               <div className="bg-white rounded-xl border border-[#DAD5E4] p-4 sm:p-6">
                 <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">Tendencia comparativa</h2>
                 {aggregated.length < 2 ? (
-                  <p className="text-xs sm:text-sm text-gray-500">Se necesitan al menos 2 ciclos con respuestas para graficar la tendencia.</p>
+                  <p className="text-xs sm:text-sm text-gray-500">Se necesitan al menos 2 rondas con respuestas para graficar la tendencia.</p>
                 ) : (
                   <div className="w-full">
                     <TrendChart data={aggregated.slice().reverse().map(c => ({
@@ -527,7 +527,7 @@ export default function ReportesPage() {
                                     )}
                                   </div>
                                   <div className="text-xs text-gray-500 space-y-1">
-                                    <p>{hasResponded ? 'Ha respondido el último ciclo' : 'No ha respondido el último ciclo'}</p>
+                                    <p>{hasResponded ? 'Ha respondido la última ronda' : 'No ha respondido la última ronda'}</p>
                                     {sharesResults && hasResponded && (
                                       <p className="text-blue-600">✓ Resultados compartidos con líder</p>
                                     )}
@@ -608,7 +608,7 @@ function CycleHelp() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span className="text-sm font-medium text-[#2E2E3A]">
-            ¿Qué son los ciclos y las dimensiones del MBI?
+            ¿Qué son las rondas y las dimensiones del MBI?
           </span>
         </div>
         <svg 
@@ -625,11 +625,11 @@ function CycleHelp() {
         <div className="mt-3 p-4 bg-[#FAF9F6] border border-[#DAD5E4] rounded-lg text-xs space-y-3 
                         animate-modal-enter leading-relaxed">
           
-          {/* Qué es un ciclo */}
+          {/* Qué es una ronda */}
           <div className="space-y-2">
             <h4 className="font-semibold text-[#2E2E3A] flex items-center space-x-2">
               <span className="w-2 h-2 bg-[#55C2A2] rounded-full"></span>
-              <span>Qué es un ciclo</span>
+              <span>Qué es una ronda</span>
             </h4>
             <p className="text-[#5B5B6B] ml-4">
               Periodo activo en el que el equipo responde el cuestionario. Al cerrarlo se congelan sus resultados.
@@ -770,7 +770,7 @@ function StrategicInsightsDropdown({ data }) {
         <div className="flex items-center space-x-2">
           {data.length > 0 && (
             <span className="bg-[#55C2A2] text-white text-xs font-medium px-2 py-1 rounded-full">
-              {data.length} ciclo{data.length !== 1 ? 's' : ''}
+              {data.length} ronda{data.length !== 1 ? 's' : ''}
             </span>
           )}
           <svg 
@@ -793,7 +793,7 @@ function StrategicInsightsDropdown({ data }) {
                       d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
               <p className="text-[#5B5B6B] font-medium">No hay datos disponibles</p>
-              <p className="text-sm text-[#9D83C6] mt-1">Genera al menos un ciclo para ver insights</p>
+              <p className="text-sm text-[#9D83C6] mt-1">Genera al menos una ronda para ver insights</p>
             </div>
           ) : (
             <InsightsPanel data={data} />
@@ -954,7 +954,7 @@ function AdvicePanel({ data, teamId }) {
       meta: {
         latestId: current.cycle.id,
         totalPeriods: valid.length,
-        analysisScope: 'Análisis por ciclos de evaluación'
+        analysisScope: 'Análisis por rondas de evaluación'
       }
     };
 
@@ -1021,7 +1021,7 @@ function AdvicePanel({ data, teamId }) {
     meta: {
       latestId: current.cycle.id,
       totalPeriods: valid.length,
-      analysisScope: 'Análisis por ciclos de evaluación'
+      analysisScope: 'Análisis por rondas de evaluación'
     }
   };
 
@@ -1073,7 +1073,7 @@ function AdvicePanel({ data, teamId }) {
 
       {/* Status indicator */}
       <div className="text-xs text-gray-500 -mt-2">
-        {loading && `🔄 Analizando evolución por ciclos del equipo...`}
+        {loading && `🔄 Analizando evolución por rondas del equipo...`}
         {error && <span className="text-red-600">❌ {error} (mostrando sugerencias locales)</span>}
         {mode === 'ai' && aiAdvice && !loading && (
           <div className="flex items-center gap-2">
@@ -1087,12 +1087,12 @@ function AdvicePanel({ data, teamId }) {
               </span>
             )}
             <span className="text-gray-400">
-              • {historyData.length} ciclo(s) de historia
+              • {historyData.length} ronda(s) de historia
             </span>
           </div>
         )}
         {mode === 'local' && !loading && !error && (
-          <span>🧠 Sugerencias por ciclos basadas en reglas heurísticas</span>
+          <span>🧠 Sugerencias por rondas basadas en reglas heurísticas</span>
         )}
       </div>
 
@@ -1149,7 +1149,7 @@ function AdvicePanel({ data, teamId }) {
       <div className="pt-2 border-t border-gray-100">
         <p className="text-[10px] text-gray-400">
           {mode === 'ai' && aiAdvice 
-            ? `🤖 Análisis evolutivo por Groq AI basado en ${historyData.length} ciclo(s) - Fallback automático a local si falla` 
+            ? `🤖 Análisis evolutivo por Groq AI basado en ${historyData.length} ronda(s) - Fallback automático a local si falla`
             : '🧠 Sugerencias heurísticas locales - Pulsa "IA + Tendencias" para análisis histórico avanzado'
           }
         </p>

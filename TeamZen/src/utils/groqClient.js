@@ -162,7 +162,7 @@ CONTEXTO DEL EQUIPO:
 - Descripción/Área: ${teamContext.description}` : ''}
 - Incluye líder en métricas: ${teamContext?.includeLeaderInMetrics ? 'Sí' : 'No'}
 
-ESTADO ACTUAL (último ciclo):
+ESTADO ACTUAL (última ronda):
 - Agotamiento Emocional: ${ae}/54 → Nivel de burnout: ${catAE}
   * ${interpretBurnoutLevel(catAE, 'AE')}
   
@@ -177,14 +177,14 @@ ESTADO ACTUAL (último ciclo):
 
   // Si hay datos históricos (múltiples ciclos), analizar la evolución
   if (history && history.length > 1) {
-    prompt += `\n\nEVOLUCIÓN HISTÓRICA (${history.length} ciclos):`;
+    prompt += `\n\nEVOLUCIÓN HISTÓRICA (${history.length} rondas):`;
     
     history.forEach((cycle, index) => {
       const cycleNum = history.length - index; // Más reciente = mayor número
       const { catAE: hAE, catD: hD, catRP: hRP } = classifyMBI(cycle.ae, cycle.d, cycle.rp);
       const hStatus = computeBurnoutStatus({ catAE: hAE, catD: hD, catRP: hRP });
       
-      prompt += `\nCiclo ${cycleNum}: AE=${cycle.ae} (${hAE}), D=${cycle.d} (${hD}), RP=${cycle.rp} (${hRP}) → ${hStatus}`;
+      prompt += `\nRonda ${cycleNum}: AE=${cycle.ae} (${hAE}), D=${cycle.d} (${hD}), RP=${cycle.rp} (${hRP}) → ${hStatus}`;
     });
     
     // Análisis de tendencias
@@ -203,7 +203,7 @@ ESTADO ACTUAL (último ciclo):
     const trendD = d > previous.d ? 'EMPEORÓ ↑' : d < previous.d ? 'MEJORÓ ↓' : 'ESTABLE →';
     const trendRP = rp > previous.rp ? 'MEJORÓ ↑' : rp < previous.rp ? 'EMPEORÓ ↓' : 'ESTABLE →';
     
-    prompt += `\n\nCOMPARACIÓN CON CICLO ANTERIOR:`;
+    prompt += `\n\nCOMPARACIÓN CON RONDA ANTERIOR:`;
     prompt += `\n- AE: ${previous.ae} → ${ae} (${trendAE})`;
     prompt += `\n- D: ${previous.d} → ${d} (${trendD})`;
     prompt += `\n- RP: ${previous.rp} → ${rp} (${trendRP})`;
@@ -223,7 +223,7 @@ REGLAS CRÍTICAS:
 - Responde SOLO el JSON, sin explicaciones adicionales
 - Usa exactamente los nombres de campos mostrados arriba
 - El diagnóstico actual es "${burnoutStatus}" - basa todo en esto
-- Si es primer ciclo o sin historia, usa "null" en trend_analysis y prognosis
+- Si es primera ronda o sin historia, usa "null" en trend_analysis y prognosis
 - Máximo 4 riesgos, máximo 6 acciones
 - Considera el contexto del equipo (${teamContext?.description || 'equipo general'}) para sugerencias específicas
 - Las acciones deben ser prácticas y adaptadas al tipo de trabajo del equipo`;
