@@ -190,7 +190,7 @@ as $$
   )
   select
     c.id as cycle_id,
-    coalesce(pc.respondent_count, 0) as respondent_count,
+    case when coalesce(pc.respondent_count, 0) >= 3 then pc.respondent_count else 0 end as respondent_count,
     case when coalesce(pc.respondent_count, 0) >= 3 then pc.ae_avg else null end as ae_avg,
     case when coalesce(pc.respondent_count, 0) >= 3 then pc.d_avg else null end as d_avg,
     case when coalesce(pc.respondent_count, 0) >= 3 then pc.rp_avg else null end as rp_avg,
@@ -221,12 +221,13 @@ Notes on this function:
 - If the caller doesn't lead `p_team_id`, `authorized` is empty and every row's `exists (select 1 from
   authorized)` check is false, so the function returns zero rows — same "just empty" behavior RLS would
   give, without needing a separate authorization error path.
-- Below the n≥3 floor, the function still returns one row per cycle with the real `respondent_count`
-  (1 or 2) but every stat field `null` — this matches today's *effective* behavior (a cycle under the
-  floor already renders as "0 respondents" / no stats in the current RLS-blocked flow), it's a
-  drop-in replacement, not a UX change. Improving that message (e.g. showing "2 respuestas, faltan para
-  ver el resumen" instead of treating it identically to zero) is a reasonable future idea but is not part
-  of this fix — noted here so it isn't lost, not undertaken now.
+- Below the n≥3 floor, the function returns one row per cycle with `respondent_count` suppressed to `0`
+  and every stat field `null` — this matches today's *effective* behavior exactly (a cycle under the floor
+  already renders as "0 respondents" / no stats, because RLS blocks the raw rows entirely before this fix),
+  so this is a drop-in replacement, not a UX change. The true small count (1 or 2) is computed internally
+  for the floor comparison but never returned. Surfacing the true small count instead (e.g. "2 respuestas,
+  faltan para ver el resumen") is a reasonable future idea but is not part of this fix — noted here so it
+  isn't lost, not undertaken now.
 - `dominant`'s tie-breaking (when two categories have the exact same count) prefers the more severe
   category, via `greatest(...)` picking the first matching `when` in severity order. The original JS
   (`Object.keys(counts).sort(...)`) had its own implicit, insertion-order-dependent tie-break that was
@@ -242,14 +243,17 @@ Notes on this function:
 ## Frontend changes (`reportes.jsx`)
 
 - The `aggregated` `useMemo` stops computing `count/aeAvg/dAvg/rpAvg/dominant/dist` locally from
-  `scoresByCycle`. Instead, it calls `supabase.rpc('mbi_team_cycle_aggregates', { p_team_id: activeTeamId
-  })` once per active team and maps each returned row to the exact same shape the rest of the component
-  already consumes: `{ cycle, count: respondent_count, aeAvg: ae_avg, dAvg: d_avg, rpAvg: rp_avg, dominant,
-  wellbeing: computeWellbeingFromScores(ae_avg, d_avg, rp_avg), dist: { Burnout: burnout_count, 'Riesgo
-  Alto': riesgo_alto_count, Riesgo: riesgo_count, 'Sin indicios': sin_indicios_count }, isActiveCycle,
-  actualDuration }` — `isActiveCycle`/`actualDuration` keep being derived client-side from
-  `cycle.status`/`start_at`/`end_at` exactly as today (Task 3's fix from earlier this session), since
-  those are per-cycle metadata, not privacy-sensitive per-respondent data.
+  `scoresByCycle`. Instead, a new effect fetches `supabase.rpc('mbi_team_cycle_aggregates', { p_team_id:
+  activeTeamId })` alongside the existing cycles/scores fetch, keyed into a new `cycleAggregates` state
+  (`cycle_id -> aggregate row`). `aggregated` then maps each cycle in `teamCycles` to the exact same shape
+  the rest of the component already consumes: `{ cycle, count: respondent_count, aeAvg: ae_avg, dAvg:
+  d_avg, rpAvg: rp_avg, dominant, wellbeing: computeWellbeingFromScores(ae_avg, d_avg, rp_avg), dist: {
+  Burnout: burnout_count, 'Riesgo Alto': riesgo_alto_count, Riesgo: riesgo_count, 'Sin indicios':
+  sin_indicios_count }, isActiveCycle }` — `isActiveCycle` keeps being derived client-side from
+  `cycle.status`/`end_at` exactly as today, since that's per-cycle metadata, not privacy-sensitive
+  per-respondent data. (`actualDuration` was already removed from `aggregated` in an earlier fix this
+  session — duration is computed inline at render time from `cycle.start_at`/`end_at`, not part of this
+  shape.)
 - `scoresByCycle` and `memberBurnoutStates` are **unchanged** — same query, same shape, same client-side
   `share_results_with_leader === true` gate on the badge (now a redundant-but-harmless second layer, since
   RLS itself won't return an opted-out row anymore).
