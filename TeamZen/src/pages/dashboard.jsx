@@ -1319,7 +1319,7 @@ function ProfileForm({ profile, firstName, setFirstName, lastName, setLastName, 
           {(!profile?.first_name && !profile?.last_name) && (
             <div className="flex flex-col gap-1">
               <label className="font-semibold text-[#2E2E3A] text-sm">
-                Rol <span className="text-red-500 ml-1">*</span>
+                ¿Vas a crear y liderar equipos? <span className="text-red-500 ml-1">*</span>
               </label>
               <select
                 className="w-full border border-[#DAD5E4] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#55C2A2] focus:border-transparent"
@@ -1327,9 +1327,9 @@ function ProfileForm({ profile, firstName, setFirstName, lastName, setLastName, 
                 onChange={(e) => setRole(e.target.value)}
                 required
               >
-                <option value="">Selecciona tu rol</option>
-                <option value="user">Miembro de Equipo</option>
-                <option value="leader">Líder de Equipo</option>
+                <option value="">Selecciona una opción</option>
+                <option value="leader">Sí, quiero poder crear y liderar equipos</option>
+                <option value="user">No, por ahora solo quiero unirme a equipos existentes</option>
               </select>
             </div>
           )}
@@ -1476,22 +1476,27 @@ function ProfileFormModal({
           
           <div>
             <label className="block text-sm font-medium text-[#2E2E3A] mb-2">
-              Rol en TeamZen*
+              ¿Vas a crear y liderar equipos?*
             </label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
               className="w-full px-4 py-3 border border-[#DAD5E4] rounded-xl focus:ring-2 focus:ring-[#55C2A2]/20 focus:border-[#55C2A2] transition-all duration-200 bg-[#FAF9F6] text-[#2E2E3A]"
               required
-              disabled={(!isNewUser && profile?.role) || saving}
+              disabled={(!isNewUser && profile?.role === 'leader') || saving}
             >
-              <option value="">Selecciona tu rol</option>
-              <option value="leader">Líder de equipo - Puedo crear y gestionar equipos</option>
-              <option value="user">Miembro de equipo - Me uno a equipos existentes</option>
+              <option value="">Selecciona una opción</option>
+              <option value="leader">Sí, quiero poder crear y liderar equipos</option>
+              <option value="user">No, por ahora solo quiero unirme a equipos existentes</option>
             </select>
-            {!isNewUser && profile?.role && (
+            {!isNewUser && profile?.role === 'leader' && (
               <p className="text-xs text-[#5B5B6B] mt-2">
-                El rol no se puede cambiar una vez establecido. Contacta al administrador si necesitas cambiarlo.
+                Ya activaste la creación de equipos — esto no se puede desactivar. Podés seguir uniéndote a otros equipos como miembro normal cuando quieras.
+              </p>
+            )}
+            {!isNewUser && profile?.role === 'user' && (
+              <p className="text-xs text-[#5B5B6B] mt-2">
+                Podés activar esto más adelante si cambiás de opinión. Una vez que actives la creación de equipos, no vas a poder desactivarla.
               </p>
             )}
           </div>
