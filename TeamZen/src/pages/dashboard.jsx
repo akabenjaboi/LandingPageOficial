@@ -942,26 +942,27 @@ export default function Dashboard() {
               </p>
             </div>
             
-            {/* Action Button */}
-            {profile?.role === "leader" ? (
-              <button
-                onClick={() => setShowCreateTeamModal(true)}
-                className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] 
-                           text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all duration-300 
-                           ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow flex items-center 
-                           space-x-1.5 sm:space-x-2 text-sm sm:text-base w-full sm:w-auto justify-center"
-              >
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Crear Equipo</span>
-              </button>
-            ) : profile?.role === "user" ? (
+            {/* Action Button(s) */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+              {profile?.role === "leader" && (
+                <button
+                  onClick={() => setShowCreateTeamModal(true)}
+                  className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8]
+                             text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all duration-300
+                             ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow flex items-center
+                             space-x-1.5 sm:space-x-2 text-sm sm:text-base w-full sm:w-auto justify-center"
+                >
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Crear Equipo</span>
+                </button>
+              )}
               <button
                 onClick={() => navigate("/unirse-equipo")}
-                className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] 
-                           text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all duration-300 
-                           ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow flex items-center 
+                className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8]
+                           text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all duration-300
+                           ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow flex items-center
                            space-x-1.5 sm:space-x-2 text-sm sm:text-base w-full sm:w-auto justify-center"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -969,7 +970,7 @@ export default function Dashboard() {
                 </svg>
                 <span>Unirse a Equipo</span>
               </button>
-            ) : null}
+            </div>
           </div>
         </div>
 
