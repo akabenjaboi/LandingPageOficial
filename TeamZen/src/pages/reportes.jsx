@@ -212,14 +212,13 @@ export default function ReportesPage() {
     if (!teamCycles.length) return [];
     return teamCycles.map(cycle => {
       const scores = scoresByCycle[cycle.id] || [];
-      const cycleStartDate = new Date(cycle.start_at || cycle.created_at);
       const cycleEndDate = cycle.end_at ? new Date(cycle.end_at) : null;
-      const isActiveCycle = !cycleEndDate;
-      const cycleEndedEarly = !!cycleEndDate;
-      const actualDuration = cycleEndDate
-        ? Math.max(1, Math.ceil((cycleEndDate.getTime() - cycleStartDate.getTime()) / (1000 * 60 * 60 * 24)))
-        : Math.max(1, Math.ceil((new Date().getTime() - cycleStartDate.getTime()) / (1000 * 60 * 60 * 24)));
-      if (!scores.length) return { cycle, count:0, isActiveCycle, cycleEndedEarly, actualDuration };
+      // Prefer the authoritative status column; a cycle only counts as active while
+      // status says so AND it hasn't been given an end_at. This also covers legacy
+      // rows that were closed without an end_at being recorded (see evaluaciones.jsx),
+      // which must be treated as completed, not as permanently "in progress".
+      const isActiveCycle = cycle.status === 'active' && !cycleEndDate;
+      if (!scores.length) return { cycle, count:0, isActiveCycle };
       // Aggregate subscale means (ya en escala 0–6 por ítem -> sumas reales)
       const aeAvg = Math.round((scores.reduce((a,s)=>a+(s.ae??0),0)/scores.length)*10)/10;
       const dAvg = Math.round((scores.reduce((a,s)=>a+(s.d??0),0)/scores.length)*10)/10;
@@ -246,7 +245,7 @@ export default function ReportesPage() {
       // Risk distribution
       const dist = { Burnout:0, 'Riesgo Alto':0, Riesgo:0, 'Sin indicios':0 };
       statuses.forEach(st => { if(dist[st]!==undefined) dist[st]++; });
-      return { cycle, count: scores.length, aeAvg, dAvg, rpAvg, dominant, wellbeing, dist, isActiveCycle, cycleEndedEarly, actualDuration };
+      return { cycle, count: scores.length, aeAvg, dAvg, rpAvg, dominant, wellbeing, dist, isActiveCycle };
     });
   }, [teamCycles, scoresByCycle]);
 
@@ -337,35 +336,33 @@ export default function ReportesPage() {
                   <div className="py-8 flex justify-center">
                     <LoadingSpinner size="small" message="Cargando rondas..."/>
                   </div>
-                ) : aggregated.length === 0 ? (
-                  teamCycles.length === 0 ? (
-                    <div className="text-sm text-[#5B5B6B] flex items-center gap-2">
-                      <span>Sin rondas creadas todavía.</span>
+                ) : teamCycles.length === 0 ? (
+                  <div className="text-sm text-[#5B5B6B] flex items-center gap-2">
+                    <span>Sin rondas creadas todavía.</span>
+                    <button
+                      onClick={handleRefresh}
+                      className="text-[#55C2A2] hover:text-[#2E2E3A] underline hover:no-underline
+                                 transition-colors duration-200"
+                    >
+                      Actualizar
+                    </button>
+                  </div>
+                ) : !aggregated.some(r => r.count > 0) ? (
+                  <div className="text-sm text-[#5B5B6B] flex flex-col gap-2">
+                    <span>Hay {teamCycles.length} ronda(s) pero aún sin respuestas con puntajes.</span>
+                    <div className="flex items-center gap-3">
                       <button
                         onClick={handleRefresh}
                         className="text-[#55C2A2] hover:text-[#2E2E3A] underline hover:no-underline
                                    transition-colors duration-200"
                       >
-                        Actualizar
+                        Reintentar
                       </button>
+                      <span className="text-[11px] text-[#9D83C6]">
+                        (Si ya respondieron hace segundos, espera y refresca)
+                      </span>
                     </div>
-                  ) : (
-                    <div className="text-sm text-[#5B5B6B] flex flex-col gap-2">
-                      <span>Hay {teamCycles.length} ronda(s) pero aún sin respuestas con puntajes.</span>
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={handleRefresh}
-                          className="text-[#55C2A2] hover:text-[#2E2E3A] underline hover:no-underline
-                                     transition-colors duration-200"
-                        >
-                          Reintentar
-                        </button>
-                        <span className="text-[11px] text-[#9D83C6]">
-                          (Si ya respondieron hace segundos, espera y refresca)
-                        </span>
-                      </div>
-                    </div>
-                  )
+                  </div>
                 ) : (
                   <div className="overflow-x-auto bg-white rounded-lg border border-[#DAD5E4]">
                     <table className="min-w-full text-xs sm:text-sm">
@@ -390,18 +387,28 @@ export default function ReportesPage() {
                           const startDate = started ? new Date(started) : null;
                           const endDate = ended ? new Date(ended) : null;
                           const fmt = (d) => d?.toLocaleString(undefined,{ dateStyle:'short', timeStyle:'short'}) || '—';
-                          const duration = startDate && endDate ? formatDuration(endDate - startDate) : (endDate ? '—' : 'En curso');
+                          // Legacy rows: cycle closed but no end_at was ever recorded (the bug the
+                          // evaluaciones.jsx fix prevents going forward). Treat them like a normal
+                          // completed round — dash placeholders instead of a live "En curso" state —
+                          // rather than introducing a third, differently-styled state.
+                          const hasReliableEnd = !!(startDate && endDate);
+                          const duration = row.isActiveCycle
+                            ? 'En curso'
+                            : (hasReliableEnd ? formatDuration(endDate - startDate) : '—');
+                          const ranFullTerm = hasReliableEnd
+                            ? (endDate.getTime() - startDate.getTime()) >= 7 * 24 * 60 * 60 * 1000
+                            : true;
                           const statusText = row.isActiveCycle
                             ? 'En curso'
-                            : (row.actualDuration < 7 ? 'Cerrado anticipadamente' : 'Completado');
+                            : (ranFullTerm ? 'Completado' : 'Cerrado anticipadamente');
                           const statusColor = row.isActiveCycle
                             ? 'text-blue-600'
-                            : (row.actualDuration < 7 ? 'text-orange-600' : 'text-green-600');
+                            : (ranFullTerm ? 'text-green-600' : 'text-orange-600');
                           return (
                             <tr key={row.cycle.id} className="hover:bg-gray-50">
                               <td className="px-2 sm:px-3 py-2">
                                 <div className="text-[10px] sm:text-xs"><span className="font-semibold text-gray-700">Inicio:</span> {fmt(startDate)}</div>
-                                <div className="text-[10px] sm:text-xs"><span className="font-semibold text-gray-700">Fin:</span> {endDate ? fmt(endDate) : 'En curso'}</div>
+                                <div className="text-[10px] sm:text-xs"><span className="font-semibold text-gray-700">Fin:</span> {row.isActiveCycle ? 'En curso' : (endDate ? fmt(endDate) : '—')}</div>
                                 <div className="text-[9px] sm:text-[10px] text-gray-500 mt-1">
                                   Duración: {duration}
                                   <span className={`ml-2 ${statusColor}`}>• {statusText}</span>

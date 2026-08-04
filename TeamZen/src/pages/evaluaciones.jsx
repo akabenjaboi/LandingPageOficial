@@ -145,7 +145,7 @@ export default function EvaluacionesPage() {
       // Cerrar ciclo activo previo
       const { error: closeError } = await supabase
         .from('mbi_evaluation_cycles')
-        .update({ status: 'closed' })
+        .update({ status: 'closed', end_at: new Date().toISOString() })
         .eq('team_id', teamId)
         .eq('status', 'active');
       if (closeError) {
