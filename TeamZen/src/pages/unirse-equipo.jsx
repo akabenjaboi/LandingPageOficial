@@ -8,13 +8,10 @@ export default function UnirseEquipo() {
   const [userId, setUserId] = useState(null);
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(null);
+  const [step, setStep] = useState("enter-code"); // 'enter-code' | 'confirm' | 'success'
   const [error, setError] = useState(null);
-  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const [joinedTeamId, setJoinedTeamId] = useState(null);
-  const [privacyPreferences, setPrivacyPreferences] = useState({
-    membersCanSeeResponses: false
-  });
+  const [teamName, setTeamName] = useState("");
+  const [shareResults, setShareResults] = useState(false);
 
   // Obtener usuario autenticado
   useEffect(() => {
@@ -24,27 +21,52 @@ export default function UnirseEquipo() {
     });
   }, [navigate]);
 
-  const handleJoin = async (e) => {
+  const handlePreview = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setSuccess(null);
     setError(null);
 
     try {
-      // Validación de código + verificación de membresía + insert ocurren
-      // atómicamente en la base de datos (join_team_with_code), no en el cliente.
-      const { data, error: joinError } = await supabase
-        .rpc("join_team_with_code", { p_code: code.toUpperCase() })
+      // La validación real (código válido, no expirado, política de unión)
+      // ocurre en la base de datos (preview_team_invite_code), no en el
+      // cliente — este paso solo muestra qué equipo es antes de unirte.
+      const { data, error: previewError } = await supabase
+        .rpc("preview_team_invite_code", { p_code: code.toUpperCase() })
+        .single();
+
+      if (previewError) {
+        throw new Error(previewError.message || "No se pudo verificar el código.");
+      }
+
+      setTeamName(data.team_name);
+      setShareResults(false);
+      setStep("confirm");
+    } catch (err) {
+      console.error("Error al verificar el código:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmJoin = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Validación + verificación de membresía + insert ocurren atómicamente
+      // en la base de datos (join_team_with_code), incluyendo la elección de
+      // compartir resultados hecha en esta misma pantalla.
+      const { error: joinError } = await supabase
+        .rpc("join_team_with_code", { p_code: code.toUpperCase(), p_share_results: shareResults })
         .single();
 
       if (joinError) {
         throw new Error(joinError.message || "No se pudo unir al equipo.");
       }
 
-      setJoinedTeamId(data.team_id);
-      setSuccess("¡Te uniste al equipo correctamente!");
-      setShowPrivacyModal(true);
       setCode("");
+      setStep("success");
     } catch (err) {
       console.error("Error al unirse al equipo:", err);
       setError(err.message);
@@ -53,30 +75,10 @@ export default function UnirseEquipo() {
     }
   };
 
-  const handlePrivacyPreferences = async () => {
-    if (!joinedTeamId || !userId) return;
-    
-    try {
-      setLoading(true);
-      
-      // Actualizar las preferencias de privacidad del miembro individual
-      const { error } = await supabase
-        .from('team_members')
-        .update({
-          share_results_with_leader: privacyPreferences.membersCanSeeResponses
-        })
-        .eq('team_id', joinedTeamId)
-        .eq('user_id', userId);
-
-      if (error) throw error;
-
-      setShowPrivacyModal(false);
-    } catch (err) {
-      console.error('Error actualizando preferencias de privacidad:', err);
-      setError('No se pudieron guardar las preferencias de privacidad.');
-    } finally {
-      setLoading(false);
-    }
+  const handleCancelConfirm = () => {
+    setStep("enter-code");
+    setTeamName("");
+    setError(null);
   };
 
   return (
@@ -124,8 +126,8 @@ export default function UnirseEquipo() {
         </div>
 
         <Card className="max-w-lg mx-auto">
-          {!success ? (
-            <form onSubmit={handleJoin} className="space-y-4 sm:space-y-6">
+          {step === "enter-code" && (
+            <form onSubmit={handlePreview} className="space-y-4 sm:space-y-6">
               <div className="space-y-4">
                 <Input
                   label="Código de Invitación"
@@ -142,17 +144,86 @@ export default function UnirseEquipo() {
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
-                loading={loading} 
-                className="w-full text-sm sm:text-base" 
+              <Button
+                type="submit"
+                loading={loading}
+                className="w-full text-sm sm:text-base"
                 size="large"
                 disabled={code.length < 6}
               >
-                {loading ? "Uniéndose al equipo..." : "Unirse al Equipo"}
+                {loading ? "Verificando código..." : "Continuar"}
               </Button>
             </form>
-          ) : (
+          )}
+
+          {step === "confirm" && (
+            <div className="space-y-4 sm:space-y-6">
+              <div className="text-center">
+                <h2 className="text-xl sm:text-2xl font-bold text-[#2E2E3A] mb-2">
+                  Antes de unirte a {teamName}
+                </h2>
+                <p className="text-[#5B5B6B] text-sm sm:text-base">
+                  Este equipo usa TeamZen para medir el bienestar del equipo con evaluaciones periódicas (MBI).
+                </p>
+              </div>
+
+              <ul className="text-xs sm:text-sm text-[#5B5B6B] space-y-2 text-left bg-gradient-to-r from-[#55C2A2]/10 to-[#9D83C6]/10 border border-[#55C2A2]/30 rounded-lg p-4 sm:p-6">
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-[#55C2A2] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span>Vas a poder responder evaluaciones de forma privada.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-[#55C2A2] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span>Tus respuestas individuales NO se muestran a tu líder por defecto — el líder solo ve un promedio de todo el equipo, y nunca con menos de 3 personas respondiendo (para que nadie pueda ser identificado a partir del promedio).</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-[#55C2A2] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span>Podés elegir compartir tus resultados individuales con tu líder si querés. Podés cambiar esta decisión cuando quieras desde tu equipo.</span>
+                </li>
+              </ul>
+
+              <div className="border border-[#DAD5E4] rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="shareResults"
+                    checked={shareResults}
+                    onChange={(e) => setShareResults(e.target.checked)}
+                    className="mt-1 w-4 h-4 text-[#845EC2] border-gray-300 rounded focus:ring-[#845EC2]"
+                  />
+                  <label htmlFor="shareResults" className="text-sm font-medium text-[#2E2E3A] cursor-pointer">
+                    Compartir mis resultados individuales con el líder de este equipo
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={handleCancelConfirm}
+                  className="flex-1 text-sm"
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleConfirmJoin}
+                  loading={loading}
+                  className="flex-1 text-sm"
+                >
+                  {loading ? "Uniéndose..." : "Unirme al equipo"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === "success" && (
             <div className="text-center space-y-4 sm:space-y-6">
               <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center">
                 <svg className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,83 +291,6 @@ export default function UnirseEquipo() {
         </div>
       </div>
 
-      {/* Modal de preferencias de privacidad */}
-      {showPrivacyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 mx-auto bg-[#845EC2]/10 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-[#845EC2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <h2 className="text-xl font-bold text-[#2E2E3A] mb-2">Configuración de Privacidad</h2>
-                <p className="text-sm text-[#5B5B6B]">
-                  Configura qué información quieres compartir con tu equipo
-                </p>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                <div className="border border-[#DAD5E4] rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      id="responses"
-                      checked={privacyPreferences.membersCanSeeResponses}
-                      onChange={(e) => setPrivacyPreferences(prev => ({
-                        ...prev,
-                        membersCanSeeResponses: e.target.checked
-                      }))}
-                      className="mt-1 w-4 h-4 text-[#845EC2] border-gray-300 rounded focus:ring-[#845EC2]"
-                    />
-                    <div className="flex-1">
-                      <label htmlFor="responses" className="text-sm font-medium text-[#2E2E3A] cursor-pointer">
-                        Compartir mis respuestas de evaluación con el líder
-                      </label>
-                      <p className="text-xs text-[#5B5B6B] mt-1">
-                        Permite que el líder del equipo pueda ver tus resultados individuales para brindar mejor apoyo personalizado
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
-                <div className="flex gap-2">
-                  <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div>
-                    <p className="text-xs text-blue-800 font-medium">¿Por qué es importante?</p>
-                    <p className="text-xs text-blue-700 mt-1">
-                      Estas configuraciones ayudan a los líderes a brindar mejor apoyo y seguimiento sin comprometer tu privacidad.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowPrivacyModal(false)}
-                  className="flex-1 text-sm"
-                  disabled={loading}
-                >
-                  Configurar después
-                </Button>
-                <Button
-                  onClick={handlePrivacyPreferences}
-                  className="flex-1 text-sm"
-                  loading={loading}
-                >
-                  {loading ? "Guardando..." : "Guardar preferencias"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
