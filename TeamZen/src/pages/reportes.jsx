@@ -1169,6 +1169,53 @@ function AdvicePanel({ data, teamId }) {
 // COMPONENTE DE ANÁLISIS PERSONAL - REPORTES PARA USUARIOS
 // ===================================================================
 
+// Análisis heurístico local, usado cuando la IA externa no responde a tiempo
+// o falla — mismo rol que el fallback local del panel de equipo (AdvicePanel),
+// pero calculado a partir de la evaluación MBI más reciente del propio usuario.
+function buildLocalPersonalFallback(mbiHistory) {
+  const latest = mbiHistory[0];
+  const latestScores = latest?.mbi_scores;
+  if (!latestScores || latestScores.ae_score == null || latestScores.d_score == null || latestScores.rp_score == null) {
+    return null;
+  }
+
+  const { catAE, catD, catRP } = classifyMBI(latestScores.ae_score, latestScores.d_score, latestScores.rp_score);
+  const status = computeBurnoutStatus({ catAE, catD, catRP });
+  const burnout_level = (status === 'Burnout' || status === 'Riesgo Alto') ? 'Alto' : (status === 'Riesgo' ? 'Medio' : 'Bajo');
+
+  const risk_areas = [];
+  if (catAE === 'Alto') risk_areas.push('Agotamiento emocional elevado');
+  if (catD === 'Alto') risk_areas.push('Despersonalización elevada');
+  if (catRP === 'Alto') risk_areas.push('Baja realización personal');
+
+  const strengths = [];
+  if (catAE === 'Bajo') strengths.push('Buen manejo del agotamiento emocional');
+  if (catD === 'Bajo') strengths.push('Trato cercano y empático sostenido');
+  if (catRP === 'Bajo') strengths.push('Alta sensación de logro en tu trabajo');
+
+  const previousScores = mbiHistory[1]?.mbi_scores;
+  let trend_analysis = null;
+  if (previousScores && previousScores.ae_score != null && previousScores.d_score != null && previousScores.rp_score != null) {
+    const trendWord = (curr, prev, higherIsBetter = false) => {
+      if (curr === prev) return 'estable';
+      const up = curr > prev;
+      return higherIsBetter ? (up ? 'mejoró' : 'empeoró') : (up ? 'empeoró' : 'mejoró');
+    };
+    trend_analysis = `Respecto a tu evaluación anterior: agotamiento emocional ${trendWord(latestScores.ae_score, previousScores.ae_score)}, despersonalización ${trendWord(latestScores.d_score, previousScores.d_score)}, realización personal ${trendWord(latestScores.rp_score, previousScores.rp_score, true)}.`;
+  }
+
+  return {
+    personal_summary: `Análisis heurístico local (la IA externa no respondió a tiempo): tu nivel de agotamiento emocional es ${catAE?.toLowerCase()}, tu despersonalización es ${catD?.toLowerCase()}, y tu realización personal es ${catRP === 'Alto' ? 'baja' : catRP === 'Medio' ? 'moderada' : 'alta'}.`,
+    burnout_level,
+    trend_analysis,
+    strengths,
+    risk_areas,
+    fromCache: false,
+    isLocalFallback: true,
+    generatedAt: new Date().toISOString()
+  };
+}
+
 function UserPersonalReports({ user, profile }) {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -1228,11 +1275,23 @@ function UserPersonalReports({ user, profile }) {
         forceRegenerate
       });
       
-      const result = await generatePersonalAnalysisWithCache(userData, forceRegenerate);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout: IA externa tardó más de 15 segundos')), 15000)
+      );
+
+      const result = await Promise.race([
+        generatePersonalAnalysisWithCache(userData, forceRegenerate),
+        timeoutPromise
+      ]);
       setAnalysis(result);
     } catch (err) {
       console.error('Error generando análisis personal:', err);
-      setError(err.message || 'Error generando análisis');
+      const fallback = buildLocalPersonalFallback(mbiHistory);
+      if (fallback) {
+        setAnalysis(fallback);
+      } else {
+        setError(err.message || 'Error generando análisis');
+      }
     } finally {
       setLoading(false);
     }
@@ -1412,6 +1471,14 @@ function UserPersonalReports({ user, profile }) {
                           {analysis.cachedAt && (
                             <span className="text-gray-500"> • Actualizado: {new Date(analysis.cachedAt).toLocaleString()}</span>
                           )}
+                        </span>
+                      </>
+                    ) : analysis.isLocalFallback ? (
+                      <>
+                        <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+                        <span className="text-sm text-gray-600">
+                          <span className="font-medium text-amber-600">Análisis local (heurístico)</span>
+                          <span className="text-gray-500"> • La IA externa no respondió a tiempo</span>
                         </span>
                       </>
                     ) : (
