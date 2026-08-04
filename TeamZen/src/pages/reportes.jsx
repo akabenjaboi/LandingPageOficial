@@ -4,7 +4,7 @@ import { supabase } from '../../supabaseClient';
 import LoadingSpinner from '../components/LoadingSpinner';
 import TrendChart from '../components/TrendChart';
 import { generateAdvice, getAIAdviceWithCache } from '../utils/adviceEngine';
-import { classifyMBI, computeBurnoutStatus, WELLBEING_NORMALIZATION } from '../utils/mbiClassification';
+import { classifyMBI, computeBurnoutStatus, WELLBEING_NORMALIZATION, computeWellbeingFromScores } from '../utils/mbiClassification';
 
 // Helper para obtener color del estado de burnout
 const getBurnoutStatusColor = (status) => {
@@ -37,7 +37,8 @@ export default function ReportesPage() {
   const [teams, setTeams] = useState([]); // leader teams
   const [activeTeamId, setActiveTeamId] = useState(null);
   const [teamCycles, setTeamCycles] = useState([]); // cycles history for selected team
-  const [scoresByCycle, setScoresByCycle] = useState({}); // cycle_id => array of {ae,d,rp,user_id}
+  const [scoresByCycle, setScoresByCycle] = useState({}); // cycle_id => array of {ae,d,rp,user_id} (used only for the per-member badge; never for team aggregates)
+  const [cycleAggregates, setCycleAggregates] = useState({}); // cycle_id => anonymized aggregate row from mbi_team_cycle_aggregates
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState('');
   const [reloadCount, setReloadCount] = useState(0);
@@ -107,10 +108,21 @@ export default function ReportesPage() {
           .order('created_at', { ascending: false });
         if (cyclesErr) throw cyclesErr;
         setTeamCycles(cycles || []);
-        if (!cycles || cycles.length === 0) { setScoresByCycle({}); return; }
+        if (!cycles || cycles.length === 0) { setScoresByCycle({}); setCycleAggregates({}); return; }
         const cycleIds = cycles.map(c => c.id);
 
-        // 2. Fetch responses with nested scores (more reliable filtering on cycle_id)
+        // 2a. Fetch the anonymized team aggregate (includes opted-out members' numbers,
+        // never their identified row) — this is the source for `aggregated`, not the
+        // raw per-respondent query below.
+        const { data: aggRows, error: aggErr } = await supabase.rpc('mbi_team_cycle_aggregates', { p_team_id: activeTeamId });
+        if (aggErr) throw aggErr;
+        const aggByCycle = {};
+        (aggRows || []).forEach(row => { aggByCycle[row.cycle_id] = row; });
+        setCycleAggregates(aggByCycle);
+
+        // 2b. Fetch responses with nested scores (more reliable filtering on cycle_id).
+        // RLS now only returns rows for respondents who set share_results_with_leader = true —
+        // this feeds only the per-member badge (memberBurnoutStates), never the team aggregate.
         const { data: scoreRows, error: scoreErr } = await supabase
           .from('mbi_scores')
           .select('ae_score, d_score, rp_score, mbi_responses (cycle_id, user_id)')
@@ -211,43 +223,36 @@ export default function ReportesPage() {
   const aggregated = useMemo(() => {
     if (!teamCycles.length) return [];
     return teamCycles.map(cycle => {
-      const scores = scoresByCycle[cycle.id] || [];
       const cycleEndDate = cycle.end_at ? new Date(cycle.end_at) : null;
       // Prefer the authoritative status column; a cycle only counts as active while
       // status says so AND it hasn't been given an end_at. This also covers legacy
       // rows that were closed without an end_at being recorded (see evaluaciones.jsx),
       // which must be treated as completed, not as permanently "in progress".
       const isActiveCycle = cycle.status === 'active' && !cycleEndDate;
-      if (!scores.length) return { cycle, count:0, isActiveCycle };
-      // Aggregate subscale means (ya en escala 0–6 por ítem -> sumas reales)
-      const aeAvg = Math.round((scores.reduce((a,s)=>a+(s.ae??0),0)/scores.length)*10)/10;
-      const dAvg = Math.round((scores.reduce((a,s)=>a+(s.d??0),0)/scores.length)*10)/10;
-      const rpAvg = Math.round((scores.reduce((a,s)=>a+(s.rp??0),0)/scores.length)*10)/10;
-      // Classification majority status usando cada respuesta individual
-      const statuses = scores.map(s => {
-        const cls = classifyMBI(s.ae, s.d, s.rp);
-        return computeBurnoutStatus(cls);
-      }).filter(Boolean);
-      const statusCounts = statuses.reduce((acc,st)=>{acc[st]=(acc[st]||0)+1; return acc;},{});
-      let dominant = null; let max=0;
-      Object.entries(statusCounts).forEach(([st,cnt])=>{ if (cnt>max){max=cnt;dominant=st;} });
-      // Wellbeing metric (0–100) con nueva normalización 0–54,0–30,0–48
-      const { MIN_AE, MAX_AE, MIN_D, MAX_D, MIN_RP, MAX_RP } = WELLBEING_NORMALIZATION;
-      const rangeAE = MAX_AE - MIN_AE, rangeD = MAX_D - MIN_D, rangeRP = MAX_RP - MIN_RP;
-      const wbSum = scores.reduce((acc,s)=>{
-        if ([s.ae,s.d,s.rp].some(v=>v==null)) return acc;
-        const aeWell = 1 - ((s.ae - MIN_AE)/(rangeAE||1));
-        const dWell  = 1 - ((s.d - MIN_D)/(rangeD||1));
-        const rpWell = ((s.rp - MIN_RP)/(rangeRP||1));
-        return acc + (aeWell + dWell + rpWell)/3;
-      },0);
-      const wellbeing = Math.round((wbSum / scores.length)*100);
-      // Risk distribution
-      const dist = { Burnout:0, 'Riesgo Alto':0, Riesgo:0, 'Sin indicios':0 };
-      statuses.forEach(st => { if(dist[st]!==undefined) dist[st]++; });
-      return { cycle, count: scores.length, aeAvg, dAvg, rpAvg, dominant, wellbeing, dist, isActiveCycle };
+      const agg = cycleAggregates[cycle.id];
+      const count = agg?.respondent_count ?? 0;
+      if (!agg || count === 0) return { cycle, count: 0, isActiveCycle };
+
+      const wellbeing = computeWellbeingFromScores(agg.ae_avg, agg.d_avg, agg.rp_avg);
+      const dist = {
+        Burnout: agg.burnout_count ?? 0,
+        'Riesgo Alto': agg.riesgo_alto_count ?? 0,
+        Riesgo: agg.riesgo_count ?? 0,
+        'Sin indicios': agg.sin_indicios_count ?? 0,
+      };
+      return {
+        cycle,
+        count,
+        aeAvg: agg.ae_avg != null ? Math.round(agg.ae_avg * 10) / 10 : null,
+        dAvg: agg.d_avg != null ? Math.round(agg.d_avg * 10) / 10 : null,
+        rpAvg: agg.rp_avg != null ? Math.round(agg.rp_avg * 10) / 10 : null,
+        dominant: agg.dominant ?? null,
+        wellbeing: wellbeing != null ? Math.round(wellbeing) : null,
+        dist,
+        isActiveCycle,
+      };
     });
-  }, [teamCycles, scoresByCycle]);
+  }, [teamCycles, cycleAggregates]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="large" message="Cargando reportes..."/></div>;
