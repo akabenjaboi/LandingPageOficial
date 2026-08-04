@@ -93,6 +93,14 @@ export default function Dashboard() {
       if (!currentUser) return navigate("/login");
       setUser(currentUser);
 
+      // Cierra automáticamente rondas activas que ya pasaron su plazo de 7 días.
+      // Best-effort: si falla, no bloquea la carga de la página — es limpieza de
+      // datos, no una dependencia funcional de lo que sigue.
+      const { error: closeExpiredError } = await supabase.rpc('close_expired_mbi_cycles');
+      if (closeExpiredError) {
+        console.warn('No se pudieron cerrar rondas vencidas', closeExpiredError);
+      }
+
       // Cargar perfil
       // Nota: se usa maybeSingle() en vez de single() para poder distinguir
       // "el perfil todavía no existe" (data null, sin error — usuario nuevo)

@@ -79,6 +79,11 @@ export default function MBIPage() {
       }
       setUser(u);
 
+      const { error: closeExpiredError } = await supabase.rpc('close_expired_mbi_cycles');
+      if (closeExpiredError) {
+        console.warn('No se pudieron cerrar rondas vencidas', closeExpiredError);
+      }
+
       // If answering for a team, require an active cycle
       if (teamId) {
         try {

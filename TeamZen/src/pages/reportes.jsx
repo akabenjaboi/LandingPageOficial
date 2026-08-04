@@ -53,6 +53,12 @@ export default function ReportesPage() {
       const currentUser = sessionData?.session?.user;
       if (!currentUser) { navigate('/login'); return; }
       setUser(currentUser);
+
+      const { error: closeExpiredError } = await supabase.rpc('close_expired_mbi_cycles');
+      if (closeExpiredError) {
+        console.warn('No se pudieron cerrar rondas vencidas', closeExpiredError);
+      }
+
       const { data: prof, error: profErr } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
       if (profErr) {
         console.error('Error cargando perfil', profErr);
