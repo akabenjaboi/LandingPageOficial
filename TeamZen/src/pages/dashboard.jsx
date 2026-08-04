@@ -27,7 +27,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+  const [dataError, setDataError] = useState("");
+
   // ===================================================================
   // ESTADO - PERFIL DE USUARIO
   // ===================================================================
@@ -93,11 +94,21 @@ export default function Dashboard() {
       setUser(currentUser);
 
       // Cargar perfil
-      const { data: profileData } = await supabase
+      // Nota: se usa maybeSingle() en vez de single() para poder distinguir
+      // "el perfil todavía no existe" (data null, sin error — usuario nuevo)
+      // de un error real de red/permite, que sí debe mostrarse al usuario.
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", currentUser.id)
-        .single();
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Error cargando perfil:", profileError);
+        setDataError("No se pudo cargar tu perfil. Intenta recargar la página.");
+        setLoading(false);
+        return;
+      }
 
       if (profileData) {
         setProfile(profileData);
@@ -120,29 +131,42 @@ export default function Dashboard() {
         setMembersLoading(true);
 
         // --- Equipos que lidera ---
-        const { data: leaderTeamsData } = await supabase
+        const { data: leaderTeamsData, error: leaderTeamsError } = await supabase
           .from("teams")
           .select("*, team_invite_codes(code, expires_at)")
           .eq("leader_id", currentUser.id);
 
+        if (leaderTeamsError) {
+          console.error("Error cargando equipos de líder:", leaderTeamsError);
+          setDataError("No se pudieron cargar tus equipos. Intenta recargar la página.");
+        }
+
         if (leaderTeamsData && leaderTeamsData.length > 0) {
           try {
             const teamIds = leaderTeamsData.map(t => t.id);
-            const { data: cycles } = await supabase
+            const { data: cycles, error: cyclesError } = await supabase
               .from('mbi_evaluation_cycles')
               .select('id, team_id, status')
               .in('team_id', teamIds)
               .eq('status', 'active');
+            if (cyclesError) {
+              console.warn('Error cargando ciclos activos (líder):', cyclesError);
+              setDataError('No se pudieron cargar los ciclos de evaluación. Algunos datos podrían faltar.');
+            }
             const cycleMap = {};
             (cycles || []).forEach(c => { cycleMap[c.team_id] = c.id; });
             setActiveCycles(prev => ({ ...prev, ...cycleMap }));
 
             const activeCycleIds = Object.values(cycleMap);
             if (activeCycleIds.length > 0) {
-              const { data: allResponses } = await supabase
+              const { data: allResponses, error: allResponsesError } = await supabase
                 .from('mbi_responses')
                 .select('cycle_id, user_id')
                 .in('cycle_id', activeCycleIds);
+              if (allResponsesError) {
+                console.warn('Error cargando respuestas MBI (líder):', allResponsesError);
+                setDataError('No se pudieron cargar algunas respuestas de bienestar. Algunos datos podrían faltar.');
+              }
 
               const respMap = {};
               (allResponses || []).filter(r => r.user_id === currentUser.id).forEach(r => {
@@ -223,85 +247,102 @@ export default function Dashboard() {
           console.error("Error cargando membresías:", membershipsError);
         } else if (memberships && memberships.length > 0) {
           const teamIds = memberships.map((m) => m.team_id);
-          const { data: teamsData } = await supabase
+          const { data: teamsData, error: teamsDataError } = await supabase
             .from("teams")
             .select("*")
             .in("id", teamIds);
 
-          memberTeamsData = teamsData || [];
+          if (teamsDataError) {
+            console.error("Error cargando equipos de miembro:", teamsDataError);
+            setDataError("No se pudieron cargar tus equipos. Intenta recargar la página.");
+          } else {
+            memberTeamsData = teamsData || [];
 
-          const memberMembersObj = {};
-          for (const teamId of teamIds) {
-            const currentTeam = memberTeamsData.find(t => t.id === teamId);
+            const memberMembersObj = {};
+            for (const teamId of teamIds) {
+              const currentTeam = memberTeamsData.find(t => t.id === teamId);
 
-            const { data: team_members, error } = await supabase
-              .from("team_members")
-              .select("user_id, profiles(first_name, last_name)")
-              .eq("team_id", teamId);
+              const { data: team_members, error } = await supabase
+                .from("team_members")
+                .select("user_id, profiles(first_name, last_name)")
+                .eq("team_id", teamId);
 
-            if (error) {
-              console.error(`Error cargando miembros para equipo ${teamId}:`, error);
-              memberMembersObj[teamId] = [];
-              continue;
-            }
+              if (error) {
+                console.error(`Error cargando miembros para equipo ${teamId}:`, error);
+                memberMembersObj[teamId] = [];
+                continue;
+              }
 
-            let finalMembers = team_members || [];
+              let finalMembers = team_members || [];
 
-            if (currentTeam && currentTeam.include_leader_in_metrics && currentTeam.leader_id) {
-              const leaderAlreadyInMembers = finalMembers.some(m => m.user_id === currentTeam.leader_id);
+              if (currentTeam && currentTeam.include_leader_in_metrics && currentTeam.leader_id) {
+                const leaderAlreadyInMembers = finalMembers.some(m => m.user_id === currentTeam.leader_id);
 
-              if (!leaderAlreadyInMembers) {
-                const { data: leaderInfo } = await supabase
-                  .rpc("get_team_leader_name", { p_team_id: teamId })
-                  .single();
+                if (!leaderAlreadyInMembers) {
+                  const { data: leaderInfo, error: leaderInfoError } = await supabase
+                    .rpc("get_team_leader_name", { p_team_id: teamId })
+                    .single();
 
-                if (leaderInfo) {
-                  finalMembers.push({
-                    user_id: leaderInfo.leader_id,
-                    profiles: {
-                      first_name: leaderInfo.first_name,
-                      last_name: leaderInfo.last_name
-                    },
-                    is_leader: true
-                  });
+                  if (leaderInfoError) {
+                    console.warn(`No se pudo obtener el nombre del líder para equipo ${teamId}:`, leaderInfoError);
+                  }
+
+                  if (leaderInfo) {
+                    finalMembers.push({
+                      user_id: leaderInfo.leader_id,
+                      profiles: {
+                        first_name: leaderInfo.first_name,
+                        last_name: leaderInfo.last_name
+                      },
+                      is_leader: true
+                    });
+                  }
                 }
               }
+
+              memberMembersObj[teamId] = finalMembers;
             }
+            setTeamMembers(prev => ({ ...prev, ...memberMembersObj }));
 
-            memberMembersObj[teamId] = finalMembers;
-          }
-          setTeamMembers(prev => ({ ...prev, ...memberMembersObj }));
-
-          try {
-            const { data: cycles } = await supabase
-              .from('mbi_evaluation_cycles')
-              .select('id, team_id, status')
-              .in('team_id', teamIds)
-              .eq('status', 'active');
-            const cycleMap = {};
-            (cycles || []).forEach(c => { cycleMap[c.team_id] = c.id; });
-            setActiveCycles(prev => ({ ...prev, ...cycleMap }));
-            const cycleIds = Object.values(cycleMap);
-            if (cycleIds.length > 0) {
-              const { data: respRows } = await supabase
-                .from('mbi_responses')
-                .select('cycle_id, user_id')
-                .in('cycle_id', cycleIds);
-              const respMap = {};
-              (respRows || []).filter(r => r.user_id === currentUser.id).forEach(r => { if (r.cycle_id) respMap[r.cycle_id] = true; });
-              setRespondedCycles(prev => ({ ...prev, ...respMap }));
-              const teamResponded = {};
-              (respRows || []).forEach(r => {
-                const teamId = Object.keys(cycleMap).find(tid => cycleMap[tid] === r.cycle_id);
-                if (teamId) {
-                  if (!teamResponded[teamId]) teamResponded[teamId] = new Set();
-                  teamResponded[teamId].add(r.user_id);
+            try {
+              const { data: cycles, error: cyclesError } = await supabase
+                .from('mbi_evaluation_cycles')
+                .select('id, team_id, status')
+                .in('team_id', teamIds)
+                .eq('status', 'active');
+              if (cyclesError) {
+                console.warn('Error cargando ciclos activos (miembro):', cyclesError);
+                setDataError('No se pudieron cargar los ciclos de evaluación. Algunos datos podrían faltar.');
+              }
+              const cycleMap = {};
+              (cycles || []).forEach(c => { cycleMap[c.team_id] = c.id; });
+              setActiveCycles(prev => ({ ...prev, ...cycleMap }));
+              const cycleIds = Object.values(cycleMap);
+              if (cycleIds.length > 0) {
+                const { data: respRows, error: respRowsError } = await supabase
+                  .from('mbi_responses')
+                  .select('cycle_id, user_id')
+                  .in('cycle_id', cycleIds);
+                if (respRowsError) {
+                  console.warn('Error cargando respuestas MBI (miembro):', respRowsError);
+                  setDataError('No se pudieron cargar algunas respuestas de bienestar. Algunos datos podrían faltar.');
                 }
-              });
-              setRespondedMembersByTeam(prev => ({ ...prev, ...teamResponded }));
+                const respMap = {};
+                (respRows || []).filter(r => r.user_id === currentUser.id).forEach(r => { if (r.cycle_id) respMap[r.cycle_id] = true; });
+                setRespondedCycles(prev => ({ ...prev, ...respMap }));
+                const teamResponded = {};
+                (respRows || []).forEach(r => {
+                  const teamId = Object.keys(cycleMap).find(tid => cycleMap[tid] === r.cycle_id);
+                  if (teamId) {
+                    if (!teamResponded[teamId]) teamResponded[teamId] = new Set();
+                    teamResponded[teamId].add(r.user_id);
+                  }
+                });
+                setRespondedMembersByTeam(prev => ({ ...prev, ...teamResponded }));
+              }
+            } catch (e) {
+              console.warn('Tabla mbi_evaluation_cycles no disponible para miembros', e);
             }
-          } catch (e) {
-            console.warn('Tabla mbi_evaluation_cycles no disponible para miembros', e);
           }
         }
 
@@ -381,11 +422,16 @@ export default function Dashboard() {
   const launchMBI = async (teamId) => {
     setLaunchingTeam(teamId);
     try {
-      await supabase
+      const { error: closeError } = await supabase
         .from('mbi_evaluation_cycles')
   .update({ status: 'closed', end_at: new Date().toISOString() })
         .eq('team_id', teamId)
         .eq('status', 'active');
+      if (closeError) {
+        console.error('Error cerrando ciclo anterior:', closeError);
+        setDataError('No se pudo cerrar el ciclo anterior. Intenta lanzar el MBI de nuevo.');
+        return;
+      }
       const { data: newCycle, error } = await supabase
         .from('mbi_evaluation_cycles')
         .insert([{ team_id: teamId, status: 'active' }])
@@ -435,16 +481,17 @@ export default function Dashboard() {
     const activeCycleId = activeCycles[teamId];
     let pendingMembers = [];
     if (activeCycleId) {
-      try {
-        const { data: responded } = await supabase
-          .from('mbi_responses')
-          .select('user_id')
-          .eq('cycle_id', activeCycleId);
-        const respondedSet = new Set((responded || []).map(r => r.user_id));
-        pendingMembers = members.filter(m => !respondedSet.has(m.user_id));
-      } catch (e) {
-        console.warn('No se pudieron cargar respuestas del ciclo', e);
+      const { data: responded, error } = await supabase
+        .from('mbi_responses')
+        .select('user_id')
+        .eq('cycle_id', activeCycleId);
+      if (error) {
+        console.error('Error cargando respuestas del ciclo:', error);
+        setDataError('No se pudo verificar quién ha respondido. Intenta de nuevo.');
+        return;
       }
+      const respondedSet = new Set((responded || []).map(r => r.user_id));
+      pendingMembers = members.filter(m => !respondedSet.has(m.user_id));
     } else {
       // Si no hay ciclo activo, todos son potenciales participantes
       pendingMembers = members.slice();
@@ -466,20 +513,26 @@ export default function Dashboard() {
   const handleTeamCreated = async (newTeam, inviteCode) => {
     // Refrescar la lista de equipos
     try {
-      const { data: leaderTeams } = await supabase
+      const { data: leaderTeams, error } = await supabase
         .from("teams")
         .select("*, team_invite_codes(code, expires_at)")
         .eq("leader_id", user.id)
         .order("created_at", { ascending: false });
-      
-      setTeams(leaderTeams || []);
-      
+
+      if (error) {
+        console.error("Error refrescando equipos:", error);
+        setDataError("Tu equipo se creó, pero no pudimos refrescar la lista. Recarga la página.");
+      } else {
+        setTeams(leaderTeams || []);
+      }
+
       // Cerrar el modal después de un breve delay para mostrar el éxito
       setTimeout(() => {
         setShowCreateTeamModal(false);
       }, 2000);
     } catch (error) {
       console.error("Error refrescando equipos:", error);
+      setDataError("Tu equipo se creó, pero no pudimos refrescar la lista. Recarga la página.");
     }
   };
 
@@ -628,11 +681,22 @@ export default function Dashboard() {
 
     try {
       // Verifica si el perfil existe
-      const { data: existingProfile } = await supabase
+      // Se usa maybeSingle() en vez de single() para distinguir "el perfil
+      // aún no existe" (data null, sin error — caso normal antes de crear el
+      // primer perfil) de un error real de verificación, que si se tratara
+      // como "no existe" arriesgaría un insert duplicado más abajo.
+      const { data: existingProfile, error: existingProfileError } = await supabase
         .from("profiles")
         .select("id")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
+
+      if (existingProfileError) {
+        console.error("Error verificando perfil existente:", existingProfileError);
+        setProfileMsg("Error verificando tu perfil. Intenta de nuevo.");
+        setSaving(false);
+        return;
+      }
 
       let error;
       const profileData = {
@@ -832,6 +896,11 @@ export default function Dashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8"
            id="teams-section">
+        {dataError && (
+          <Alert type="error" title="Error al cargar datos" className="mb-4">
+            {dataError}
+          </Alert>
+        )}
         {/* Welcome Section & Profile Setup */}
         {(!profile?.first_name || !profile?.last_name) && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 mb-6 sm:mb-8">

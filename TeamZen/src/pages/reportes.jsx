@@ -6,67 +6,6 @@ import TrendChart from '../components/TrendChart';
 import { generateAdvice, getAIAdviceWithCache } from '../utils/adviceEngine';
 import { classifyMBI, computeBurnoutStatus, WELLBEING_NORMALIZATION } from '../utils/mbiClassification';
 
-// Helper para obtener estado de burnout de un miembro
-const getMemberBurnoutStatus = async (userId, supabase) => {
-  try {
-    console.log('Buscando estado de burnout para usuario:', userId);
-    
-    // Primero intentemos una consulta más simple para obtener las respuestas del usuario
-    const { data: userResponses, error: responsesError } = await supabase
-      .from('mbi_responses')
-      .select('id, created_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    console.log('Respuestas del usuario:', { userResponses, responsesError });
-
-    if (responsesError) {
-      console.error('Error al buscar respuestas:', responsesError);
-      return null;
-    }
-
-    if (!userResponses || userResponses.length === 0) {
-      console.log('No se encontraron respuestas para el usuario:', userId);
-      return null;
-    }
-
-    // Ahora obtener los scores para esa respuesta
-    const responseId = userResponses[0].id;
-    const { data: scores, error: scoresError } = await supabase
-      .from('mbi_scores')
-      .select('ae_score, d_score, rp_score')
-      .eq('response_id', responseId)
-      .single();
-
-    console.log('Scores encontrados:', { scores, scoresError });
-
-    if (scoresError) {
-      console.error('Error al buscar scores:', scoresError);
-      return null;
-    }
-
-    if (!scores) {
-      console.log('No se encontraron scores para la respuesta:', responseId);
-      return null;
-    }
-
-    const { ae_score, d_score, rp_score } = scores;
-    console.log('Scores obtenidos:', { ae_score, d_score, rp_score });
-    
-    const classification = classifyMBI(ae_score, d_score, rp_score);
-    console.log('Clasificación MBI:', classification);
-    
-    const status = computeBurnoutStatus(classification);
-    console.log('Estado de burnout calculado:', status);
-    
-    return status;
-  } catch (error) {
-    console.error('Error al obtener estado de burnout:', error);
-    return null;
-  }
-};
-
 // Helper para obtener color del estado de burnout
 const getBurnoutStatusColor = (status) => {
   switch (status) {
@@ -114,13 +53,24 @@ export default function ReportesPage() {
       const currentUser = sessionData?.session?.user;
       if (!currentUser) { navigate('/login'); return; }
       setUser(currentUser);
-      const { data: prof } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+      const { data: prof, error: profErr } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+      if (profErr) {
+        console.error('Error cargando perfil', profErr);
+        setError('No se pudo cargar tu perfil.');
+        setLoading(false);
+        return;
+      }
       setProfile(prof);
-      
+
       if (prof?.role === 'leader') {
         // Cargar equipos para líderes
-        const { data: leaderTeams } = await supabase.from('teams').select('id,name,include_leader_in_metrics,members_can_see_others,members_can_see_responses').eq('leader_id', currentUser.id).order('created_at',{ascending:true});
-        setTeams(leaderTeams || []);
+        const { data: leaderTeams, error: teamsErr } = await supabase.from('teams').select('id,name,include_leader_in_metrics,members_can_see_others,members_can_see_responses').eq('leader_id', currentUser.id).order('created_at',{ascending:true});
+        if (teamsErr) {
+          console.error('Error cargando equipos', teamsErr);
+          setError('No se pudieron cargar tus equipos.');
+        } else {
+          setTeams(leaderTeams || []);
+        }
       }
       // Tanto líderes como usuarios pueden acceder a reportes
       setLoading(false);
@@ -221,45 +171,35 @@ export default function ReportesPage() {
     loadTeamMembers();
   }, [activeTeamId]);
 
-  // Effect para cargar estados de burnout de miembros que comparten resultados
+  // Effect para calcular estados de burnout de miembros que comparten resultados,
+  // acotado al equipo/ciclo actual (antes esta consulta traía la respuesta más
+  // reciente del usuario en CUALQUIER equipo, mezclando el reporte de un equipo
+  // con datos de otro). Usa los scores del ciclo actual ya cargados en
+  // `scoresByCycle` — evita además una consulta extra por miembro (N+1).
   useEffect(() => {
-    const loadMemberBurnoutStates = async () => {
-      if (!teamMembers.length) {
-        console.log('No hay miembros del equipo para cargar estados de burnout');
-        return;
-      }
+    if (!teamMembers.length || !teamCycles.length) {
+      setMemberBurnoutStates(new Map());
+      return;
+    }
 
-      console.log('Cargando estados de burnout para miembros:', teamMembers.length);
-      const states = new Map();
-      
-      // Solo cargar para miembros que comparten resultados y han respondido
-      const membersToCheck = teamMembers.filter(member => 
-        member.share_results_with_leader === true && 
-        respondedMembers.has(member.user_id)
-      );
+    const currentCycleId = teamCycles[0]?.id;
+    const scoresForCurrentCycle = scoresByCycle[currentCycleId] || [];
 
-      console.log('Miembros que comparten resultados y han respondido:', membersToCheck.length);
+    const membersToCheck = teamMembers.filter(member =>
+      member.share_results_with_leader === true &&
+      respondedMembers.has(member.user_id)
+    );
 
-      if (membersToCheck.length === 0) {
-        setMemberBurnoutStates(new Map());
-        return;
-      }
+    const states = new Map();
+    membersToCheck.forEach(member => {
+      const memberScore = scoresForCurrentCycle.find(s => s.user_id === member.user_id);
+      if (!memberScore) return;
+      const status = computeBurnoutStatus(classifyMBI(memberScore.ae, memberScore.d, memberScore.rp));
+      if (status) states.set(member.user_id, status);
+    });
 
-      for (const member of membersToCheck) {
-        console.log('Obteniendo estado de burnout para:', member.user_id);
-        const status = await getMemberBurnoutStatus(member.user_id, supabase);
-        console.log('Estado obtenido:', status);
-        if (status) {
-          states.set(member.user_id, status);
-        }
-      }
-
-      console.log('Estados de burnout cargados:', states);
-      setMemberBurnoutStates(states);
-    };
-
-    loadMemberBurnoutStates();
-  }, [teamMembers, respondedMembers]);
+    setMemberBurnoutStates(states);
+  }, [teamMembers, respondedMembers, teamCycles, scoresByCycle]);
 
   const handleRefresh = () => setReloadCount(c => c + 1);
 
@@ -279,13 +219,14 @@ export default function ReportesPage() {
     const rpAvg = Math.round((scores.reduce((a,s)=>a+(s.rp??0),0)/scores.length)*10)/10;
 
     // Calcular estado dominante y bienestar
+    // Usa la misma clasificación oficial (classifyMBI/computeBurnoutStatus)
+    // que la vista "Por Ciclos" (ver `aggregated` más abajo) — antes esta
+    // vista tenía su propio umbral ad-hoc que ignoraba RP y podía mostrar
+    // un riesgo distinto para los mismos datos según la vista.
     const statuses = scores.map(s => {
-      const ae=s.ae??0, d=s.d??0, rp=s.rp??0;
-      if (ae >= 27 && d >= 10) return 'Burnout';
-      if (ae >= 16 && d >= 6) return 'Riesgo Alto';
-      if (ae >= 10 || d >= 3) return 'Riesgo';
-      return 'Sin indicios';
-    });
+      const cls = classifyMBI(s.ae, s.d, s.rp);
+      return computeBurnoutStatus(cls);
+    }).filter(Boolean);
     const counts = statuses.reduce((acc,st)=>{acc[st]=(acc[st]||0)+1;return acc;},{});
     const dominant = Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0] || 'Sin indicios';
 
@@ -431,6 +372,11 @@ export default function ReportesPage() {
         </div>
       </nav>
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-8">
+        {error && !fetching && teams.length === 0 && (
+          <div className="mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+            {error}
+          </div>
+        )}
         {profile?.role === 'leader' ? (
           // Vista para líderes - Reportes de equipos
           <section className="bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl p-4 sm:p-6 shadow-teamzen">
@@ -453,7 +399,7 @@ export default function ReportesPage() {
                 </div>
               )}
             </div>
-            {teams.length === 0 && (
+            {teams.length === 0 && !error && (
               <p className="text-sm text-[#5B5B6B]">No tienes equipos aún. Crea uno para generar reportes.</p>
             )}
             {teams.length > 0 && (

@@ -83,7 +83,7 @@ export default function MBIPage() {
       if (teamId) {
         try {
           // Simplified: any cycle with status='active' counts. We ignore start/end windows to avoid blocking selection.
-          const { data: cycle } = await supabase
+          const { data: cycle, error: cycleErr } = await supabase
             .from('mbi_evaluation_cycles')
             .select('*')
             .eq('team_id', teamId)
@@ -92,6 +92,11 @@ export default function MBIPage() {
             .limit(1)
             .maybeSingle();
 
+          if (cycleErr) {
+            setError('No se pudo verificar el ciclo de evaluación activo. Intenta de nuevo.');
+            return;
+          }
+
           // If there's an end_at in the past, treat as no active cycle (defensive)
             if (!cycle || (cycle?.end_at && new Date(cycle.end_at) <= new Date())) {
               setError('No hay una evaluación MBI activa para este equipo.');
@@ -99,12 +104,17 @@ export default function MBIPage() {
             }
             setActiveCycle(cycle);
             // Check if user already responded in this active cycle
-            const { data: existing } = await supabase
+            const { data: existing, error: existingErr } = await supabase
               .from('mbi_responses')
               .select('id')
               .eq('user_id', u.id)
               .eq('cycle_id', cycle.id)
               .limit(1);
+            if (existingErr) {
+              setError('No se pudo verificar si ya respondiste esta evaluación. Intenta de nuevo.');
+              setActiveCycle(null);
+              return;
+            }
             if (existing && existing.length > 0) {
               setAlreadyAnswered(true);
             }

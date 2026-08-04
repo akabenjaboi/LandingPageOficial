@@ -25,35 +25,54 @@ export default function EvaluacionesPage() {
       const currentUser = sessionData?.session?.user;
       if (!currentUser) { navigate('/login'); return; }
       setUser(currentUser);
-      const { data: prof } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+      const { data: prof, error: profError } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+      if (profError) {
+        setError('No se pudo cargar tu perfil.');
+        setLoading(false);
+        return;
+      }
       setProfile(prof);
 
       // Load personal MBI history (scores join)
-      const { data: respData } = await supabase
+      const { data: respData, error: respError } = await supabase
         .from('mbi_responses')
         .select('id, created_at, team_id, teams(name), mbi_scores(ae_score,d_score,rp_score)')
         .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false });
-      setResponses(respData || []);
+      if (respError) {
+        setError('No se pudo cargar tu historial de evaluaciones.');
+      } else {
+        setResponses(respData || []);
+      }
 
       if (prof?.role === 'leader') {
-        const { data: leaderTeams } = await supabase
+        const { data: leaderTeams, error: teamsError } = await supabase
           .from('teams')
           .select('id,name')
           .eq('leader_id', currentUser.id);
-        setTeams(leaderTeams || []);
-        if (leaderTeams && leaderTeams.length > 0) {
-          try {
-            const { data: cycles } = await supabase
-              .from('mbi_evaluation_cycles')
-              .select('id, team_id, status')
-              .in('team_id', leaderTeams.map(t => t.id))
-              .eq('status', 'active');
-            const map = {};
-            (cycles || []).forEach(c => { map[c.team_id] = c.id; });
-            setActiveCycles(map);
-          } catch (e) {
-            console.warn('No se pudieron cargar ciclos activos', e);
+        if (teamsError) {
+          setError('No se pudieron cargar tus equipos.');
+        } else {
+          setTeams(leaderTeams || []);
+          if (leaderTeams && leaderTeams.length > 0) {
+            try {
+              const { data: cycles, error: cyclesError } = await supabase
+                .from('mbi_evaluation_cycles')
+                .select('id, team_id, status')
+                .in('team_id', leaderTeams.map(t => t.id))
+                .eq('status', 'active');
+              if (cyclesError) {
+                console.warn('No se pudieron cargar ciclos activos', cyclesError);
+                setError('No se pudieron cargar los ciclos activos de tus equipos.');
+              } else {
+                const map = {};
+                (cycles || []).forEach(c => { map[c.team_id] = c.id; });
+                setActiveCycles(map);
+              }
+            } catch (e) {
+              console.warn('No se pudieron cargar ciclos activos', e);
+              setError('No se pudieron cargar los ciclos activos de tus equipos.');
+            }
           }
         }
       }
@@ -70,25 +89,37 @@ export default function EvaluacionesPage() {
     // Obtener miembros
     let members = [];
     try {
-      const { data: teamMembers } = await supabase
+      const { data: teamMembers, error: membersError } = await supabase
         .from('team_members')
         .select('user_id, profiles(first_name,last_name)')
         .eq('team_id', teamId);
+      if (membersError) {
+        setError('No se pudo cargar la lista de miembros del equipo.');
+        return;
+      }
       members = teamMembers || [];
     } catch (e) {
       console.warn('No se pudieron cargar miembros', e);
+      setError('No se pudo cargar la lista de miembros del equipo.');
+      return;
     }
     let pendingMembers = members.slice();
     if (activeCycleId) {
       try {
-        const { data: responded } = await supabase
+        const { data: responded, error: respondedError } = await supabase
           .from('mbi_responses')
           .select('user_id')
           .eq('cycle_id', activeCycleId);
+        if (respondedError) {
+          setError('No se pudo verificar quién ha respondido.');
+          return;
+        }
         const respondedSet = new Set((responded || []).map(r => r.user_id));
         pendingMembers = members.filter(m => !respondedSet.has(m.user_id));
       } catch (e) {
         console.warn('No se pudieron cargar respuestas de ciclo', e);
+        setError('No se pudo verificar quién ha respondido.');
+        return;
       }
     }
     setLaunchContext({
@@ -106,11 +137,15 @@ export default function EvaluacionesPage() {
     setLaunching(true);
     try {
       // Cerrar ciclo activo previo
-      await supabase
+      const { error: closeError } = await supabase
         .from('mbi_evaluation_cycles')
         .update({ status: 'closed' })
         .eq('team_id', teamId)
         .eq('status', 'active');
+      if (closeError) {
+        setError('No se pudo cerrar el ciclo anterior. Intenta lanzar el MBI de nuevo.');
+        return;
+      }
       // Crear nuevo
       const { data: newCycle, error } = await supabase
         .from('mbi_evaluation_cycles')
@@ -161,6 +196,8 @@ export default function EvaluacionesPage() {
       </nav>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+        {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
+        {success && <p className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg px-4 py-3">{success}</p>}
         {profile?.role === 'leader' && (
           <section className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
@@ -206,8 +243,6 @@ export default function EvaluacionesPage() {
                 </div>
               ))}
             </div>
-            {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
-            {success && <p className="mt-4 text-sm text-green-600">{success}</p>}
           </section>
         )}
 
