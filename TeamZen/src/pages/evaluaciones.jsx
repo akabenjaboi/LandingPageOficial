@@ -112,15 +112,15 @@ export default function EvaluacionesPage() {
     let pendingMembers = members.slice();
     if (activeCycleId) {
       try {
+        // Uses mbi_cycle_respondents (participation only, no scores) so opted-out
+        // members who did respond aren't nudged with a reminder.
         const { data: responded, error: respondedError } = await supabase
-          .from('mbi_responses')
-          .select('user_id')
-          .eq('cycle_id', activeCycleId);
+          .rpc('mbi_cycle_respondents', { p_cycle_id: activeCycleId });
         if (respondedError) {
           setError('No se pudo verificar quién ha respondido.');
           return;
         }
-        const respondedSet = new Set((responded || []).map(r => r.user_id));
+        const respondedSet = new Set(responded || []);
         pendingMembers = members.filter(m => !respondedSet.has(m.user_id));
       } catch (e) {
         console.warn('No se pudieron cargar respuestas de ciclo', e);

@@ -167,27 +167,28 @@ export default function Dashboard() {
 
             const activeCycleIds = Object.values(cycleMap);
             if (activeCycleIds.length > 0) {
-              const { data: allResponses, error: allResponsesError } = await supabase
-                .from('mbi_responses')
-                .select('cycle_id, user_id')
-                .in('cycle_id', activeCycleIds);
+              // Uses mbi_cycle_respondents (participation only, no scores) per active
+              // cycle, so opted-out members who did respond still count as "responded".
+              const cycleResults = await Promise.all(
+                Object.entries(cycleMap).map(async ([teamId, cycleId]) => {
+                  const { data, error } = await supabase
+                    .rpc('mbi_cycle_respondents', { p_cycle_id: cycleId });
+                  return { teamId, cycleId, data, error };
+                })
+              );
+
+              const allResponsesError = cycleResults.find(r => r.error)?.error;
               if (allResponsesError) {
                 console.warn('Error cargando respuestas MBI (líder):', allResponsesError);
                 setDataError('No se pudieron cargar algunas respuestas de bienestar. Algunos datos podrían faltar.');
               }
 
               const respMap = {};
-              (allResponses || []).filter(r => r.user_id === currentUser.id).forEach(r => {
-                if (r.cycle_id) respMap[r.cycle_id] = true;
-              });
-
               const teamResponded = {};
-              (allResponses || []).forEach(r => {
-                const teamId = Object.keys(cycleMap).find(tid => cycleMap[tid] === r.cycle_id);
-                if (teamId && r.user_id) {
-                  if (!teamResponded[teamId]) teamResponded[teamId] = new Set();
-                  teamResponded[teamId].add(r.user_id);
-                }
+              cycleResults.forEach(({ teamId, cycleId, data }) => {
+                const respondentIds = data || [];
+                if (respondentIds.includes(currentUser.id)) respMap[cycleId] = true;
+                teamResponded[teamId] = new Set(respondentIds);
               });
 
               setRespondedCycles(prev => ({ ...prev, ...respMap }));
@@ -489,16 +490,16 @@ export default function Dashboard() {
     const activeCycleId = activeCycles[teamId];
     let pendingMembers = [];
     if (activeCycleId) {
+      // Uses mbi_cycle_respondents (participation only, no scores) so opted-out
+      // members who did respond aren't nudged with a reminder.
       const { data: responded, error } = await supabase
-        .from('mbi_responses')
-        .select('user_id')
-        .eq('cycle_id', activeCycleId);
+        .rpc('mbi_cycle_respondents', { p_cycle_id: activeCycleId });
       if (error) {
         console.error('Error cargando respuestas del ciclo:', error);
         setDataError('No se pudo verificar quién ha respondido. Intenta de nuevo.');
         return;
       }
-      const respondedSet = new Set((responded || []).map(r => r.user_id));
+      const respondedSet = new Set(responded || []);
       pendingMembers = members.filter(m => !respondedSet.has(m.user_id));
     } else {
       // Si no hay ciclo activo, todos son potenciales participantes

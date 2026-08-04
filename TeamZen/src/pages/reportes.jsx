@@ -137,15 +137,15 @@ export default function ReportesPage() {
         setScoresByCycle(grouped);
 
         // 3. Obtener miembros que han respondido en el ciclo actual (más reciente)
+        // Uses mbi_cycle_respondents (participation only, no scores) so opted-out
+        // members who did respond still show up as "respondido" rather than "pendiente".
         if (cycles.length > 0) {
           const currentCycle = cycles[0]; // El más reciente
           const { data: responses, error: responsesErr } = await supabase
-            .from('mbi_responses')
-            .select('user_id')
-            .eq('cycle_id', currentCycle.id);
-          
+            .rpc('mbi_cycle_respondents', { p_cycle_id: currentCycle.id });
+
           if (!responsesErr && responses) {
-            setRespondedMembers(new Set(responses.map(r => r.user_id)));
+            setRespondedMembers(new Set(responses));
           }
         }
       } catch (e) {
