@@ -60,10 +60,8 @@ export default function MBIPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [answers, setAnswers] = useState(() => {
-    const saved = localStorage.getItem('mbi_draft');
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [answers, setAnswers] = useState({});
+  const [draftKey, setDraftKey] = useState(null);
   const [activeCycle, setActiveCycle] = useState(null);
   const [alreadyAnswered, setAlreadyAnswered] = useState(false);
 
@@ -108,6 +106,21 @@ export default function MBIPage() {
               return;
             }
             setActiveCycle(cycle);
+
+            // Scope the draft key by user + team + cycle so answers never
+            // leak across users on a shared machine, across teams, or
+            // across evaluation rounds for the same team.
+            const key = `mbi_draft_${u.id}_${teamId}_${cycle.id}`;
+            setDraftKey(key);
+            const saved = localStorage.getItem(key);
+            if (saved) {
+              try {
+                setAnswers(JSON.parse(saved));
+              } catch {
+                // Corrupt/old draft — ignore and start fresh.
+              }
+            }
+
             // Check if user already responded in this active cycle
             const { data: existing, error: existingErr } = await supabase
               .from('mbi_responses')
@@ -126,14 +139,26 @@ export default function MBIPage() {
         } catch (e) {
           setError('Error verificando ronda activa.');
         }
+      } else {
+        const key = `mbi_draft_${u.id}_personal`;
+        setDraftKey(key);
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          try {
+            setAnswers(JSON.parse(saved));
+          } catch {
+            // Corrupt/old draft — ignore and start fresh.
+          }
+        }
       }
     };
     init();
   }, [navigate]);
 
   useEffect(() => {
-    localStorage.setItem('mbi_draft', JSON.stringify(answers));
-  }, [answers]);
+    if (!draftKey) return;
+    localStorage.setItem(draftKey, JSON.stringify(answers));
+  }, [answers, draftKey]);
 
   const scores = useMemo(() => {
   const ae = ITEMS.filter(i => i.sub === 'AE').reduce((acc, i) => acc + (answers[i.id] != null ? answers[i.id] : 0), 0);
@@ -211,7 +236,7 @@ export default function MBIPage() {
         .insert([{ response_id: responseId, ae_score: scores.ae, d_score: scores.d, rp_score: scores.rp }]);
       if (insertScoreErr) throw insertScoreErr;
 
-      localStorage.removeItem('mbi_draft');
+      if (draftKey) localStorage.removeItem(draftKey);
       setSuccess('¡Gracias! Tu respuesta fue enviada correctamente.');
       setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {
