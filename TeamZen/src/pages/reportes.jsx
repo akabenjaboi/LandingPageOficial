@@ -937,6 +937,17 @@ function AdvicePanel({ data, teamId }) {
   const [loading, setLoading] = React.useState(false);
   const [aiAdvice, setAiAdvice] = React.useState(null);
   const [error, setError] = React.useState('');
+  const [currentActionStatuses, setCurrentActionStatuses] = React.useState({}); // action_text -> status, for the current cycle
+  const [prevActionStatuses, setPrevActionStatuses] = React.useState([]); // [{action_text, status}], for the previous cycle, oldest-first
+
+  // Hoisted above this component's early returns below (React forbids hooks
+  // after a conditional return), purely to learn the current/previous cycle
+  // IDs — the render body further down computes its own `valid`/`current`/
+  // `prev` again for its own purposes (pre-existing duplication in this
+  // file, not introduced by this change).
+  const validForTracking = data.filter(r => r.count > 0 && r.aeAvg != null && r.dAvg != null && r.rpAvg != null && r.wellbeing != null);
+  const currentForTracking = validForTracking[0];
+  const prevForTracking = validForTracking.length > 1 ? validForTracking[1] : null;
 
   // Función para obtener sugerencias de IA - definida antes para usar en useEffect
   const handleAIFetch = React.useCallback(async (forceRegenerate = false) => {
@@ -997,6 +1008,57 @@ function AdvicePanel({ data, teamId }) {
     }
   }, [loading, data, teamId]);
 
+  // Sembrar y cargar el estado trackeado de las acciones de la ronda actual —
+  // solo cuando se está mostrando IA (el modo local resamplea sus acciones al
+  // azar en cada render, no es contenido estable al que asignarle un estado).
+  const aiActionsKey = JSON.stringify((mode === 'ai' && aiAdvice?.actions) || []);
+
+  React.useEffect(() => {
+    if (mode !== 'ai' || !aiAdvice?.actions?.length || !currentForTracking?.cycle?.id) return;
+    const actionsList = aiAdvice.actions;
+    let cancelled = false;
+    (async () => {
+      const rows = actionsList.map(action_text => ({ team_id: teamId, cycle_id: currentForTracking.cycle.id, action_text }));
+      const { error: seedError } = await supabase
+        .from('mbi_action_tracking')
+        .upsert(rows, { onConflict: 'team_id,cycle_id,action_text', ignoreDuplicates: true });
+      if (seedError) console.warn('No se pudieron registrar las acciones sugeridas', seedError);
+
+      const { data: loaded, error: loadError } = await supabase
+        .from('mbi_action_tracking')
+        .select('action_text, status')
+        .eq('team_id', teamId)
+        .eq('cycle_id', currentForTracking.cycle.id);
+      if (cancelled) return;
+      if (loadError) { console.warn('No se pudieron cargar los estados de acciones', loadError); return; }
+      const map = {};
+      (loaded || []).forEach(r => { map[r.action_text] = r.status; });
+      setCurrentActionStatuses(map);
+    })();
+    return () => { cancelled = true; };
+  }, [teamId, currentForTracking?.cycle?.id, aiActionsKey]);
+
+  // Cargar (solo lectura hasta que se haga clic) las acciones trackeadas de
+  // la ronda anterior — no depende de `mode`/`aiAdvice`, ya que esa ronda
+  // pudo haber sido sembrada en su propia sesión de modo IA, independiente
+  // del modo que se esté viendo ahora.
+  React.useEffect(() => {
+    if (!prevForTracking?.cycle?.id) { setPrevActionStatuses([]); return; }
+    let cancelled = false;
+    (async () => {
+      const { data: loaded, error } = await supabase
+        .from('mbi_action_tracking')
+        .select('action_text, status')
+        .eq('team_id', teamId)
+        .eq('cycle_id', prevForTracking.cycle.id)
+        .order('created_at', { ascending: true });
+      if (cancelled) return;
+      if (error) { console.warn('No se pudieron cargar las acciones de la ronda anterior', error); setPrevActionStatuses([]); return; }
+      setPrevActionStatuses(loaded || []);
+    })();
+    return () => { cancelled = true; };
+  }, [teamId, prevForTracking?.cycle?.id]);
+
   // Auto-generar análisis de IA cuando hay datos válidos
   React.useEffect(() => {
     const valid = data.filter(r => r.count > 0 && r.aeAvg != null && r.dAvg != null && r.rpAvg != null && r.wellbeing != null);
@@ -1042,6 +1104,25 @@ function AdvicePanel({ data, teamId }) {
 
   // Determinar qué sugerencias mostrar
   const displayAdvice = mode === 'ai' && aiAdvice ? aiAdvice : localAdvice;
+
+  const STATUS_CYCLE = { pendiente: 'en_curso', en_curso: 'hecha', hecha: 'pendiente' };
+  const STATUS_LABEL = { pendiente: '⚪ Pendiente', en_curso: '🔵 En curso', hecha: '✅ Hecha' };
+
+  const handleToggleActionStatus = async (cycleId, actionText, currentStatus, isCurrentCycle) => {
+    const nextStatus = STATUS_CYCLE[currentStatus] || 'en_curso';
+    const { error: toggleError } = await supabase
+      .from('mbi_action_tracking')
+      .update({ status: nextStatus, updated_at: new Date().toISOString() })
+      .eq('team_id', teamId)
+      .eq('cycle_id', cycleId)
+      .eq('action_text', actionText);
+    if (toggleError) { console.warn('No se pudo actualizar el estado de la acción', toggleError); return; }
+    if (isCurrentCycle) {
+      setCurrentActionStatuses(m => ({ ...m, [actionText]: nextStatus }));
+    } else {
+      setPrevActionStatuses(list => list.map(r => r.action_text === actionText ? { ...r, status: nextStatus } : r));
+    }
+  };
 
   return (
     <div className="border rounded-lg p-4 bg-white shadow-sm space-y-4">
@@ -1135,15 +1216,53 @@ function AdvicePanel({ data, teamId }) {
           </div>
         )}
         
+        {prevActionStatuses.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-gray-800 mb-1">📋 Acciones de la ronda anterior</p>
+            <ul className="list-disc pl-4 text-xs text-gray-600 space-y-0.5">
+              {prevActionStatuses.map((row) => (
+                <li key={row.action_text} className="flex items-start justify-between gap-2">
+                  <span>{row.action_text}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleActionStatus(prevForTracking.cycle.id, row.action_text, row.status, false)}
+                    className="shrink-0 text-[10px] px-1.5 py-0.5 rounded border border-gray-300 hover:bg-gray-50"
+                    title="Click para cambiar el estado"
+                  >
+                    {STATUS_LABEL[row.status] || STATUS_LABEL.pendiente}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div>
           <p className="text-xs font-semibold text-gray-800 mb-1">💡 Acciones recomendadas</p>
           {!displayAdvice.actions?.length ? (
             <p className="text-xs text-gray-500">Sin acciones prioritarias detectadas.</p>
           ) : (
             <ul className="list-disc pl-4 text-xs text-gray-600 space-y-0.5">
-              {displayAdvice.actions.map((action, i) => (
-                <li key={i}>{action}</li>
-              ))}
+              {displayAdvice.actions.map((action, i) => {
+                const isTrackable = mode === 'ai' && !!aiAdvice;
+                const status = currentActionStatuses[action] || 'pendiente';
+                if (!isTrackable) {
+                  return <li key={i}>{action}</li>;
+                }
+                return (
+                  <li key={i} className="flex items-start justify-between gap-2">
+                    <span>{action}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleActionStatus(currentForTracking.cycle.id, action, status, true)}
+                      className="shrink-0 text-[10px] px-1.5 py-0.5 rounded border border-gray-300 hover:bg-gray-50"
+                      title="Click para cambiar el estado"
+                    >
+                      {STATUS_LABEL[status]}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
