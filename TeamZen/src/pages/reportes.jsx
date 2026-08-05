@@ -1018,6 +1018,23 @@ function AdvicePanel({ data, teamId }) {
     const actionsList = aiAdvice.actions;
     let cancelled = false;
     (async () => {
+      // Defensa contra un desfase transitorio durante el cambio de equipo: `teamId`
+      // puede reflejar ya el equipo nuevo mientras `data` (y por lo tanto
+      // `currentForTracking`) todavía refleja el equipo anterior. Verificar que el
+      // ciclo realmente pertenece a `teamId` antes de escribir nada.
+      const { data: cycleCheck, error: cycleCheckError } = await supabase
+        .from('mbi_evaluation_cycles')
+        .select('team_id')
+        .eq('id', currentForTracking.cycle.id)
+        .single();
+      if (cancelled) return;
+      if (cycleCheckError || cycleCheck?.team_id !== teamId) {
+        // Props obsoletas de un cambio de equipo en curso — el ciclo que se iba a
+        // sembrar no pertenece en realidad al equipo que creemos estar viendo.
+        // Omitir silenciosamente; el efecto se volverá a ejecutar cuando `data`
+        // alcance al equipo actual real.
+        return;
+      }
       const rows = actionsList.map(action_text => ({ team_id: teamId, cycle_id: currentForTracking.cycle.id, action_text }));
       const { error: seedError } = await supabase
         .from('mbi_action_tracking')
