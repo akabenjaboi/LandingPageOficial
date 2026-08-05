@@ -15,10 +15,10 @@ import { supabase } from "../../supabaseClient";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { Card, Button, Alert, Badge, Input } from "../components/UIComponents";
 import AppNavbar from "../components/AppNavbar";
-import LaunchMBIModal from "../components/LaunchMBIModal";
-import CreateTeamModal from "../components/CreateTeamModal";
+import LaunchMBIPanel from "../components/LaunchMBIPanel";
+import CreateTeamPanel from "../components/CreateTeamPanel";
 import TeamOptionsMenu from "../components/TeamOptionsMenu";
-import EditTeamModal from "../components/EditTeamModal";
+import EditTeamPanel from "../components/EditTeamPanel";
 import TransferLeadershipModal from "../components/TransferLeadershipModal";
 
 export default function Dashboard() {
@@ -69,15 +69,17 @@ export default function Dashboard() {
   const [endingTeam, setEndingTeam] = useState(null);
   
   // ===================================================================
-  // ESTADO - MODALES
+  // ESTADO - PANELES EN LÍNEA Y MODALES
   // ===================================================================
-  // ===================================================================
-  // ESTADO - MODALES
-  // ===================================================================
-  const [showLaunchModal, setShowLaunchModal] = useState(false);
+  // Crear equipo, editar equipo y lanzar MBI son flujos de configuración
+  // rutinarios: se muestran como paneles que se expanden dentro de la
+  // página (ver CreateTeamPanel/EditTeamPanel/LaunchMBIPanel), no como
+  // modales flotantes. Transferir liderazgo sigue siendo un modal a
+  // propósito: es una decisión de alto impacto que sí amerita interrumpir.
+  const [showLaunchPanel, setShowLaunchPanel] = useState(false);
   const [launchContext, setLaunchContext] = useState(null); // {teamId, teamName, activeCycleId, pendingMembers:[], totalMembers}
-  const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
-  const [showEditTeamModal, setShowEditTeamModal] = useState(false);
+  const [showCreateTeamPanel, setShowCreateTeamPanel] = useState(false);
+  const [showEditTeamPanel, setShowEditTeamPanel] = useState(false);
   const [editingTeam, setEditingTeam] = useState(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferringTeam, setTransferringTeam] = useState(null);
@@ -429,7 +431,7 @@ export default function Dashboard() {
   // Reset responded members list for the new active cycle
   setRespondedMembersByTeam(prev => ({ ...prev, [teamId]: new Set() }));
   setWellbeingByTeam(prev => ({ ...prev, [teamId]: { avg: null, count: 0 } }));
-      setShowLaunchModal(false);
+      setShowLaunchPanel(false);
       setLaunchContext(null);
     } catch (e) {
       alert('Error lanzando MBI: ' + (e.message || ''));
@@ -489,7 +491,7 @@ export default function Dashboard() {
       pendingMembers,
       totalMembers: members.length
     });
-    setShowLaunchModal(true);
+    setShowLaunchPanel(true);
   };
 
   // ===================================================================
@@ -514,7 +516,7 @@ export default function Dashboard() {
 
       // Cerrar el modal después de un breve delay para mostrar el éxito
       setTimeout(() => {
-        setShowCreateTeamModal(false);
+        setShowCreateTeamPanel(false);
       }, 2000);
     } catch (error) {
       console.error("Error refrescando equipos:", error);
@@ -524,7 +526,7 @@ export default function Dashboard() {
 
   const handleEditTeam = (team) => {
     setEditingTeam(team);
-    setShowEditTeamModal(true);
+    setShowEditTeamPanel(true);
   };
 
   const handleTeamUpdated = async (updatedTeam) => {
@@ -534,7 +536,7 @@ export default function Dashboard() {
         team.id === updatedTeam.id ? { ...team, ...updatedTeam } : team
       )
     );
-    setShowEditTeamModal(false);
+    setShowEditTeamPanel(false);
     setEditingTeam(null);
   };
 
@@ -760,6 +762,95 @@ export default function Dashboard() {
     [teams, user?.id]
   );
 
+  // Ir a la tarjeta de un equipo específico y darle foco visual momentáneo.
+  const scrollToTeam = (teamId) => {
+    const el = document.getElementById(`team-card-${teamId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  // ===================================================================
+  // "REQUIERE TU ATENCIÓN" - derivado de datos ya cargados, sin fetches
+  // adicionales ni métricas inventadas: ciclos activos, respuestas
+  // pendientes, bienestar promedio y expiración de código de invitación
+  // ya están en el estado del componente para otros fines.
+  // ===================================================================
+  const attentionItems = useMemo(() => {
+    const items = [];
+    const now = new Date();
+
+    myLeaderTeams.forEach((team) => {
+      const activeCycleId = activeCycles[team.id];
+      const members = teamMembers[team.id] || [];
+      const leaderCounts = team.include_leader_in_metrics !== false;
+      const totalParticipants = leaderCounts ? members.length + 1 : members.length;
+
+      if (activeCycleId) {
+        const respondedSet = respondedMembersByTeam[team.id];
+        let respondedCount = respondedSet ? respondedSet.size : 0;
+        if (!leaderCounts && respondedSet && team.leader_id) {
+          respondedCount -= respondedSet.has(team.leader_id) ? 1 : 0;
+        }
+        respondedCount = Math.min(Math.max(respondedCount, 0), totalParticipants);
+        const pending = totalParticipants - respondedCount;
+        if (pending > 0) {
+          items.push({
+            id: `pending-${team.id}`,
+            tone: 'mint',
+            message: `${team.name}: ${pending} de ${totalParticipants} aún no ${pending === 1 ? 'ha' : 'han'} respondido el ciclo activo`,
+            ctaLabel: 'Ver equipo',
+            onClick: () => scrollToTeam(team.id),
+          });
+        }
+      } else if (members.length > 0) {
+        items.push({
+          id: `nocycle-${team.id}`,
+          tone: 'mint',
+          message: `${team.name} no tiene un ciclo de evaluación activo`,
+          ctaLabel: 'Lanzar MBI',
+          onClick: () => prepareLaunch(team),
+        });
+      }
+
+      const wb = wellbeingByTeam[team.id];
+      if (activeCycleId && wb && wb.avg != null && wb.avg < 50) {
+        items.push({
+          id: `wellbeing-${team.id}`,
+          tone: 'purple',
+          message: `${team.name}: bienestar promedio bajo (${wb.avg}/100) en el ciclo actual`,
+          ctaLabel: 'Ver reporte',
+          onClick: () => navigate(`/reportes?team=${team.id}`),
+        });
+      }
+
+      const invite = team.team_invite_codes?.[0];
+      if (invite?.expires_at && new Date(invite.expires_at) <= now) {
+        items.push({
+          id: `expired-${team.id}`,
+          tone: 'mint',
+          message: `${team.name}: el código de invitación expiró`,
+          ctaLabel: 'Regenerar código',
+          onClick: () => handleRegenerateCode(team.id),
+        });
+      }
+    });
+
+    myMemberTeams.forEach((team) => {
+      const activeCycleId = activeCycles[team.id];
+      if (activeCycleId && !respondedCycles[activeCycleId]) {
+        items.push({
+          id: `respond-${team.id}`,
+          tone: 'mint',
+          message: `Tienes una evaluación MBI pendiente en "${team.name}"`,
+          ctaLabel: 'Completar MBI',
+          onClick: () => navigate(`/mbi?team=${team.id}`),
+        });
+      }
+    });
+
+    return items;
+  }, [myLeaderTeams, myMemberTeams, activeCycles, teamMembers, respondedMembersByTeam, wellbeingByTeam, respondedCycles, navigate]);
+
   // ===================================================================
   // RENDERIZADO PRINCIPAL
   // ===================================================================
@@ -820,7 +911,7 @@ export default function Dashboard() {
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#2E2E3A]">
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#2E2E3A] tracking-tight">
                 {profile?.role === "leader" ? "Panel de Líder" : "Mis Equipos"}
               </h1>
               <p className="text-sm sm:text-base text-[#5B5B6B] mt-1">
@@ -834,7 +925,7 @@ export default function Dashboard() {
             {/* Action Button */}
             {profile?.role === "leader" ? (
               <button
-                onClick={() => setShowCreateTeamModal(true)}
+                onClick={() => setShowCreateTeamPanel(true)}
                 className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] 
                            text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all duration-300 
                            ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow flex items-center 
@@ -862,31 +953,51 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Requiere tu atención — resumen accionable antes de la lista de equipos */}
+        {(showLeaderSection || showMemberSection) && (
+          <AttentionSection items={attentionItems} />
+        )}
+
         {/* Teams Section */}
         <div className="space-y-6">
           {showLeaderSection && (
-            <LeaderTeamsSection
-              teams={myLeaderTeams}
-              teamsLoading={teamsLoading}
-              teamMembers={teamMembers}
-              membersLoading={membersLoading}
-              navigate={navigate}
-              activeCycles={activeCycles}
-              onPrepareLaunch={prepareLaunch}
-              launchingTeam={launchingTeam}
-              endingTeam={endingTeam}
-              onEndCycle={endCycle}
-              respondedMembersByTeam={respondedMembersByTeam}
-              wellbeingByTeam={wellbeingByTeam}
-              onCreateTeam={() => setShowCreateTeamModal(true)}
-              onEditTeam={handleEditTeam}
-              onDeleteTeam={handleDeleteTeam}
-              onRegenerateCode={handleRegenerateCode}
-              onKickMember={handleKickMember}
-              onTransferLeadership={handleOpenTransfer}
-              profile={profile}
-              currentUserId={user?.id}
-            />
+            <>
+              <CreateTeamPanel
+                isOpen={showCreateTeamPanel}
+                onClose={() => setShowCreateTeamPanel(false)}
+                onTeamCreated={handleTeamCreated}
+              />
+              <LeaderTeamsSection
+                teams={myLeaderTeams}
+                teamsLoading={teamsLoading}
+                teamMembers={teamMembers}
+                membersLoading={membersLoading}
+                navigate={navigate}
+                activeCycles={activeCycles}
+                onPrepareLaunch={prepareLaunch}
+                launchingTeam={launchingTeam}
+                endingTeam={endingTeam}
+                onEndCycle={endCycle}
+                respondedMembersByTeam={respondedMembersByTeam}
+                wellbeingByTeam={wellbeingByTeam}
+                onCreateTeam={() => setShowCreateTeamPanel(true)}
+                onEditTeam={handleEditTeam}
+                onDeleteTeam={handleDeleteTeam}
+                onRegenerateCode={handleRegenerateCode}
+                onKickMember={handleKickMember}
+                onTransferLeadership={handleOpenTransfer}
+                profile={profile}
+                currentUserId={user?.id}
+                editingTeam={editingTeam}
+                showEditTeamPanel={showEditTeamPanel}
+                onCloseEditPanel={() => { setShowEditTeamPanel(false); setEditingTeam(null); }}
+                onTeamUpdated={handleTeamUpdated}
+                launchContext={launchContext}
+                showLaunchPanel={showLaunchPanel}
+                onCloseLaunchPanel={() => { setShowLaunchPanel(false); setLaunchContext(null); }}
+                onConfirmLaunch={launchMBI}
+              />
+            </>
           )}
           {showMemberSection && (
             <UserTeamsSection
@@ -931,29 +1042,9 @@ export default function Dashboard() {
             onCancel={() => setShowProfileForm(false)}
           />
         )}
-        <LaunchMBIModal
-          open={showLaunchModal}
-          context={launchContext}
-          launching={!!launchingTeam}
-          onClose={() => { setShowLaunchModal(false); setLaunchContext(null); }}
-          onConfirm={launchMBI}
-        />
-        
-        <CreateTeamModal
-          isOpen={showCreateTeamModal}
-          onClose={() => setShowCreateTeamModal(false)}
-          onTeamCreated={handleTeamCreated}
-        />
-
-        <EditTeamModal
-          isOpen={showEditTeamModal}
-          onClose={() => {
-            setShowEditTeamModal(false);
-            setEditingTeam(null);
-          }}
-          team={editingTeam}
-          onTeamUpdated={handleTeamUpdated}
-        />
+        {/* CreateTeamPanel/EditTeamPanel/LaunchMBIPanel ya se renderizan en línea,
+            arriba (junto a la sección de equipos) y dentro de cada LeaderTeamCard
+            respectivamente — ver comentario en el bloque de estado de paneles. */}
 
         <TransferLeadershipModal
           isOpen={showTransferModal}
@@ -968,11 +1059,80 @@ export default function Dashboard() {
 }
 
 // ===================================================================
+// SECCIÓN "REQUIERE TU ATENCIÓN" - resumen accionable, action-forward
+// ===================================================================
+// Se ubica antes de la lista de equipos para que un usuario que vuelve
+// vea primero lo que necesita hacer (respuestas pendientes, bienestar
+// bajo, código expirado) en vez de tener que abrir cada equipo para
+// descubrirlo. mint = acción operativa disponible ahora mismo;
+// púrpura = hallazgo analítico (bienestar) que amerita revisar el reporte.
+function AttentionSection({ items }) {
+  if (!items || items.length === 0) {
+    return (
+      <div className="mb-6 sm:mb-8 rounded-2xl border border-[#55C2A2]/30 bg-gradient-to-r from-[#55C2A2]/[0.07] to-[#9D83C6]/[0.05] shadow-teamzen p-4 sm:p-5 flex items-center gap-3">
+        <span className="w-9 h-9 rounded-full bg-[#55C2A2]/15 flex items-center justify-center flex-shrink-0">
+          <svg className="w-5 h-5 text-[#2C7B64]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </span>
+        <p className="text-sm text-[#2E2E3A]">
+          <span className="font-semibold">Todo al día.</span> No hay evaluaciones pendientes ni alertas en tus equipos.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6 sm:mb-8">
+      <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E3A] mb-3">Requiere tu atención</h2>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {items.map((item) => {
+          const isPurple = item.tone === 'purple';
+          return (
+            <li
+              key={item.id}
+              className={`rounded-2xl border shadow-teamzen p-4 flex items-start gap-3 ${
+                isPurple ? 'border-[#9D83C6]/30 bg-[#9D83C6]/[0.06]' : 'border-[#55C2A2]/30 bg-[#55C2A2]/[0.06]'
+              }`}
+            >
+              <span className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isPurple ? 'bg-[#9D83C6]/20' : 'bg-[#55C2A2]/20'}`}>
+                {isPurple ? (
+                  <svg className="w-4 h-4 text-[#8160B6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-[#2C7B64]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-[#2E2E3A] leading-snug">{item.message}</p>
+                <button
+                  onClick={item.onClick}
+                  className={`mt-2 text-xs sm:text-sm font-semibold rounded-lg px-3 py-1.5 transition-colors duration-200 ${
+                    isPurple
+                      ? 'text-[#8160B6] hover:bg-[#9D83C6]/15'
+                      : 'text-[#2C7B64] hover:bg-[#55C2A2]/15'
+                  }`}
+                >
+                  {item.ctaLabel} →
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+// ===================================================================
 // COMPONENTES DE SECCIÓN - VISTAS ESPECIALIZADAS POR ROL
 // ===================================================================
 
 // Sección de equipos para líderes - Gestión completa de equipos
-function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam, onRegenerateCode, onKickMember, onTransferLeadership, profile, currentUserId }) {
+function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam, onRegenerateCode, onKickMember, onTransferLeadership, profile, currentUserId, editingTeam, showEditTeamPanel, onCloseEditPanel, onTeamUpdated, launchContext, showLaunchPanel, onCloseLaunchPanel, onConfirmLaunch }) {
   if (teamsLoading) {
     return (
       <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4] p-8 text-center">
@@ -1007,8 +1167,8 @@ function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, 
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       {teams.map((team) => (
         <div key={team.id} className="w-full">
-          <LeaderTeamCard 
-            team={team} 
+          <LeaderTeamCard
+            team={team}
             members={teamMembers[team.id] || []}
             membersLoading={membersLoading}
             activeCycleId={activeCycles[team.id]}
@@ -1025,6 +1185,13 @@ function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, 
             onTransferLeadership={onTransferLeadership}
             profile={profile}
             currentUserId={currentUserId}
+            isEditingThisTeam={showEditTeamPanel && editingTeam?.id === team.id}
+            onCloseEditPanel={onCloseEditPanel}
+            onTeamUpdated={onTeamUpdated}
+            isLaunchingThisTeam={showLaunchPanel && launchContext?.teamId === team.id}
+            launchContext={launchContext?.teamId === team.id ? launchContext : null}
+            onCloseLaunchPanel={onCloseLaunchPanel}
+            onConfirmLaunch={onConfirmLaunch}
           />
         </div>
       ))}
@@ -1464,7 +1631,7 @@ function ProfileFormModal({
 // ===================================================================
 
 // Tarjeta de equipo para líderes - Control completo y métricas
-function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete, onRegenerateCode, onKickMember, onTransferLeadership, profile, currentUserId }) {
+function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete, onRegenerateCode, onKickMember, onTransferLeadership, profile, currentUserId, isEditingThisTeam, onCloseEditPanel, onTeamUpdated, isLaunchingThisTeam, launchContext, onCloseLaunchPanel, onConfirmLaunch }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -1508,7 +1675,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
   const participationPct = activeCycleId ? Math.round((respondedCount / (totalParticipantes || 1)) * 100) : 0;
 
   return (
-    <div className="bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl shadow-teamzen hover:shadow-teamzen-strong transition-shadow">
+    <div id={`team-card-${team.id}`} className="bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl shadow-teamzen hover:shadow-teamzen-strong transition-shadow scroll-mt-20">
       <div className="p-6">
         {/* Header del equipo */}
         <div className="flex items-start justify-between mb-4">
@@ -1519,8 +1686,8 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
               </span>
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{team.name}</h3>
-              <p className="text-xs sm:text-sm text-gray-500">
+              <h3 className="text-base sm:text-lg font-semibold text-[#2E2E3A] truncate">{team.name}</h3>
+              <p className="text-xs sm:text-sm text-[#5B5B6B]">
                 Creado el {new Date(team.created_at).toLocaleDateString()}
               </p>
             </div>
@@ -1542,12 +1709,14 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
             />
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-expanded={isExpanded}
+              aria-label={isExpanded ? 'Ocultar miembros del equipo' : 'Mostrar miembros del equipo'}
+              className="p-1.5 sm:p-2 hover:bg-[#DAD5E4]/30 rounded-lg transition-colors"
             >
-              <svg 
-                className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className={`w-4 h-4 sm:w-5 sm:h-5 text-[#5B5B6B] transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -1556,84 +1725,96 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
           </div>
         </div>
 
+        {/* Panel de edición en línea — reemplaza al EditTeamModal flotante */}
+        {isEditingThisTeam && (
+          <EditTeamPanel
+            isOpen={isEditingThisTeam}
+            onClose={onCloseEditPanel}
+            team={team}
+            onTeamUpdated={onTeamUpdated}
+          />
+        )}
+
         {/* Estadísticas rápidas */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 mt-4">
           <div className="bg-[#FAF9F6] border border-[#DAD5E4] p-3 rounded-xl">
             <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#5B5B6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               <div>
-                <p className="text-xs sm:text-sm text-gray-600">Miembros</p>
-                <p className="text-sm sm:text-lg font-semibold text-gray-900">{totalParticipantes}</p>
+                <p className="text-xs font-medium text-[#5B5B6B]">Miembros</p>
+                <p className="text-lg sm:text-xl font-bold tabular-nums text-[#2E2E3A]">{totalParticipantes}</p>
               </div>
             </div>
           </div>
           <div className="bg-[#FAF9F6] border border-[#DAD5E4] p-3 rounded-xl">
             <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#55C2A2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${activeCycleId ? 'text-[#2C7B64]' : 'text-[#5B5B6B]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <p className="text-xs sm:text-sm text-[#5B5B6B]">Estado</p>
-                <p className="text-sm sm:text-lg font-semibold text-[#2C7B64]">Activo</p>
+                <p className="text-xs font-medium text-[#5B5B6B]">Ciclo</p>
+                <p className={`text-lg sm:text-xl font-bold ${activeCycleId ? 'text-[#2C7B64]' : 'text-[#5B5B6B]'}`}>
+                  {activeCycleId ? 'Activo' : 'Sin ciclo'}
+                </p>
               </div>
             </div>
           </div>
           <div className="bg-[#FAF9F6] border border-[#DAD5E4] p-3 rounded-xl">
             <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#9D83C6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#2C7B64]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13a4 4 0 014-4h10a4 4 0 110 8H7a4 4 0 01-4-4z" />
               </svg>
               <div className="flex-1">
-                <p className="text-xs sm:text-sm text-[#5B5B6B]">Participación</p>
+                <p className="text-xs font-medium text-[#5B5B6B]">Participación</p>
                 {activeCycleId ? (
-                  <p className="text-sm sm:text-lg font-semibold text-[#2E2E3A]">{participationPct}%</p>
+                  <p className="text-lg sm:text-xl font-bold tabular-nums text-[#2E2E3A]">{participationPct}%</p>
                 ) : (
-                  <p className="text-sm sm:text-lg font-semibold text-[#5B5B6B]">-</p>
+                  <p className="text-lg sm:text-xl font-bold text-[#5B5B6B]">—</p>
                 )}
               </div>
             </div>
             {activeCycleId && (
               <div className="mt-2">
-                <div className="w-full h-1.5 sm:h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 sm:h-2 bg-[#DAD5E4]/50 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
                       width: `${participationPct}%`,
-                      backgroundColor: participationPct >= 80 ? '#16a34a' : participationPct >= 50 ? '#f59e0b' : '#dc2626'
+                      backgroundColor: participationPct >= 80 ? '#4AA690' : participationPct >= 50 ? '#55C2A2' : '#9D83C6'
                     }}
                   />
                 </div>
-                <p className="mt-1 text-[10px] sm:text-[11px] text-gray-500 font-medium">{respondedCount} / {totalParticipantes}</p>
+                <p className="mt-1 text-[10px] sm:text-[11px] text-[#5B5B6B] font-medium">{respondedCount} / {totalParticipantes}</p>
               </div>
             )}
           </div>
           <div className="bg-[#FAF9F6] border border-[#DAD5E4] p-3 rounded-xl">
             <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#9D83C6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#8160B6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .843-3 1.882v4.236C9 15.157 10.343 16 12 16s3-.843 3-1.882V9.882C15 8.843 13.657 8 12 8z" />
               </svg>
               <div className="flex-1">
-                <p className="text-xs sm:text-sm text-[#5B5B6B]">Bienestar</p>
+                <p className="text-xs font-medium text-[#5B5B6B]">Bienestar</p>
                 {activeCycleId ? (
-                  <p className="text-sm sm:text-lg font-semibold text-[#2E2E3A]">
+                  <p className="text-lg sm:text-xl font-bold tabular-nums text-[#8160B6]">
                     {wellbeingMetric && wellbeingMetric.avg != null ? `${wellbeingMetric.avg}` : '—'}
-                    <span className="text-xs text-[#5B5B6B] ml-1">/100</span>
+                    <span className="text-xs font-medium text-[#5B5B6B] ml-1">/100</span>
                   </p>
                 ) : (
-                  <p className="text-sm sm:text-lg font-semibold text-[#5B5B6B]">-</p>
+                  <p className="text-lg sm:text-xl font-bold text-[#5B5B6B]">—</p>
                 )}
               </div>
             </div>
             {activeCycleId && wellbeingMetric && wellbeingMetric.avg != null && (
               <div className="mt-2">
-                <div className="w-full h-1.5 sm:h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 sm:h-2 bg-[#DAD5E4]/50 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
                       width: `${wellbeingMetric.avg}%`,
-                      backgroundColor: wellbeingMetric.avg >= 70 ? '#16a34a' : wellbeingMetric.avg >= 40 ? '#f59e0b' : '#dc2626'
+                      backgroundColor: '#9D83C6'
                     }}
                   />
                 </div>
@@ -1696,8 +1877,8 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
 
         {/* Miembros expandidos */}
         {isExpanded && (
-          <div className="border-t pt-4">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Miembros del equipo</h4>
+          <div className="border-t border-[#DAD5E4] pt-4">
+            <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] mb-3">Miembros del equipo</h4>
             {membersLoading ? (
               <div className="flex items-center justify-center py-4">
                 <LoadingSpinner size="small" />
@@ -1715,24 +1896,24 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                         </span>
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-[#2E2E3A]">
                           {member.profiles?.first_name && member.profiles?.last_name
                             ? `${member.profiles.first_name} ${member.profiles.last_name}`
                             : 'Usuario sin nombre'
                           }
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-[#5B5B6B]">
                           {isLeaderMember ? 'Líder del equipo' : 'Miembro del equipo'}
                         </p>
                       </div>
                       {activeCycleId ? (
                         hasResponded ? (
-                          <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">Respondió</span>
+                          <span className="bg-[#55C2A2]/15 text-[#2C7B64] text-xs font-medium px-2 py-1 rounded-full">Respondió</span>
                         ) : (
-                          <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full">Pendiente</span>
+                          <span className="bg-[#9D83C6]/15 text-[#8160B6] text-xs font-medium px-2 py-1 rounded-full">Pendiente</span>
                         )
                       ) : (
-                        <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full">Sin ciclo</span>
+                        <span className="bg-[#DAD5E4]/50 text-[#5B5B6B] text-xs font-medium px-2 py-1 rounded-full">Sin ciclo</span>
                       )}
                       {!isLeaderMember && (
                         <button
@@ -1751,26 +1932,27 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                 })}
               </div>
             ) : (
-              <p className="text-sm text-gray-500 italic">Sin miembros aún</p>
+              <p className="text-sm text-[#5B5B6B] italic">Sin miembros aún</p>
             )}
           </div>
         )}
 
         {/* Acciones */}
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t">
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t border-[#DAD5E4]">
           {activeCycleId ? (
             <button
-              className="w-full sm:flex-1 bg-red-600 text-white py-2.5 sm:py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 text-sm"
+              className="w-full sm:flex-1 bg-red-600 text-white py-2.5 sm:py-2 px-4 rounded-xl font-medium hover:bg-red-700 transition-colors disabled:opacity-50 text-sm"
               onClick={() => onEndCycle && onEndCycle(team.id)}
               disabled={ending}
             >
               {ending ? 'Terminando...' : 'Terminar ciclo'}
             </button>
           ) : (
-            <button 
+            <button
               className="w-full sm:flex-1 bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] disabled:from-[#55C2A2]/50 disabled:to-[#9D83C6]/50 text-white py-2.5 sm:py-2 px-4 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none text-sm"
               onClick={() => onLaunch && onLaunch(team)}
               disabled={launching}
+              aria-expanded={isLaunchingThisTeam}
             >
               {launching ? (
                 <span className="flex items-center justify-center gap-2">
@@ -1785,23 +1967,34 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
           {activeCycleId && (
             <div className="hidden sm:block sm:flex-1">
               {participationPct === 100 ? (
-                <div className="w-full flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
+                <div className="w-full flex items-center justify-center px-4 py-2 rounded-xl bg-[#55C2A2]/10 text-[#2C7B64] text-xs font-medium border border-[#55C2A2]/30">
                   Todos respondieron
                 </div>
               ) : (
-                <div className="w-full flex items-center justify-center px-4 py-2 rounded-lg bg-green-50 text-green-700 text-xs font-medium border border-green-200">
+                <div className="w-full flex items-center justify-center px-4 py-2 rounded-xl bg-[#55C2A2]/10 text-[#2C7B64] text-xs font-medium border border-[#55C2A2]/30">
                   Ciclo activo
                 </div>
               )}
             </div>
           )}
-          <button 
-            className="w-full sm:flex-1 border border-[#DAD5E4] text-[#2E2E3A] py-2.5 sm:py-2 px-4 rounded-lg font-medium hover:bg-[#FAF9F6] transition-colors text-sm"
+          <button
+            className="w-full sm:flex-1 border border-[#DAD5E4] text-[#2E2E3A] py-2.5 sm:py-2 px-4 rounded-xl font-medium hover:bg-[#DAD5E4]/20 transition-colors text-sm"
             onClick={() => navigate(`/reportes?team=${team.id}`)}
           >
             Generar Reporte
           </button>
         </div>
+
+        {/* Panel de lanzamiento de ciclo MBI en línea — reemplaza al LaunchMBIModal flotante */}
+        {isLaunchingThisTeam && (
+          <LaunchMBIPanel
+            isOpen={isLaunchingThisTeam}
+            context={launchContext}
+            launching={launching}
+            onClose={onCloseLaunchPanel}
+            onConfirm={onConfirmLaunch}
+          />
+        )}
       </div>
     </div>
   );
@@ -1908,46 +2101,47 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
         {/* Header del equipo */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-[#55C2A2] to-[#9D83C6] rounded-xl flex items-center justify-center shadow-lg">
               <span className="text-white font-bold text-lg">
                 {team.name.charAt(0).toUpperCase()}
               </span>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">{team.name}</h3>
-              <p className="text-sm text-gray-500">
+              <h3 className="text-base sm:text-lg font-semibold text-[#2E2E3A]">{team.name}</h3>
+              <p className="text-xs sm:text-sm text-[#5B5B6B]">
                 Miembro desde que te uniste al equipo
               </p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+            <span className="bg-[#55C2A2]/15 text-[#2C7B64] text-[10px] sm:text-xs font-medium px-2.5 py-0.5 rounded-full">
               Miembro
             </span>
-            
+
             {/* Menú de opciones */}
             <div className="relative options-menu">
               <button
                 onClick={() => setShowOptionsMenu(!showOptionsMenu)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Opciones"
+                aria-label="Opciones del equipo"
+                aria-expanded={showOptionsMenu}
+                className="p-2 hover:bg-[#DAD5E4]/30 rounded-lg transition-colors"
               >
-                <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-[#5B5B6B]" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                 </svg>
               </button>
-              
+
               {showOptionsMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                <div className="absolute right-0 mt-2 w-56 bg-[#FAF9F6] rounded-xl shadow-teamzen-strong border border-[#DAD5E4] z-10">
                   <div className="py-1">
                     <button
                       onClick={() => {
                         setShowPrivacyModal(true);
                         setShowOptionsMenu(false);
                       }}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      className="flex items-center w-full px-4 py-2 text-sm text-[#2E2E3A] hover:bg-[#DAD5E4]/30"
                     >
-                      <svg className="w-4 h-4 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 mr-3 text-[#5B5B6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                       Configurar privacidad
@@ -1968,15 +2162,17 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
                 </div>
               )}
             </div>
-            
+
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-expanded={isExpanded}
+              aria-label={isExpanded ? 'Ocultar miembros del equipo' : 'Mostrar miembros del equipo'}
+              className="p-2 hover:bg-[#DAD5E4]/30 rounded-lg transition-colors"
             >
-              <svg 
-                className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className={`w-5 h-5 text-[#5B5B6B] transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -1986,48 +2182,56 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
         </div>
 
         {/* Información del equipo */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="bg-gray-50 p-3 rounded-lg">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
+          <div className="bg-[#FAF9F6] border border-[#DAD5E4] p-3 rounded-xl">
             <div className="flex items-center space-x-2">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#5B5B6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               <div>
-                <p className="text-sm text-gray-600">Miembros</p>
-                <p className="text-lg font-semibold text-gray-900">{totalParticipantes}</p>
+                <p className="text-xs font-medium text-[#5B5B6B]">Miembros</p>
+                <p className="text-lg sm:text-xl font-bold tabular-nums text-[#2E2E3A]">{totalParticipantes}</p>
               </div>
             </div>
           </div>
-          <div className="bg-gray-50 p-3 rounded-lg">
+          <div className="bg-[#FAF9F6] border border-[#DAD5E4] p-3 rounded-xl">
             <div className="flex items-center space-x-2">
-              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${activeCycleId ? 'text-[#2C7B64]' : 'text-[#5B5B6B]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <p className="text-sm text-gray-600">Evaluaciones</p>
-                <p className="text-lg font-semibold text-gray-900">0</p>
+                <p className="text-xs font-medium text-[#5B5B6B]">Ciclo</p>
+                <p className={`text-lg sm:text-xl font-bold ${activeCycleId ? 'text-[#2C7B64]' : 'text-[#5B5B6B]'}`}>
+                  {activeCycleId ? 'Activo' : 'Sin ciclo'}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Próxima evaluación */}
-        <div className="bg-yellow-50 p-3 rounded-lg mb-4">
-          <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div>
-              <p className="text-sm text-yellow-700 font-medium">Próxima evaluación</p>
-              <p className="text-sm text-yellow-600">Pendiente de programar</p>
+        {/* Estado de tu evaluación en el ciclo activo (derivado de datos reales, no un valor fijo) */}
+        {activeCycleId && (
+          <div className={`p-3 rounded-xl mb-4 ${respondedCycles[activeCycleId] ? 'bg-[#55C2A2]/10 border border-[#55C2A2]/30' : 'bg-[#9D83C6]/10 border border-[#9D83C6]/30'}`}>
+            <div className="flex items-center space-x-2">
+              <svg className={`w-5 h-5 flex-shrink-0 ${respondedCycles[activeCycleId] ? 'text-[#2C7B64]' : 'text-[#8160B6]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className={`text-sm font-medium ${respondedCycles[activeCycleId] ? 'text-[#2C7B64]' : 'text-[#8160B6]'}`}>
+                  {respondedCycles[activeCycleId] ? 'Ya respondiste este ciclo' : 'Evaluación pendiente'}
+                </p>
+                {!respondedCycles[activeCycleId] && (
+                  <p className="text-xs text-[#5B5B6B]">Responde el MBI antes de que cierre el ciclo</p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Miembros expandidos */}
         {isExpanded && (
-          <div className="border-t pt-4">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Miembros del equipo</h4>
+          <div className="border-t border-[#DAD5E4] pt-4">
+            <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] mb-3">Miembros del equipo</h4>
             {membersLoading ? (
               <div className="flex items-center justify-center py-4">
                 <LoadingSpinner size="small" />
@@ -2040,58 +2244,54 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
                   const isLeader = member.is_leader || member.user_id === team.leader_id;
                   
                   return (
-                    <div key={member.user_id} className="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg">
+                    <div key={member.user_id} className="flex items-center space-x-3 p-2 bg-[#FAF9F6] border border-[#DAD5E4] rounded-xl">
                       <div className={`w-8 h-8 ${
-                        isCurrentUser ? 'bg-green-500' : 
-                        isLeader ? 'bg-blue-500' : 
-                        'bg-gray-300'
+                        isCurrentUser || isLeader ? 'bg-gradient-to-br from-[#55C2A2] to-[#9D83C6]' :
+                        'bg-[#DAD5E4]'
                       } rounded-full flex items-center justify-center`}>
                         <span className={`text-sm font-medium ${
-                          isCurrentUser || isLeader ? 'text-white' : 'text-gray-700'
+                          isCurrentUser || isLeader ? 'text-white' : 'text-[#2E2E3A]'
                         }`}>
                           {member.profiles?.first_name?.charAt(0) || 'U'}
                         </span>
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-[#2E2E3A]">
                           {member.profiles?.first_name && member.profiles?.last_name
                             ? `${member.profiles.first_name} ${member.profiles.last_name}`
                             : 'Usuario sin nombre'
                           }
                           {isCurrentUser && (
-                            <span className="ml-2 text-xs text-green-600 font-semibold">(Tú)</span>
+                            <span className="ml-2 text-xs text-[#2C7B64] font-semibold">(Tú)</span>
                           )}
-                          {isLeader && !isCurrentUser && (
-                            <span className="ml-2 text-xs text-[#2C7B64] font-semibold">(Líder)</span>
-                          )}
-                          {isLeader && isCurrentUser && (
+                          {isLeader && (
                             <span className="ml-2 text-xs text-[#2C7B64] font-semibold">(Líder)</span>
                           )}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {isCurrentUser ? 'Tu participación' : 
-                           isLeader ? 'Líder del equipo' : 
+                        <p className="text-xs text-[#5B5B6B]">
+                          {isCurrentUser ? 'Tu participación' :
+                           isLeader ? 'Líder del equipo' :
                            'Miembro del equipo'}
                         </p>
                       </div>
                       {activeCycleId && canSeeResponses ? (
                         // Mostrar estado de respuesta solo si está permitido
                         hasResponded ? (
-                          <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">Respondió</span>
+                          <span className="bg-[#55C2A2]/15 text-[#2C7B64] text-xs font-medium px-2 py-1 rounded-full">Respondió</span>
                         ) : (
-                          <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full">Pendiente</span>
+                          <span className="bg-[#9D83C6]/15 text-[#8160B6] text-xs font-medium px-2 py-1 rounded-full">Pendiente</span>
                         )
                       ) : activeCycleId && !canSeeResponses && isCurrentUser ? (
                         // Para el usuario actual, siempre mostrar su estado
                         hasResponded ? (
-                          <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">Respondiste</span>
+                          <span className="bg-[#55C2A2]/15 text-[#2C7B64] text-xs font-medium px-2 py-1 rounded-full">Respondiste</span>
                         ) : (
-                          <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full">Pendiente</span>
+                          <span className="bg-[#9D83C6]/15 text-[#8160B6] text-xs font-medium px-2 py-1 rounded-full">Pendiente</span>
                         )
                       ) : activeCycleId ? (
-                        <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full">Privado</span>
+                        <span className="bg-[#DAD5E4]/50 text-[#5B5B6B] text-xs font-medium px-2 py-1 rounded-full">Privado</span>
                       ) : (
-                        <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full">Sin ciclo</span>
+                        <span className="bg-[#DAD5E4]/50 text-[#5B5B6B] text-xs font-medium px-2 py-1 rounded-full">Sin ciclo</span>
                       )}
                     </div>
                   );
@@ -2107,30 +2307,30 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
                   </div>
                 )}
                 {canSeeOthers && visibleMembers.filter(m => m.user_id !== currentUserId).length === 0 && (
-                  <p className="text-sm text-gray-500 italic">Eres el único miembro del equipo</p>
+                  <p className="text-sm text-[#5B5B6B] italic">Eres el único miembro del equipo</p>
                 )}
               </div>
             ) : (
-              <p className="text-sm text-gray-500 italic">Sin otros miembros</p>
+              <p className="text-sm text-[#5B5B6B] italic">Sin otros miembros</p>
             )}
           </div>
         )}
 
         {/* Acciones */}
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t">
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t border-[#DAD5E4]">
           {!activeCycleId ? (
-            <div className="w-full sm:flex-1 flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-lg bg-gray-100 text-gray-500 text-sm font-medium border border-gray-200">Sin ciclo activo</div>
+            <div className="w-full sm:flex-1 flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-xl bg-[#DAD5E4]/30 text-[#5B5B6B] text-sm font-medium border border-[#DAD5E4]">Sin ciclo activo</div>
           ) : respondedCycles[activeCycleId] ? (
-            <div className="w-full sm:flex-1 flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-lg bg-green-50 text-green-600 text-sm font-medium border border-green-200">Respondido</div>
+            <div className="w-full sm:flex-1 flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-xl bg-[#55C2A2]/10 text-[#2C7B64] text-sm font-medium border border-[#55C2A2]/30">Respondido</div>
           ) : (
-            <button 
+            <button
               className="w-full sm:flex-1 bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white py-2.5 sm:py-2 px-4 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow text-sm"
               onClick={() => navigate(`/mbi?team=${team.id}`)}
             >
               Completar MBI
             </button>
           )}
-          <button className="w-full sm:flex-1 border border-[#DAD5E4] text-[#2E2E3A] py-2.5 sm:py-2 px-4 rounded-lg font-medium hover:bg-[#FAF9F6] transition-colors text-sm">
+          <button className="w-full sm:flex-1 border border-[#DAD5E4] text-[#2E2E3A] py-2.5 sm:py-2 px-4 rounded-xl font-medium hover:bg-[#DAD5E4]/20 transition-colors text-sm">
             Ver Historial
           </button>
         </div>

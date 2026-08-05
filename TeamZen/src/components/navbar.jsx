@@ -36,10 +36,13 @@ export default function Navbar() {
     <nav className="w-full fixed top-0 left-0 z-50">
       {/* Desktop Navbar */}
       <div
-        className={`hidden md:flex justify-center w-full mt-6 transition-all duration-700 ease-out
+        className={`hidden md:flex relative items-center w-full mt-6 px-8 transition-all duration-700 ease-out
         ${show ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-8"}`}
       >
-        <div className="backdrop-blur-md bg-[#FAF9F6]/80 border border-[#DAD5E4] rounded-2xl shadow-xl px-8 py-3 flex gap-6 items-center transition-all duration-300">
+        <a href="#top" className="text-xl font-extrabold text-[#2E2E3A] select-none z-10">
+          Team<span className="text-[#55C2A2]">Zen</span>
+        </a>
+        <div className="absolute left-1/2 -translate-x-1/2 backdrop-blur-md bg-[#FAF9F6]/80 border border-[#DAD5E4] rounded-2xl shadow-xl px-8 py-3 flex gap-6 items-center transition-all duration-300">
           {navItems.map((item) => (
             <a
               key={item.name}

@@ -375,4 +375,11 @@
   .modal-panel-motion {
     transform: none !important;
   }
+
+  /* InlinePanel.jsx: conservar el cambio de opacidad como retroalimentación
+     de apertura/cierre, sin la animación de alto (grid-template-rows). */
+  .inline-panel-motion {
+    transition-duration: 150ms !important;
+  }
 }
+

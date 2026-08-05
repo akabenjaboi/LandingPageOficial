@@ -373,15 +373,15 @@ export default function ReportesPage() {
           <section className="bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl p-4 sm:p-6 shadow-teamzen">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
               <div>
-                <h1 className="text-2xl font-bold text-[#2E2E3A]">Reportes estratégicos</h1>
-                <p className="text-[#5B5B6B] text-sm mt-1">Visualiza tendencias por ciclo y distribución de riesgo de burnout.</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-[#2E2E3A] tracking-tight">Reportes estratégicos</h1>
+                <p className="text-sm sm:text-base text-[#5B5B6B] mt-1 leading-relaxed">Visualiza tendencias por ciclo y distribución de riesgo de burnout.</p>
               </div>
               {!!teams.length && (
                 <div className="flex items-center gap-2">
                   <label className="text-sm text-[#2E2E3A] font-medium">Equipo</label>
                   <select
-                    className="border border-[#DAD5E4] rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#55C2A2] 
-                               focus:border-[#55C2A2] bg-white text-[#2E2E3A] transition-all duration-200"
+                    className="border border-[#DAD5E4] rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#55C2A2]
+                               focus:border-[#55C2A2] bg-[#FAF9F6] text-[#2E2E3A] transition-all duration-200"
                     value={activeTeamId || ''}
                     onChange={e => setActiveTeamId(e.target.value)}
                   >
@@ -399,7 +399,7 @@ export default function ReportesPage() {
               <div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2 sm:gap-4">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                    <h2 className="text-base sm:text-lg font-semibold text-[#2E2E3A]">Análisis de evaluaciones</h2>
+                    <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E3A]">Análisis de evaluaciones</h2>
                     {/* Toggle entre vista por ciclos y vista semanal */}
                     <div className="flex items-center gap-1 sm:gap-2 bg-[#DAD5E4]/30 p-1 rounded-xl w-fit">
                       <button
@@ -487,10 +487,10 @@ export default function ReportesPage() {
                     </div>
                   )
                 ) : (
-                  <div className="overflow-x-auto bg-white rounded-lg border border-[#DAD5E4]">
+                  <div className="overflow-x-auto bg-[#FAF9F6] rounded-2xl border border-[#DAD5E4]">
                     <table className="min-w-full text-xs sm:text-sm">
                       <thead>
-                        <tr className="bg-gray-100 text-gray-700">
+                        <tr className="bg-[#DAD5E4]/40 text-[#2E2E3A]">
                           <th className="text-left px-2 sm:px-3 py-2 font-medium text-[10px] sm:text-sm">
                             {viewMode === 'cycles' ? 'Inicio / Fin / Duración' : 'Semana'}
                           </th>
@@ -503,7 +503,7 @@ export default function ReportesPage() {
                           <th className="text-left px-2 sm:px-3 py-2 font-medium text-[10px] sm:text-sm hidden md:table-cell">Distribución de estados</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
+                      <tbody className="divide-y divide-[#DAD5E4]">
                         {(viewMode === 'cycles' ? aggregated : getWeeklyData).map((row, index) => {
                           if (viewMode === 'cycles') {
                             // Vista por ciclos (código original)
@@ -514,11 +514,11 @@ export default function ReportesPage() {
                             const fmt = (d) => d?.toLocaleString(undefined,{ dateStyle:'short', timeStyle:'short'}) || '—';
                             const duration = startDate && endDate ? formatDuration(endDate - startDate) : (endDate ? '—' : 'En curso');
                             return (
-                              <tr key={row.cycle.id} className="hover:bg-gray-50">
+                              <tr key={row.cycle.id} className="hover:bg-[#DAD5E4]/20">
                                 <td className="px-2 sm:px-3 py-2">
-                                  <div className="text-[10px] sm:text-xs"><span className="font-semibold text-gray-700">Inicio:</span> {fmt(startDate)}</div>
-                                  <div className="text-[10px] sm:text-xs"><span className="font-semibold text-gray-700">Fin:</span> {endDate ? fmt(endDate) : 'En curso'}</div>
-                                  <div className="text-[9px] sm:text-[10px] text-gray-500 mt-1">Duración: {duration}</div>
+                                  <div className="text-[10px] sm:text-xs"><span className="font-semibold text-[#2E2E3A]">Inicio:</span> {fmt(startDate)}</div>
+                                  <div className="text-[10px] sm:text-xs"><span className="font-semibold text-[#2E2E3A]">Fin:</span> {endDate ? fmt(endDate) : 'En curso'}</div>
+                                  <div className="text-[9px] sm:text-[10px] text-[#5B5B6B] mt-1">Duración: {duration}</div>
                                 </td>
                                 <td className="px-2 sm:px-3 py-2 text-center">{row.count}</td>
                                 <td className="px-2 sm:px-3 py-2">{row.aeAvg != null ? `${row.aeAvg}` : '—'}</td>
@@ -527,7 +527,7 @@ export default function ReportesPage() {
                                 <td className="px-2 sm:px-3 py-2">
                                   {row.wellbeing != null ? (
                                     <div className="flex items-center gap-1 sm:gap-2">
-                                      <div className="w-12 sm:w-20 h-1.5 sm:h-2 bg-gray-200 rounded-full overflow-hidden">
+                                      <div className="w-12 sm:w-20 h-1.5 sm:h-2 bg-[#DAD5E4] rounded-full overflow-hidden">
                                         <div className="h-full rounded-full" style={{ width: `${row.wellbeing}%`, background: row.wellbeing>=70?'#16a34a':row.wellbeing>=40?'#f59e0b':'#dc2626' }} />
                                       </div>
                                       <span className="text-[10px] sm:text-xs">{row.wellbeing}</span>
@@ -584,14 +584,14 @@ export default function ReportesPage() {
                             }
                             
                             return (
-                              <tr key={`cycle-${row.cycleId}`} className="hover:bg-gray-50">
+                              <tr key={`cycle-${row.cycleId}`} className="hover:bg-[#DAD5E4]/20">
                                 <td className="px-2 sm:px-3 py-2">
                                   <div className="text-[10px] sm:text-xs">
-                                    <span className="font-semibold text-gray-700">
+                                    <span className="font-semibold text-[#2E2E3A]">
                                       Ciclo #{row.friendlyId}:
                                     </span> {periodText}
                                   </div>
-                                  <div className="text-[9px] sm:text-[10px] text-gray-500 mt-1">
+                                  <div className="text-[9px] sm:text-[10px] text-[#5B5B6B] mt-1">
                                     {actualDuration} día{actualDuration !== 1 ? 's' : ''}
                                     {statusText && (
                                       <span className={`ml-2 ${
@@ -611,7 +611,7 @@ export default function ReportesPage() {
                                 <td className="px-2 sm:px-3 py-2">
                                   {row.wellbeing != null ? (
                                     <div className="flex items-center gap-1 sm:gap-2">
-                                      <div className="w-12 sm:w-20 h-1.5 sm:h-2 bg-gray-200 rounded-full overflow-hidden">
+                                      <div className="w-12 sm:w-20 h-1.5 sm:h-2 bg-[#DAD5E4] rounded-full overflow-hidden">
                                         <div className="h-full rounded-full" style={{ width: `${row.wellbeing}%`, background: row.wellbeing>=70?'#16a34a':row.wellbeing>=40?'#f59e0b':'#dc2626' }} />
                                       </div>
                                       <span className="text-[10px] sm:text-xs">{row.wellbeing}</span>
@@ -638,10 +638,10 @@ export default function ReportesPage() {
               {/* Strategic insights */}
               <StrategicInsightsDropdown data={aggregated} />
 
-              <div className="bg-white rounded-xl border border-[#DAD5E4] p-4 sm:p-6">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">Tendencia comparativa</h2>
+              <div className="bg-gradient-to-br from-[#9D83C6]/5 to-[#9D83C6]/10 rounded-2xl border border-[#9D83C6]/20 p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E3A] mb-3">Tendencia comparativa</h2>
                 {aggregated.length < 2 ? (
-                  <p className="text-xs sm:text-sm text-gray-500">Se necesitan al menos 2 ciclos con respuestas para graficar la tendencia.</p>
+                  <p className="text-sm sm:text-base text-[#5B5B6B] leading-relaxed">Se necesitan al menos 2 ciclos con respuestas para graficar la tendencia.</p>
                 ) : (
                   <div className="w-full">
                     <TrendChart data={trendChartData} />
@@ -651,7 +651,7 @@ export default function ReportesPage() {
 
               {(viewMode === 'cycles' ? aggregated : getWeeklyData).length > 0 && (
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-800 mb-3">
+                  <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E3A] mb-3">
                     Sugerencias personalizadas ({viewMode === 'cycles' ? 'por ciclos' : 'por semana'})
                   </h2>
                   <AdvicePanel 
@@ -670,11 +670,11 @@ export default function ReportesPage() {
                 const canSeeResponses = activeTeam?.members_can_see_responses ?? true;
                 
                 return (
-                  <div className="bg-white rounded-xl border border-[#DAD5E4] p-4 sm:p-6">
-                    <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">
+                  <div className="bg-[#FAF9F6] rounded-2xl border border-[#DAD5E4] p-4 sm:p-6">
+                    <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E3A] mb-4">
                       Miembros del equipo
                       {teamMembers.length > 0 && (
-                        <span className="ml-2 text-sm font-normal text-gray-500">
+                        <span className="ml-2 text-sm font-normal text-[#5B5B6B]">
                           ({canSeeOthers ? teamMembers.length : 'Privado'} miembro{teamMembers.length !== 1 ? 's' : ''})
                         </span>
                       )}
@@ -683,17 +683,17 @@ export default function ReportesPage() {
                     {membersLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="animate-spin w-5 h-5 border-2 border-[#9D83C6] border-t-transparent rounded-full"></div>
-                        <span className="ml-2 text-sm text-gray-600">Cargando miembros...</span>
+                        <span className="ml-2 text-sm text-[#5B5B6B]">Cargando miembros...</span>
                       </div>
                     ) : !canSeeOthers ? (
                       <div className="text-center py-8">
-                        <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-12 h-12 mx-auto bg-[#DAD5E4]/40 rounded-full flex items-center justify-center mb-3">
+                          <svg className="w-6 h-6 text-[#5B5B6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.03 8.03m1.848 1.848L14.12 14.12M12 2.252c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21m-6.332-6.332l-1.896-1.896M12 2.252V2" />
                           </svg>
                         </div>
-                        <p className="text-sm text-gray-500">La visibilidad de miembros está deshabilitada.</p>
-                        <p className="text-xs text-gray-400 mt-1">El líder del equipo ha configurado los perfiles como privados.</p>
+                        <p className="text-sm text-[#5B5B6B]">La visibilidad de miembros está deshabilitada.</p>
+                        <p className="text-xs text-[#5B5B6B] mt-1">El líder del equipo ha configurado los perfiles como privados.</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -708,27 +708,27 @@ export default function ReportesPage() {
                             const sharesResults = member.share_results_with_leader === true;
                           
                           return (
-                            <div key={member.user_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div key={member.user_id} className="flex items-center justify-between p-3 bg-[#DAD5E4]/20 rounded-xl">
                               <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 bg-[#9D83C6] rounded-full flex items-center justify-center text-white text-sm font-medium">
                                   {fullName.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
                                   <div className="flex items-center gap-2">
-                                    <p className="text-sm font-medium text-gray-900">{fullName}</p>
+                                    <p className="text-sm font-medium text-[#2E2E3A]">{fullName}</p>
                                     {sharesResults && hasResponded && memberBurnoutStates.has(member.user_id) && (
                                       <span className={`text-xs px-2 py-1 rounded-full border ${getBurnoutStatusColor(memberBurnoutStates.get(member.user_id))}`}>
                                         {getBurnoutStatusEmoji(memberBurnoutStates.get(member.user_id))} {memberBurnoutStates.get(member.user_id)}
                                       </span>
                                     )}
                                   </div>
-                                  <div className="text-xs text-gray-500 space-y-1">
+                                  <div className="text-xs text-[#5B5B6B] space-y-1">
                                     <p>{hasResponded ? 'Ha respondido el último ciclo' : 'No ha respondido el último ciclo'}</p>
                                     {sharesResults && hasResponded && (
                                       <p className="text-blue-600">✓ Resultados compartidos con líder</p>
                                     )}
                                     {!sharesResults && hasResponded && (
-                                      <p className="text-gray-400">⚫ Resultados privados</p>
+                                      <p className="text-[#5B5B6B]">⚫ Resultados privados</p>
                                     )}
                                   </div>
                                 </div>
@@ -823,7 +823,7 @@ function CycleHelp() {
           
           {/* Qué es un ciclo */}
           <div className="space-y-2">
-            <h4 className="font-semibold text-[#2E2E3A] flex items-center space-x-2">
+            <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] flex items-center space-x-2">
               <span className="w-2 h-2 bg-[#55C2A2] rounded-full"></span>
               <span>Qué es un ciclo</span>
             </h4>
@@ -834,7 +834,7 @@ function CycleHelp() {
 
           {/* Dimensiones del MBI */}
           <div className="space-y-2">
-            <h4 className="font-semibold text-[#2E2E3A] flex items-center space-x-2">
+            <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] flex items-center space-x-2">
               <span className="w-2 h-2 bg-[#9D83C6] rounded-full"></span>
               <span>Dimensiones del MBI</span>
             </h4>
@@ -865,7 +865,7 @@ function CycleHelp() {
 
           {/* Escala */}
           <div className="space-y-2">
-            <h4 className="font-semibold text-[#2E2E3A] flex items-center space-x-2">
+            <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] flex items-center space-x-2">
               <span className="w-2 h-2 bg-[#55C2A2] rounded-full"></span>
               <span>Escala de medición</span>
             </h4>
@@ -879,7 +879,7 @@ function CycleHelp() {
 
           {/* Rangos de burnout */}
           <div className="space-y-2">
-            <h4 className="font-semibold text-[#2E2E3A] flex items-center space-x-2">
+            <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] flex items-center space-x-2">
               <span className="w-2 h-2 bg-[#9D83C6] rounded-full"></span>
               <span>Rangos de burnout</span>
             </h4>
@@ -909,7 +909,7 @@ function CycleHelp() {
 
           {/* Diagnóstico de síndrome */}
           <div className="space-y-2">
-            <h4 className="font-semibold text-[#2E2E3A] flex items-center space-x-2">
+            <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] flex items-center space-x-2">
               <span className="w-2 h-2 bg-red-500 rounded-full"></span>
               <span>Diagnóstico de síndrome</span>
             </h4>
@@ -921,7 +921,7 @@ function CycleHelp() {
 
           {/* Bienestar Global */}
           <div className="space-y-2">
-            <h4 className="font-semibold text-[#2E2E3A] flex items-center space-x-2">
+            <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] flex items-center space-x-2">
               <span className="w-2 h-2 bg-[#55C2A2] rounded-full"></span>
               <span>Bienestar Global (0–100)</span>
             </h4>
@@ -959,8 +959,8 @@ function StrategicInsightsDropdown({ data }) {
                   d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
           <div className="text-left">
-            <h2 className="text-lg font-semibold text-[#2E2E3A]">Insights estratégicos</h2>
-            <p className="text-sm text-[#5B5B6B]">Tendencias y prioridades de mejora</p>
+            <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E3A]">Insights estratégicos</h2>
+            <p className="text-sm sm:text-base text-[#5B5B6B] leading-relaxed">Tendencias y prioridades de mejora</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
@@ -1034,57 +1034,57 @@ function InsightsPanel({ data }) {
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
-      <div className="border border-[#DAD5E4] rounded-xl p-5 bg-gradient-to-br from-[#55C2A2]/5 to-[#55C2A2]/10 
+      <div className="border border-[#DAD5E4] rounded-xl p-5 bg-gradient-to-br from-[#9D83C6]/5 to-[#9D83C6]/10
                       hover:shadow-teamzen transition-all duration-200">
         <div className="flex items-center space-x-2 mb-4">
-          <svg className="w-5 h-5 text-[#55C2A2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+          <svg className="w-5 h-5 text-[#9D83C6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
           </svg>
-          <h3 className="font-semibold text-[#2E2E3A]">Tendencias recientes</h3>
+          <h3 className="text-sm sm:text-base font-semibold text-[#2E2E3A]">Tendencias recientes</h3>
         </div>
         <ul className="space-y-3">
           <li className="flex items-center justify-between">
             <span className="text-sm text-[#2E2E3A] font-medium">Agotamiento Emocional</span>
             <div className="flex items-center space-x-2">
-              <span className="text-lg font-bold text-[#2E2E3A]">{makeTrendLabel(aeT, false)}</span>
+              <span className="text-xl sm:text-2xl font-bold tabular-nums text-[#2E2E3A]">{makeTrendLabel(aeT, false)}</span>
               <span className="text-xs text-[#5B5B6B]">(menor es mejor)</span>
             </div>
           </li>
           <li className="flex items-center justify-between">
             <span className="text-sm text-[#2E2E3A] font-medium">Despersonalización</span>
             <div className="flex items-center space-x-2">
-              <span className="text-lg font-bold text-[#2E2E3A]">{makeTrendLabel(dT, false)}</span>
+              <span className="text-xl sm:text-2xl font-bold tabular-nums text-[#2E2E3A]">{makeTrendLabel(dT, false)}</span>
               <span className="text-xs text-[#5B5B6B]">(menor es mejor)</span>
             </div>
           </li>
           <li className="flex items-center justify-between">
             <span className="text-sm text-[#2E2E3A] font-medium">Realización Personal</span>
             <div className="flex items-center space-x-2">
-              <span className="text-lg font-bold text-[#2E2E3A]">{makeTrendLabel(rpT, true)}</span>
+              <span className="text-xl sm:text-2xl font-bold tabular-nums text-[#2E2E3A]">{makeTrendLabel(rpT, true)}</span>
               <span className="text-xs text-[#5B5B6B]">(mayor es mejor)</span>
             </div>
           </li>
           <li className="flex items-center justify-between border-t border-[#DAD5E4] pt-3">
             <span className="text-sm text-[#2E2E3A] font-semibold">Bienestar Global</span>
             <div className="flex items-center space-x-2">
-              <span className="text-lg font-bold text-[#55C2A2]">{makeTrendLabel(wbT, true)}</span>
-              <span className="text-xs px-2 py-1 bg-[#55C2A2]/20 text-[#2E2E3A] rounded-full">
+              <span className="text-xl sm:text-2xl font-bold tabular-nums text-[#9D83C6]">{makeTrendLabel(wbT, true)}</span>
+              <span className="text-xs px-2 py-1 bg-[#9D83C6]/20 text-[#2E2E3A] rounded-full">
                 {latest.wellbeing}%
               </span>
             </div>
           </li>
         </ul>
       </div>
-      
-      <div className="border border-[#DAD5E4] rounded-xl p-5 bg-gradient-to-br from-[#9D83C6]/5 to-[#9D83C6]/10 
+
+      <div className="border border-[#DAD5E4] rounded-xl p-5 bg-gradient-to-br from-[#9D83C6]/5 to-[#9D83C6]/10
                       hover:shadow-teamzen transition-all duration-200">
         <div className="flex items-center space-x-2 mb-4">
           <svg className="w-5 h-5 text-[#9D83C6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
           </svg>
-          <h3 className="font-semibold text-[#2E2E3A]">Prioridades sugeridas</h3>
+          <h3 className="text-sm sm:text-base font-semibold text-[#2E2E3A]">Prioridades sugeridas</h3>
         </div>
         {improvementAreas.length === 0 ? (
           <div className="text-center py-4">
@@ -1230,38 +1230,39 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
   const displayAdvice = mode === 'ai' && aiAdvice ? aiAdvice : localAdvice;
 
   return (
-    <div className="border border-[#DAD5E4] rounded-2xl p-4 bg-[#FAF9F6] shadow-teamzen space-y-4">
+    <div className="border border-[#9D83C6]/20 rounded-2xl p-4 bg-[#FAF9F6] shadow-teamzen space-y-4">
       {/* Header con controles */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h3 className="font-medium text-gray-800">Sugerencias personalizadas</h3>
+        <h3 className="text-sm sm:text-base font-semibold text-[#2E2E3A]">Sugerencias personalizadas</h3>
         <div className="flex items-center gap-2 text-xs">
-          <button 
+          <button
             onClick={() => {setMode('local'); setError('');}}
             className={`px-3 py-1 rounded-xl border transition-colors ${
-              mode === 'local' 
-                ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white border-[#55C2A2] shadow-lg' 
-                : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+              mode === 'local'
+                ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white border-[#55C2A2] shadow-lg'
+                : 'border-[#DAD5E4] text-[#5B5B6B] hover:bg-[#DAD5E4]/20'
             }`}
           >
             🧠 Local
           </button>
-          <button 
+          <button
             onClick={() => handleAIFetch(false)}
             disabled={loading}
-            className={`px-3 py-1 rounded border transition-colors disabled:opacity-50 ${
-              mode === 'ai' 
-                ? 'bg-purple-600 text-white border-purple-600' 
-                : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+            className={`px-3 py-1 rounded-xl border transition-colors disabled:opacity-50 ${
+              mode === 'ai'
+                ? 'bg-[#9D83C6] text-white border-[#9D83C6]'
+                : 'border-[#DAD5E4] text-[#5B5B6B] hover:bg-[#DAD5E4]/20'
             }`}
           >
             {loading ? '⏳ Analizando...' : '🤖 IA + Tendencias'}
           </button>
           {mode === 'ai' && aiAdvice && !loading && (
-            <button 
+            <button
               onClick={() => handleAIFetch(true)}
               disabled={loading}
-              className="px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="px-2 py-1 rounded-xl border border-[#DAD5E4] text-[#5B5B6B] hover:bg-[#DAD5E4]/20 transition-colors disabled:opacity-50"
               title="Regenerar análisis forzadamente"
+              aria-label="Regenerar análisis forzadamente"
             >
               🔄
             </button>
@@ -1270,7 +1271,7 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
       </div>
 
       {/* Status indicator */}
-      <div className="text-xs text-gray-500 -mt-2">
+      <div className="text-xs text-[#5B5B6B] -mt-2">
         {loading && `🔄 Analizando ${viewMode === 'cycles' ? 'evolución por ciclos' : 'tendencias semanales'} del equipo...`}
         {error && <span className="text-red-600">❌ {error} (mostrando sugerencias locales)</span>}
         {mode === 'ai' && aiAdvice && !loading && (
@@ -1284,7 +1285,7 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
                 🟢 Recién generado • {new Date(aiAdvice._cacheInfo?.createdAt).toLocaleString()}
               </span>
             )}
-            <span className="text-gray-400">
+            <span className="text-[#5B5B6B]">
               • {historyData.length} {viewMode === 'cycles' ? 'ciclo(s)' : 'semana(s)'} de historia
             </span>
           </div>
@@ -1297,36 +1298,36 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
       {/* Content */}
       <div className="space-y-3">
         <div>
-          <p className="text-sm text-gray-700 leading-relaxed">
-            <span className="font-medium">Resumen:</span> {displayAdvice.summary}
+          <p className="text-sm sm:text-base text-[#5B5B6B] leading-relaxed">
+            <span className="font-medium text-[#2E2E3A]">Resumen:</span> {displayAdvice.summary}
           </p>
         </div>
 
         {/* Análisis de tendencias (solo IA) */}
         {mode === 'ai' && aiAdvice?.trendAnalysis && (
-          <div className="bg-blue-50 border border-blue-200 rounded p-3">
-            <p className="text-xs font-semibold text-blue-800 mb-1">📈 Análisis de evolución</p>
-            <p className="text-xs text-blue-700 leading-relaxed">{aiAdvice.trendAnalysis}</p>
+          <div className="bg-[#9D83C6]/10 border border-[#9D83C6]/30 rounded-lg p-3">
+            <p className="text-xs font-semibold text-[#8160B6] mb-1">📈 Análisis de evolución</p>
+            <p className="text-xs text-[#5B5B6B] leading-relaxed">{aiAdvice.trendAnalysis}</p>
           </div>
         )}
-        
+
         {displayAdvice.keyRisks?.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-gray-800 mb-1">⚠️ Riesgos identificados</p>
-            <ul className="list-disc pl-4 text-xs text-gray-600 space-y-0.5">
+            <p className="text-xs font-semibold text-[#2E2E3A] mb-1">⚠️ Riesgos identificados</p>
+            <ul className="list-disc pl-4 text-xs text-[#5B5B6B] space-y-0.5">
               {displayAdvice.keyRisks.map((risk, i) => (
                 <li key={i}>{risk}</li>
               ))}
             </ul>
           </div>
         )}
-        
+
         <div>
-          <p className="text-xs font-semibold text-gray-800 mb-1">💡 Acciones recomendadas</p>
+          <p className="text-xs font-semibold text-[#2C7B64] mb-1">💡 Acciones recomendadas</p>
           {!displayAdvice.actions?.length ? (
-            <p className="text-xs text-gray-500">Sin acciones prioritarias detectadas.</p>
+            <p className="text-xs text-[#5B5B6B]">Sin acciones prioritarias detectadas.</p>
           ) : (
-            <ul className="list-disc pl-4 text-xs text-gray-600 space-y-0.5">
+            <ul className="list-disc pl-4 text-xs text-[#5B5B6B] space-y-0.5">
               {displayAdvice.actions.map((action, i) => (
                 <li key={i}>{action}</li>
               ))}
@@ -1336,18 +1337,18 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
 
         {/* Pronóstico (solo IA) */}
         {mode === 'ai' && aiAdvice?.prognosis && (
-          <div className="bg-amber-50 border border-amber-200 rounded p-3">
-            <p className="text-xs font-semibold text-amber-800 mb-1">🔮 Pronóstico</p>
-            <p className="text-xs text-amber-700 leading-relaxed">{aiAdvice.prognosis}</p>
+          <div className="bg-[#9D83C6]/10 border border-[#9D83C6]/30 rounded-lg p-3">
+            <p className="text-xs font-semibold text-[#8160B6] mb-1">🔮 Pronóstico</p>
+            <p className="text-xs text-[#5B5B6B] leading-relaxed">{aiAdvice.prognosis}</p>
           </div>
         )}
       </div>
-      
+
       {/* Footer */}
-      <div className="pt-2 border-t border-gray-100">
-        <p className="text-[10px] text-gray-400">
-          {mode === 'ai' && aiAdvice 
-            ? `🤖 Análisis evolutivo por Groq AI basado en ${historyData.length} ciclo(s) - Fallback automático a local si falla` 
+      <div className="pt-2 border-t border-[#DAD5E4]">
+        <p className="text-[10px] text-[#5B5B6B]">
+          {mode === 'ai' && aiAdvice
+            ? `🤖 Análisis evolutivo por Groq AI basado en ${historyData.length} ciclo(s) - Fallback automático a local si falla`
             : '🧠 Sugerencias heurísticas locales - Pulsa "IA + Tendencias" para análisis histórico avanzado'
           }
         </p>
@@ -1440,8 +1441,8 @@ function UserPersonalReports({ user, profile }) {
     <div className="space-y-8">
       {/* Título de la sección */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900">Mi Análisis Personal de Bienestar</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#2E2E3A] tracking-tight">Mi Análisis Personal de Bienestar</h1>
+        <p className="text-sm sm:text-base text-[#5B5B6B] mt-2 leading-relaxed">
           Descubre insights personalizados sobre tu bienestar laboral y recibe recomendaciones específicas para tu situación
         </p>
       </div>
@@ -1457,8 +1458,8 @@ function UserPersonalReports({ user, profile }) {
                 </svg>
               </div>
               <div className="ml-3 sm:ml-4 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Evaluaciones</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">{mbiHistory.length}</p>
+                <p className="text-xs font-medium text-[#5B5B6B] truncate">Total Evaluaciones</p>
+                <p className="text-xl sm:text-2xl font-bold tabular-nums text-[#2E2E3A]">{mbiHistory.length}</p>
               </div>
             </div>
           </div>
@@ -1471,8 +1472,8 @@ function UserPersonalReports({ user, profile }) {
                 </svg>
               </div>
               <div className="ml-3 sm:ml-4 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Última Evaluación</p>
-                <p className="text-sm sm:text-lg font-bold text-gray-900">
+                <p className="text-xs font-medium text-[#5B5B6B] truncate">Última Evaluación</p>
+                <p className="text-sm sm:text-lg font-bold tabular-nums text-[#2E2E3A]">
                   {new Date(mbiHistory[0]?.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -1481,14 +1482,14 @@ function UserPersonalReports({ user, profile }) {
 
           <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4] p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#9D83C6]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-[#9D83C6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
               </div>
               <div className="ml-3 sm:ml-4 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Cargo Actual</p>
-                <p className="text-sm sm:text-lg font-bold text-gray-900 truncate">
+                <p className="text-xs font-medium text-[#5B5B6B] truncate">Cargo Actual</p>
+                <p className="text-sm sm:text-lg font-bold text-[#2E2E3A] truncate">
                   {profile?.job_title || 'No especificado'}
                 </p>
               </div>
@@ -1500,14 +1501,14 @@ function UserPersonalReports({ user, profile }) {
       {/* Mensaje si no hay evaluaciones */}
       {mbiHistory.length === 0 && (
         <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4] p-6 sm:p-8 lg:p-12 text-center">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#DAD5E4]/40 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-[#5B5B6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Sin evaluaciones aún</h3>
-          <p className="text-sm sm:text-base text-gray-600 mb-6 max-w-sm sm:max-w-md mx-auto leading-relaxed">
-            Para ver tu análisis personal, necesitas completar al menos una evaluación MBI. 
+          <h3 className="text-sm sm:text-base font-semibold text-[#2E2E3A] mb-2">Sin evaluaciones aún</h3>
+          <p className="text-sm sm:text-base text-[#5B5B6B] mb-6 max-w-sm sm:max-w-md mx-auto leading-relaxed">
+            Para ver tu análisis personal, necesitas completar al menos una evaluación MBI.
             Esto nos permitirá generar insights específicos sobre tu bienestar laboral.
           </p>
           <button
@@ -1531,9 +1532,9 @@ function UserPersonalReports({ user, profile }) {
                   </svg>
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">Análisis Inteligente</h3>
+                  <h3 className="text-sm sm:text-base font-semibold text-[#2E2E3A]">Análisis Inteligente</h3>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                    <p className="text-xs sm:text-sm text-gray-600">
+                    <p className="text-xs text-[#5B5B6B]">
                       Basado en {mbiHistory.length} evaluación{mbiHistory.length !== 1 ? 'es' : ''} MBI
                     </p>
                     {analysis?.fromCache ? (
@@ -1551,14 +1552,14 @@ function UserPersonalReports({ user, profile }) {
               <div className="flex space-x-2 justify-end sm:justify-start">
                 <button
                   onClick={() => setExpanded(!expanded)}
-                  className="px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm border border-[#DAD5E4] rounded-xl hover:bg-[#DAD5E4]/20 transition-colors text-[#2E2E3A]"
                 >
                   {expanded ? 'Contraer' : 'Ver Detalles'}
                 </button>
                 <button
                   onClick={() => generateAnalysis(true)}
                   disabled={loading}
-                  className="px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                  className="px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm bg-[#9D83C6] text-white rounded-xl hover:bg-[#8B6FB8] disabled:opacity-50 transition-colors"
                 >
                   {loading ? 'Analizando...' : 'Actualizar'}
                 </button>
@@ -1570,8 +1571,8 @@ function UserPersonalReports({ user, profile }) {
             {loading && (
               <div className="flex items-center justify-center py-6 sm:py-8">
                 <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-sm sm:text-base text-gray-600 text-center sm:text-left">Generando análisis personalizado con IA...</span>
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-[#9D83C6] border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm sm:text-base text-[#5B5B6B] text-center sm:text-left">Generando análisis personalizado con IA...</span>
                 </div>
               </div>
             )}
@@ -1593,39 +1594,39 @@ function UserPersonalReports({ user, profile }) {
             {analysis && !loading && (
               <div className="space-y-6">
                 {/* Indicador de origen del análisis */}
-                <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                <div className="flex items-center justify-between border-b border-[#DAD5E4] pb-3">
                   <div className="flex items-center space-x-2">
                     {analysis.fromCache ? (
                       <>
                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-[#5B5B6B]">
                           <span className="font-medium text-blue-600">Desde caché</span>
                           {analysis.cachedAt && (
-                            <span className="text-gray-500"> • Actualizado: {new Date(analysis.cachedAt).toLocaleString()}</span>
+                            <span className="text-[#5B5B6B]"> • Actualizado: {new Date(analysis.cachedAt).toLocaleString()}</span>
                           )}
                         </span>
                       </>
                     ) : (
                       <>
                         <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-[#5B5B6B]">
                           <span className="font-medium text-green-600">Recién generado</span>
                           {analysis.generatedAt && (
-                            <span className="text-gray-500"> • {new Date(analysis.generatedAt).toLocaleString()}</span>
+                            <span className="text-[#5B5B6B]"> • {new Date(analysis.generatedAt).toLocaleString()}</span>
                           )}
                         </span>
                       </>
                     )}
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-[#5B5B6B]">
                     ⚡ Análisis por IA
                   </div>
                 </div>
 
                 {/* Resumen Personal */}
                 <div>
-                  <h4 className="text-md font-semibold text-gray-900 mb-2">Resumen de tu Estado Actual</h4>
-                  <p className="text-gray-700 leading-relaxed">{analysis.personal_summary}</p>
+                  <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] mb-2">Resumen de tu Estado Actual</h4>
+                  <p className="text-sm sm:text-base text-[#5B5B6B] leading-relaxed">{analysis.personal_summary}</p>
                   {analysis.burnout_level && (
                     <div className="mt-3">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
@@ -1642,8 +1643,8 @@ function UserPersonalReports({ user, profile }) {
                 {/* Análisis de Tendencias */}
                 {analysis.trend_analysis && expanded && (
                   <div>
-                    <h4 className="text-md font-semibold text-gray-900 mb-2">Evolución de tu Bienestar</h4>
-                    <p className="text-gray-700 leading-relaxed">{analysis.trend_analysis}</p>
+                    <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] mb-2">Evolución de tu Bienestar</h4>
+                    <p className="text-sm sm:text-base text-[#5B5B6B] leading-relaxed">{analysis.trend_analysis}</p>
                   </div>
                 )}
 
@@ -1652,14 +1653,14 @@ function UserPersonalReports({ user, profile }) {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     {analysis.strengths && analysis.strengths.length > 0 && (
                       <div>
-                        <h4 className="text-sm sm:text-md font-semibold text-green-800 mb-3">Tus Fortalezas</h4>
+                        <h4 className="text-sm sm:text-base font-semibold text-green-800 mb-3">Tus Fortalezas</h4>
                         <ul className="space-y-2">
                           {analysis.strengths.map((strength, index) => (
                             <li key={index} className="flex items-start">
                               <svg className="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                               </svg>
-                              <span className="text-xs sm:text-sm text-gray-700 leading-relaxed">{strength}</span>
+                              <span className="text-xs sm:text-sm text-[#5B5B6B] leading-relaxed">{strength}</span>
                             </li>
                           ))}
                         </ul>
@@ -1668,14 +1669,14 @@ function UserPersonalReports({ user, profile }) {
 
                     {analysis.risk_areas && analysis.risk_areas.length > 0 && (
                       <div>
-                        <h4 className="text-sm sm:text-md font-semibold text-orange-800 mb-3">Áreas de Atención</h4>
+                        <h4 className="text-sm sm:text-base font-semibold text-orange-800 mb-3">Áreas de Atención</h4>
                         <ul className="space-y-2">
                           {analysis.risk_areas.map((risk, index) => (
                             <li key={index} className="flex items-start">
                               <svg className="w-4 h-4 text-orange-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                               </svg>
-                              <span className="text-xs sm:text-sm text-gray-700 leading-relaxed">{risk}</span>
+                              <span className="text-xs sm:text-sm text-[#5B5B6B] leading-relaxed">{risk}</span>
                             </li>
                           ))}
                         </ul>
@@ -1687,10 +1688,10 @@ function UserPersonalReports({ user, profile }) {
                 {/* Recomendaciones Personalizadas */}
                 {analysis.personalized_recommendations && analysis.personalized_recommendations.length > 0 && (
                   <div>
-                    <h4 className="text-sm sm:text-md font-semibold text-gray-900 mb-3 sm:mb-4">Recomendaciones Personalizadas</h4>
+                    <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] mb-3 sm:mb-4">Recomendaciones Personalizadas</h4>
                     <div className="space-y-3 sm:space-y-4">
                       {analysis.personalized_recommendations.map((rec, index) => (
-                        <div key={index} className="border border-gray-200 rounded-lg p-3 sm:p-4">
+                        <div key={index} className="border border-[#DAD5E4] rounded-xl p-3 sm:p-4">
                           <div className="flex flex-col sm:flex-row sm:items-center mb-2 gap-2">
                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium w-fit ${
                               rec.category === 'Inmediato' ? 'bg-red-100 text-red-800' :
@@ -1700,8 +1701,8 @@ function UserPersonalReports({ user, profile }) {
                               {rec.category}
                             </span>
                           </div>
-                          <h5 className="font-medium text-gray-900 mb-1 text-sm sm:text-base">{rec.action}</h5>
-                          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{rec.why}</p>
+                          <h5 className="font-medium text-[#2E2E3A] mb-1 text-sm sm:text-base">{rec.action}</h5>
+                          <p className="text-xs sm:text-sm text-[#5B5B6B] leading-relaxed">{rec.why}</p>
                         </div>
                       ))}
                     </div>
@@ -1710,15 +1711,15 @@ function UserPersonalReports({ user, profile }) {
 
                 {/* Próxima Evaluación */}
                 {analysis.next_evaluation_suggestion && expanded && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="text-md font-semibold text-blue-900 mb-2">Próxima Evaluación</h4>
-                    <p className="text-sm text-blue-800">{analysis.next_evaluation_suggestion}</p>
+                  <div className="bg-[#9D83C6]/10 border border-[#9D83C6]/30 rounded-xl p-4">
+                    <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] mb-2">Próxima Evaluación</h4>
+                    <p className="text-sm text-[#5B5B6B]">{analysis.next_evaluation_suggestion}</p>
                   </div>
                 )}
 
                 {/* Metadatos del análisis */}
                 {expanded && (analysis.fromCache || analysis.generatedAt) && (
-                  <div className="text-xs text-gray-500 pt-4 border-t border-gray-200 flex justify-between items-center">
+                  <div className="text-xs text-[#5B5B6B] pt-4 border-t border-[#DAD5E4] flex justify-between items-center">
                     <div>
                       {analysis.fromCache ? (
                         <span>📋 Análisis desde caché: {new Date(analysis.cachedAt || analysis.generatedAt).toLocaleString()}</span>
