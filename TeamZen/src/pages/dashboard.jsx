@@ -746,10 +746,24 @@ export default function Dashboard() {
     }
   };
 
+  // Separar los equipos por la relación real del usuario con cada uno.
+  // Memoizado: `teams` cambia solo al (re)cargar datos, pero este componente
+  // re-renderiza por muchos otros motivos (toggles de modales, hover, toasts,
+  // etc.); sin useMemo estos dos .filter() se recalculaban en cada uno de
+  // esos renders solo para alimentar los .map() de tarjetas de equipo.
+  const myLeaderTeams = useMemo(
+    () => teams.filter(t => t.leader_id === user?.id),
+    [teams, user?.id]
+  );
+  const myMemberTeams = useMemo(
+    () => teams.filter(t => t.leader_id !== user?.id),
+    [teams, user?.id]
+  );
+
   // ===================================================================
   // RENDERIZADO PRINCIPAL
   // ===================================================================
-  
+
   // Pantalla de carga inicial
   if (loading) return (
     <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center">
@@ -757,13 +771,13 @@ export default function Dashboard() {
     </div>
   );
 
-  // Separar los equipos por la relación real del usuario con cada uno
-  // (teams.leader_id), no por profiles.role: transferir liderazgo no cambia
-  // profiles.role, así que el rol no sirve para decidir qué secciones mostrar.
-  // profile.role solo se usa como respaldo para el estado vacío de onboarding,
-  // y únicamente cuando no hay ninguna otra relación con equipos que mostrar.
-  const myLeaderTeams = teams.filter(t => t.leader_id === user?.id);
-  const myMemberTeams = teams.filter(t => t.leader_id !== user?.id);
+  // myLeaderTeams / myMemberTeams ya se calcularon arriba (memoizados, antes
+  // del early return de loading). Se separan por la relación real del
+  // usuario con cada equipo (teams.leader_id), no por profiles.role:
+  // transferir liderazgo no cambia profiles.role, así que el rol no sirve
+  // para decidir qué secciones mostrar. profile.role solo se usa como
+  // respaldo para el estado vacío de onboarding, y únicamente cuando no hay
+  // ninguna otra relación con equipos que mostrar.
   const showLeaderSection = myLeaderTeams.length > 0 || (profile?.role === "leader" && myMemberTeams.length === 0);
   const showMemberSection = myMemberTeams.length > 0 || (profile?.role === "user" && myLeaderTeams.length === 0);
 
@@ -1060,10 +1074,10 @@ function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, 
             members={teamMembers[team.id] || []}
             membersLoading={membersLoading}
             activeCycleId={activeCycles[team.id]}
-            onLaunch={() => onPrepareLaunch(team)}
+            onLaunch={onPrepareLaunch}
             launching={launchingTeam === team.id}
             ending={endingTeam === team.id}
-            onEndCycle={() => onEndCycle(team.id)}
+            onEndCycle={onEndCycle}
             respondedMembers={respondedMembersByTeam[team.id]}
             wellbeingMetric={wellbeingByTeam[team.id]}
             onEdit={onEditTeam}
@@ -1809,7 +1823,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
           {activeCycleId ? (
             <button
               className="w-full sm:flex-1 bg-red-600 text-white py-2.5 sm:py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 text-sm"
-              onClick={onEndCycle}
+              onClick={() => onEndCycle && onEndCycle(team.id)}
               disabled={ending}
             >
               {ending ? 'Terminando...' : 'Terminar ciclo'}
@@ -1817,7 +1831,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
           ) : (
             <button 
               className="w-full sm:flex-1 bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] disabled:from-[#55C2A2]/50 disabled:to-[#7DDFC7]/50 text-white py-2.5 sm:py-2 px-4 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none text-sm"
-              onClick={onLaunch}
+              onClick={() => onLaunch && onLaunch(team)}
               disabled={launching}
             >
               {launching ? (

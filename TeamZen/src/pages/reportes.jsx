@@ -344,6 +344,17 @@ export default function ReportesPage() {
     });
   }, [teamCycles, scoresByCycle]);
 
+  // Datos para el gráfico de tendencia comparativa: reordena `aggregated` y
+  // formatea fechas. Se memoiza porque `aggregated` ya es estable entre
+  // renders (toggle de menús, estados de carga, etc.) y esta transformación
+  // (parseo de Date + toLocaleDateString) no debe recalcularse en cada render.
+  const trendChartData = useMemo(() => {
+    return aggregated.slice().reverse().map(c => ({
+      label: new Date(c.cycle.start_at || c.cycle.created_at).toLocaleDateString(),
+      values: { aeAvg: c.aeAvg, dAvg: c.dAvg, rpAvg: c.rpAvg, wellbeing: c.wellbeing }
+    }));
+  }, [aggregated]);
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="large" message="Cargando reportes..."/></div>;
   }
@@ -633,10 +644,7 @@ export default function ReportesPage() {
                   <p className="text-xs sm:text-sm text-gray-500">Se necesitan al menos 2 ciclos con respuestas para graficar la tendencia.</p>
                 ) : (
                   <div className="w-full">
-                    <TrendChart data={aggregated.slice().reverse().map(c => ({
-                      label: new Date(c.cycle.start_at || c.cycle.created_at).toLocaleDateString(),
-                      values: { aeAvg: c.aeAvg, dAvg: c.dAvg, rpAvg: c.rpAvg, wellbeing: c.wellbeing }
-                    }))} />
+                    <TrendChart data={trendChartData} />
                   </div>
                 )}
               </div>
@@ -1114,26 +1122,32 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
   const [aiAdvice, setAiAdvice] = React.useState(null);
   const [error, setError] = React.useState('');
 
-  // Función para obtener sugerencias de IA - definida antes para usar en useEffect
-  const handleAIFetch = React.useCallback(async (forceRegenerate = false) => {
-    if (loading) return;
-    
+  // Derivación de datos válidos + payload para la IA, consolidada en un único
+  // lugar (antes se calculaba por separado dentro de handleAIFetch y de nuevo
+  // en el cuerpo del render, con la misma lógica duplicada). Memoizado porque
+  // depende solo de `data`/`viewMode`, que cambian con menor frecuencia que
+  // los re-renders del panel (loading/error/mode/aiAdvice).
+  const derived = React.useMemo(() => {
+    // Considerar solo ciclos con respuestas (count > 0) para evitar nulls en clasificación
     const valid = data.filter(r => r.count > 0 && r.aeAvg != null && r.dAvg != null && r.rpAvg != null && r.wellbeing != null);
-    if (!valid.length) return; // No hay datos válidos
-    
+    if (!valid.length) {
+      return { valid, current: null, prev: null, historyData: [], mbiPayload: null };
+    }
+
     const current = valid[0];
     const prev = valid.length > 1 ? valid[1] : null;
-    
+
+    // Datos históricos para análisis de tendencias (máximo 5 elementos más recientes)
     const historyData = valid.slice(0, 5).map(item => ({
       ae: item.aeAvg,
       d: item.dAvg,
       rp: item.rpAvg,
       wellbeing: item.wellbeing,
-      date: viewMode === 'cycles' 
+      date: viewMode === 'cycles'
         ? (item.cycle.start_at || item.cycle.created_at)
         : item.weekStart.toISOString()
     }));
-    
+
     const mbiPayload = {
       ae: current.aeAvg,
       d: current.dAvg,
@@ -1141,32 +1155,42 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
       wellbeing: current.wellbeing,
       previous: prev ? { ae: prev.aeAvg, d: prev.dAvg, rp: prev.rpAvg, wellbeing: prev.wellbeing } : null,
       history: historyData,
-      meta: { 
+      meta: {
         latestId: viewMode === 'cycles' ? current.cycle.id : `week-${current.weekStart.toISOString().split('T')[0]}`,
         totalPeriods: valid.length,
         viewMode: viewMode,
         analysisScope: viewMode === 'cycles' ? 'Análisis por ciclos de evaluación' : 'Análisis semanal granular'
       }
     };
-    
+
+    return { valid, current, prev, historyData, mbiPayload };
+  }, [data, viewMode]);
+
+  // Función para obtener sugerencias de IA - definida antes para usar en useEffect
+  const handleAIFetch = React.useCallback(async (forceRegenerate = false) => {
+    if (loading) return;
+
+    const { valid, current, mbiPayload } = derived;
+    if (!valid.length) return; // No hay datos válidos
+
     setLoading(true);
     setError('');
-    
+
     try {
       // Timeout de 15 segundos para evitar esperas largas
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Timeout: IA externa tardó más de 15 segundos')), 15000)
       );
-      
-      const analysisId = viewMode === 'cycles' 
-        ? current.cycle.id 
+
+      const analysisId = viewMode === 'cycles'
+        ? current.cycle.id
         : `weekly-${current.weekStart.toISOString().split('T')[0]}`;
-      
+
       const result = await Promise.race([
         getAIAdviceWithCache(mbiPayload, teamId, analysisId, forceRegenerate),
         timeoutPromise
       ]);
-      
+
       setAiAdvice(result);
       setMode('ai');
     } catch (err) {
@@ -1176,7 +1200,7 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
     } finally {
       setLoading(false);
     }
-  }, [loading, data, viewMode, teamId]);
+  }, [loading, derived, viewMode, teamId]);
 
   // Limpiar análisis de IA cuando cambie el modo de vista
   React.useEffect(() => {
@@ -1189,46 +1213,15 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
 
   // Auto-generar análisis de IA cuando hay datos válidos
   React.useEffect(() => {
-    const valid = data.filter(r => r.count > 0 && r.aeAvg != null && r.dAvg != null && r.rpAvg != null && r.wellbeing != null);
-    if (valid.length > 0 && !aiAdvice && !loading && mode === 'ai') {
+    if (derived.valid.length > 0 && !aiAdvice && !loading && mode === 'ai') {
       handleAIFetch(false);
     }
-  }, [data, teamId, viewMode, aiAdvice, loading, mode, handleAIFetch]);
+  }, [derived, teamId, viewMode, aiAdvice, loading, mode, handleAIFetch]);
 
   if (!data.length) return null;
-  
-  // Considerar solo ciclos con respuestas (count > 0) para evitar nulls en clasificación
-  const valid = data.filter(r => r.count > 0 && r.aeAvg != null && r.dAvg != null && r.rpAvg != null && r.wellbeing != null);
+
+  const { valid, historyData, mbiPayload } = derived;
   if (!valid.length) return null; // No hay datos aún
-  
-  const current = valid[0];
-  const prev = valid.length > 1 ? valid[1] : null;
-  
-  // Preparar datos históricos para análisis de tendencias (máximo 5 elementos más recientes)
-  const historyData = valid.slice(0, 5).map(item => ({
-    ae: item.aeAvg,
-    d: item.dAvg,
-    rp: item.rpAvg,
-    wellbeing: item.wellbeing,
-    date: viewMode === 'cycles' 
-      ? (item.cycle.start_at || item.cycle.created_at)
-      : item.weekStart.toISOString()
-  }));
-  
-  const mbiPayload = {
-    ae: current.aeAvg,
-    d: current.dAvg,
-    rp: current.rpAvg,
-    wellbeing: current.wellbeing,
-    previous: prev ? { ae: prev.aeAvg, d: prev.dAvg, rp: prev.rpAvg, wellbeing: prev.wellbeing } : null,
-    history: historyData,
-    meta: { 
-      latestId: viewMode === 'cycles' ? current.cycle.id : `week-${current.weekStart.toISOString().split('T')[0]}`,
-      totalPeriods: valid.length,
-      viewMode: viewMode,
-      analysisScope: viewMode === 'cycles' ? 'Análisis por ciclos de evaluación' : 'Análisis semanal granular'
-    }
-  };
 
   // Generar sugerencias locales (siempre disponibles)
   const localAdvice = generateAdvice(mbiPayload);
