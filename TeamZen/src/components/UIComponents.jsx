@@ -45,8 +45,8 @@ export function Button({
     primary: "bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AA690] hover:to-[#8B6FB8] text-white shadow-lg hover:shadow-xl",
     secondary: "bg-[#DAD5E4] hover:bg-gradient-to-r hover:from-[#55C2A2] hover:to-[#9D83C6] text-[#2E2E3A] hover:text-white border border-[#DAD5E4]",
     danger: "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg",
-    outline: "border-2 border-[#55C2A2] text-[#55C2A2] hover:bg-gradient-to-r hover:from-[#55C2A2] hover:to-[#9D83C6] hover:text-white hover:border-transparent",
-    ghost: "text-[#9D83C6] hover:text-[#55C2A2] hover:bg-[#DAD5E4]/30 transition-colors duration-200"
+    outline: "border-2 border-[#55C2A2] text-[#2C7B64] hover:bg-gradient-to-r hover:from-[#55C2A2] hover:to-[#9D83C6] hover:text-white hover:border-transparent",
+    ghost: "text-[#8160B6] hover:text-[#2C7B64] hover:bg-[#DAD5E4]/30 transition-colors duration-200"
   };
 
   // Tamaños disponibles

@@ -835,7 +835,7 @@ export default function Dashboard() {
             {profile?.role === "leader" ? (
               <button
                 onClick={() => setShowCreateTeamModal(true)}
-                className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] 
+                className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] 
                            text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all duration-300 
                            ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow flex items-center 
                            space-x-1.5 sm:space-x-2 text-sm sm:text-base w-full sm:w-auto justify-center"
@@ -848,7 +848,7 @@ export default function Dashboard() {
             ) : profile?.role === "user" ? (
               <button
                 onClick={() => navigate("/unirse-equipo")}
-                className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] 
+                className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] 
                            text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all duration-300 
                            ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow flex items-center 
                            space-x-1.5 sm:space-x-2 text-sm sm:text-base w-full sm:w-auto justify-center"
@@ -976,7 +976,7 @@ export default function Dashboard() {
                   <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                 </svg>
               </div>
-              <span className="text-xs font-medium text-[#55C2A2]">Dashboard</span>
+              <span className="text-xs font-medium text-[#2C7B64]">Dashboard</span>
             </button>
 
             {/* Evaluaciones */}
@@ -1037,7 +1037,7 @@ export default function Dashboard() {
 function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam, onRegenerateCode, onKickMember, onTransferLeadership, profile, currentUserId }) {
   if (teamsLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+      <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4] p-8 text-center">
         <LoadingSpinner message="Cargando tus equipos..." />
       </div>
     );
@@ -1057,7 +1057,7 @@ function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, 
         </p>
         <button
           onClick={onCreateTeam}
-          className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow"
+          className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow"
         >
           Crear mi primer equipo
         </button>
@@ -1110,7 +1110,7 @@ function UserTeamsSection({ teams, teamMembers, membersLoading, navigate, userId
         </p>
         <button
           onClick={() => navigate("/unirse-equipo")}
-          className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow"
+          className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow"
         >
           Unirse a un equipo
         </button>
@@ -1154,7 +1154,7 @@ function WelcomeSection({ onSetupProfile }) {
       </p>
       <button
         onClick={onSetupProfile}
-        className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] text-white px-8 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow flex items-center gap-2 mx-auto"
+        className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white px-8 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow flex items-center gap-2 mx-auto"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -1497,7 +1497,7 @@ function ProfileFormModal({
             )}
             <button
               type="submit"
-              className={`${isNewUser ? 'w-full' : 'flex-1'} bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] disabled:from-[#55C2A2]/50 disabled:to-[#7DDFC7]/50 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center justify-center gap-2`}
+              className={`${isNewUser ? 'w-full' : 'flex-1'} bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] disabled:from-[#55C2A2]/50 disabled:to-[#9D83C6]/50 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center justify-center gap-2`}
               disabled={saving}
             >
               {saving ? (
@@ -1638,7 +1638,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
               </svg>
               <div>
                 <p className="text-xs sm:text-sm text-[#5B5B6B]">Estado</p>
-                <p className="text-sm sm:text-lg font-semibold text-[#55C2A2]">Activo</p>
+                <p className="text-sm sm:text-lg font-semibold text-[#2C7B64]">Activo</p>
               </div>
             </div>
           </div>
@@ -1716,7 +1716,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                 <span className="flex-1">Código de invitación</span>
                 <button
                   onClick={() => setShowInvite(v => !v)}
-                  className="text-[10px] sm:text-xs px-2 py-0.5 rounded-lg border border-[#55C2A2]/50 text-[#55C2A2] hover:bg-[#55C2A2]/20 transition-all duration-200 flex-shrink-0"
+                  className="text-[10px] sm:text-xs px-2 py-0.5 rounded-lg border border-[#55C2A2]/50 text-[#2C7B64] hover:bg-[#55C2A2]/20 transition-all duration-200 flex-shrink-0"
                 >{showInvite ? 'Ocultar' : 'Mostrar'}</button>
               </p>
               <p className="text-sm sm:text-lg font-mono font-bold text-[#2E2E3A] select-all break-all bg-[#FAF9F6] px-2 sm:px-3 py-2 rounded-lg border border-[#DAD5E4]">
@@ -1742,13 +1742,13 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                     try { await navigator.clipboard.writeText(team.team_invite_codes[0].code); setCopied(true); setTimeout(()=>setCopied(false), 2000);} catch(e){}
                   }
                 }}
-                className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] text-white px-3 py-1.5 sm:py-1 rounded-lg text-xs sm:text-sm transition-all duration-300 ease-out transform hover:scale-105 shadow-md hover:shadow-lg"
+                className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white px-3 py-1.5 sm:py-1 rounded-lg text-xs sm:text-sm transition-all duration-300 ease-out transform hover:scale-105 shadow-md hover:shadow-lg"
               >
                 Copiar
               </button>
               <button
                 onClick={() => onRegenerateCode && onRegenerateCode(team.id)}
-                className="border border-[#9D83C6]/50 text-[#9D83C6] px-3 py-1.5 sm:py-1 rounded-lg text-xs sm:text-sm hover:bg-[#9D83C6]/10 transition-all duration-200"
+                className="border border-[#9D83C6]/50 text-[#8160B6] px-3 py-1.5 sm:py-1 rounded-lg text-xs sm:text-sm hover:bg-[#9D83C6]/10 transition-all duration-200"
               >
                 Regenerar
               </button>
@@ -1771,7 +1771,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                   const isLeaderMember = member.isLeader;
                   return (
                     <div key={member.user_id} className="flex items-center space-x-3 p-2 bg-[#FAF9F6] border border-[#DAD5E4] rounded-xl">
-                      <div className={`w-8 h-8 ${isLeaderMember ? 'bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7]' : 'bg-[#DAD5E4]'} rounded-full flex items-center justify-center`}>
+                      <div className={`w-8 h-8 ${isLeaderMember ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6]' : 'bg-[#DAD5E4]'} rounded-full flex items-center justify-center`}>
                         <span className={`text-sm font-medium ${isLeaderMember ? 'text-white' : 'text-[#2E2E3A]'}`}>
                           {member.profiles?.first_name?.charAt(0) || 'U'}
                         </span>
@@ -1830,7 +1830,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
             </button>
           ) : (
             <button 
-              className="w-full sm:flex-1 bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] disabled:from-[#55C2A2]/50 disabled:to-[#7DDFC7]/50 text-white py-2.5 sm:py-2 px-4 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none text-sm"
+              className="w-full sm:flex-1 bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] disabled:from-[#55C2A2]/50 disabled:to-[#9D83C6]/50 text-white py-2.5 sm:py-2 px-4 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none text-sm"
               onClick={() => onLaunch && onLaunch(team)}
               disabled={launching}
             >
@@ -1965,7 +1965,7 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+    <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4] hover:shadow-teamzen-strong hover:border-[#55C2A2] transition-all duration-300">
       <div className="p-6">
         {/* Header del equipo */}
         <div className="flex items-center justify-between mb-4">
@@ -2124,10 +2124,10 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
                             <span className="ml-2 text-xs text-green-600 font-semibold">(Tú)</span>
                           )}
                           {isLeader && !isCurrentUser && (
-                            <span className="ml-2 text-xs text-[#55C2A2] font-semibold">(Líder)</span>
+                            <span className="ml-2 text-xs text-[#2C7B64] font-semibold">(Líder)</span>
                           )}
                           {isLeader && isCurrentUser && (
-                            <span className="ml-2 text-xs text-[#55C2A2] font-semibold">(Líder)</span>
+                            <span className="ml-2 text-xs text-[#2C7B64] font-semibold">(Líder)</span>
                           )}
                         </p>
                         <p className="text-xs text-gray-500">
@@ -2186,7 +2186,7 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
             <div className="w-full sm:flex-1 flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-lg bg-green-50 text-green-600 text-sm font-medium border border-green-200">Respondido</div>
           ) : (
             <button 
-              className="w-full sm:flex-1 bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] text-white py-2.5 sm:py-2 px-4 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow text-sm"
+              className="w-full sm:flex-1 bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white py-2.5 sm:py-2 px-4 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow text-sm"
               onClick={() => navigate(`/mbi?team=${team.id}`)}
             >
               Completar MBI
@@ -2204,8 +2204,8 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="text-center mb-6">
-                <div className="w-16 h-16 mx-auto bg-[#845EC2]/10 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-[#845EC2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-16 h-16 mx-auto bg-[#9D83C6]/10 rounded-full flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-[#9D83C6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
@@ -2310,7 +2310,7 @@ function PrivacySettingsForm({ currentSettings, onSave, onCancel, loading, teamS
                 ...prev,
                 share_results_with_leader: e.target.checked
               }))}
-              className="mt-1 w-4 h-4 text-[#845EC2] border-gray-300 rounded focus:ring-[#845EC2]"
+              className="mt-1 w-4 h-4 text-[#9D83C6] border-gray-300 rounded focus:ring-[#9D83C6]"
             />
             <div className="flex-1">
               <label htmlFor="shareResults" className="text-sm font-medium text-[#2E2E3A] cursor-pointer">
@@ -2367,7 +2367,7 @@ function PrivacySettingsForm({ currentSettings, onSave, onCancel, loading, teamS
         </button>
         <button
           onClick={handleSave}
-          className="flex-1 px-4 py-2 bg-[#845EC2] text-white rounded-lg hover:bg-[#7551A6] transition-colors disabled:opacity-50"
+          className="flex-1 px-4 py-2 bg-[#9D83C6] text-white rounded-lg hover:bg-[#8B6FB8] transition-colors disabled:opacity-50"
           disabled={loading}
         >
           {loading ? "Guardando..." : "Guardar preferencia"}

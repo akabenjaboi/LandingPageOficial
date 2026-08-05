@@ -221,7 +221,7 @@ export default function EvaluacionesPage() {
                     <h3 className="font-medium text-gray-800">{t.name}</h3>
                   </div>
                   <button
-                    className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] disabled:from-[#55C2A2]/50 disabled:to-[#7DDFC7]/50 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                    className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] disabled:from-[#55C2A2]/50 disabled:to-[#9D83C6]/50 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
                     disabled={launching}
                     onClick={() => prepareLaunch(t)}
                   >
@@ -273,7 +273,7 @@ export default function EvaluacionesPage() {
               <p>RP se invierte solo para evaluar riesgo (puntajes bajos en RP reflejan mayor riesgo).</p>
             </div>
             <div className="mt-6 flex justify-end">
-              <button onClick={() => navigate('/mbi')} className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] text-white px-5 py-2 rounded-xl text-sm font-medium transition-all duration-300 ease-out transform hover:scale-105 shadow-lg hover:shadow-teamzen-glow">Responder MBI</button>
+              <button onClick={() => navigate('/mbi')} className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white px-5 py-2 rounded-xl text-sm font-medium transition-all duration-300 ease-out transform hover:scale-105 shadow-lg hover:shadow-teamzen-glow">Responder MBI</button>
             </div>
         </section>
       </main>

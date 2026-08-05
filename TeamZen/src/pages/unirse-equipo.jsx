@@ -226,8 +226,8 @@ export default function UnirseEquipo() {
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="text-center mb-6">
-                <div className="w-16 h-16 mx-auto bg-[#845EC2]/10 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-[#845EC2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-16 h-16 mx-auto bg-[#9D83C6]/10 rounded-full flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-[#9D83C6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
@@ -248,7 +248,7 @@ export default function UnirseEquipo() {
                         ...prev,
                         membersCanSeeResponses: e.target.checked
                       }))}
-                      className="mt-1 w-4 h-4 text-[#845EC2] border-gray-300 rounded focus:ring-[#845EC2]"
+                      className="mt-1 w-4 h-4 text-[#9D83C6] border-gray-300 rounded focus:ring-[#9D83C6]"
                     />
                     <div className="flex-1">
                       <label htmlFor="responses" className="text-sm font-medium text-[#2E2E3A] cursor-pointer">

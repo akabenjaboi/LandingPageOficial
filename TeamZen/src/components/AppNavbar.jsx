@@ -59,7 +59,7 @@ export default function AppNavbar({ user, profile, onProfileEdit, onLogout }) {
                 src="/img/pandalogo.png" 
                 alt="TeamZen" 
               />
-              <span className="ml-3 text-xl font-bold text-[#2E2E3A] group-hover:text-gradient 
+              <span className="ml-3 text-xl font-bold text-[#2E2E3A] group-hover:text-[#9D83C6]
                                transition-all duration-300">
                 TeamZen
               </span>

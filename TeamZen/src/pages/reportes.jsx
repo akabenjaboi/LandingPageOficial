@@ -407,7 +407,7 @@ export default function ReportesPage() {
                         className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-lg transition-all duration-200 ${
                           viewMode === 'cycles' 
                             ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white shadow-lg' 
-                            : 'text-[#2E2E3A] hover:text-[#55C2A2]'
+                            : 'text-[#2E2E3A] hover:text-[#2C7B64]'
                         }`}
                       >
                         Por Ciclos
@@ -417,7 +417,7 @@ export default function ReportesPage() {
                         className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded-lg transition-all duration-200 ${
                           viewMode === 'weekly' 
                             ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white shadow-lg' 
-                            : 'text-[#2E2E3A] hover:text-[#55C2A2]'
+                            : 'text-[#2E2E3A] hover:text-[#2C7B64]'
                         }`}
                       >
                         Semanal
@@ -451,7 +451,7 @@ export default function ReportesPage() {
                         <span>Sin ciclos creados todavía.</span>
                         <button 
                           onClick={handleRefresh} 
-                          className="text-[#55C2A2] hover:text-[#2E2E3A] underline hover:no-underline 
+                          className="text-[#2C7B64] hover:text-[#2E2E3A] underline hover:no-underline
                                      transition-colors duration-200"
                         >
                           Actualizar
@@ -463,12 +463,12 @@ export default function ReportesPage() {
                         <div className="flex items-center gap-3">
                           <button 
                             onClick={handleRefresh} 
-                            className="text-[#55C2A2] hover:text-[#2E2E3A] underline hover:no-underline 
+                            className="text-[#2C7B64] hover:text-[#2E2E3A] underline hover:no-underline
                                        transition-colors duration-200"
                           >
                             Reintentar
                           </button>
-                          <span className="text-[11px] text-[#9D83C6]">
+                          <span className="text-[11px] text-[#8160B6]">
                             (Si ya respondieron hace segundos, espera y refresca)
                           </span>
                         </div>
@@ -479,7 +479,7 @@ export default function ReportesPage() {
                       <span>No hay datos suficientes para mostrar vista semanal.</span>
                       <button 
                         onClick={handleRefresh} 
-                        className="text-[#55C2A2] hover:text-[#2E2E3A] underline hover:no-underline 
+                        className="text-[#2C7B64] hover:text-[#2E2E3A] underline hover:no-underline
                                    transition-colors duration-200"
                       >
                         Actualizar
@@ -682,7 +682,7 @@ export default function ReportesPage() {
 
                     {membersLoading ? (
                       <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin w-5 h-5 border-2 border-[#845EC2] border-t-transparent rounded-full"></div>
+                        <div className="animate-spin w-5 h-5 border-2 border-[#9D83C6] border-t-transparent rounded-full"></div>
                         <span className="ml-2 text-sm text-gray-600">Cargando miembros...</span>
                       </div>
                     ) : !canSeeOthers ? (
@@ -710,7 +710,7 @@ export default function ReportesPage() {
                           return (
                             <div key={member.user_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-[#845EC2] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                <div className="w-8 h-8 bg-[#9D83C6] rounded-full flex items-center justify-center text-white text-sm font-medium">
                                   {fullName.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
@@ -927,7 +927,7 @@ function CycleHelp() {
             </h4>
             <p className="text-[#5B5B6B] ml-4">
               Índice sintético que normaliza e invierte AE y D, y normaliza RP. 
-              <span className="font-medium text-[#9D83C6]"> Solo para tendencia general</span>, 
+              <span className="font-medium text-[#8160B6]"> Solo para tendencia general</span>,
               siempre interpretar las 3 dimensiones por separado.
             </p>
           </div>
@@ -989,7 +989,7 @@ function StrategicInsightsDropdown({ data }) {
                       d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
               <p className="text-[#5B5B6B] font-medium">No hay datos disponibles</p>
-              <p className="text-sm text-[#9D83C6] mt-1">Genera al menos un ciclo para ver insights</p>
+              <p className="text-sm text-[#8160B6] mt-1">Genera al menos un ciclo para ver insights</p>
             </div>
           ) : (
             <InsightsPanel data={data} />
@@ -1230,7 +1230,7 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
   const displayAdvice = mode === 'ai' && aiAdvice ? aiAdvice : localAdvice;
 
   return (
-    <div className="border rounded-lg p-4 bg-white shadow-sm space-y-4">
+    <div className="border border-[#DAD5E4] rounded-2xl p-4 bg-[#FAF9F6] shadow-teamzen space-y-4">
       {/* Header con controles */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="font-medium text-gray-800">Sugerencias personalizadas</h3>
@@ -1239,7 +1239,7 @@ function AdvicePanel({ data, teamId, viewMode = 'cycles' }) {
             onClick={() => {setMode('local'); setError('');}}
             className={`px-3 py-1 rounded-xl border transition-colors ${
               mode === 'local' 
-                ? 'bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] text-white border-[#55C2A2] shadow-lg' 
+                ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white border-[#55C2A2] shadow-lg' 
                 : 'border-gray-300 text-gray-600 hover:bg-gray-50'
             }`}
           >
@@ -1449,7 +1449,7 @@ function UserPersonalReports({ user, profile }) {
       {/* Estadísticas rápidas */}
       {mbiHistory.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4] p-4 sm:p-6">
             <div className="flex items-center">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                 <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1463,7 +1463,7 @@ function UserPersonalReports({ user, profile }) {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4] p-4 sm:p-6">
             <div className="flex items-center">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
                 <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1479,7 +1479,7 @@ function UserPersonalReports({ user, profile }) {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
+          <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4] p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                 <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1499,7 +1499,7 @@ function UserPersonalReports({ user, profile }) {
 
       {/* Mensaje si no hay evaluaciones */}
       {mbiHistory.length === 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8 lg:p-12 text-center">
+        <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4] p-6 sm:p-8 lg:p-12 text-center">
           <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -1512,7 +1512,7 @@ function UserPersonalReports({ user, profile }) {
           </p>
           <button
             onClick={() => window.location.href = '/mbi'}
-            className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] text-white px-4 py-2 sm:px-6 sm:py-3 rounded-xl font-medium text-sm sm:text-base transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow"
+            className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white px-4 py-2 sm:px-6 sm:py-3 rounded-xl font-medium text-sm sm:text-base transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow"
           >
             Completar primera evaluación
           </button>
@@ -1521,11 +1521,11 @@ function UserPersonalReports({ user, profile }) {
 
       {/* Análisis Personal */}
       {mbiHistory.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-4 sm:p-6 border-b border-gray-200">
+        <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4]">
+          <div className="p-4 sm:p-6 border-b border-[#DAD5E4]">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#55C2A2] to-[#9D83C6] rounded-lg flex items-center justify-center flex-shrink-0">
                   <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>

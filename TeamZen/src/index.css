@@ -167,7 +167,7 @@
 }
 
 .animate-modal-enter {
-  animation: modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .animate-modal-exit {
@@ -307,24 +307,6 @@
 .loading-pulse {
   background: linear-gradient(90deg, rgba(85, 194, 162, 0.1), rgba(157, 131, 198, 0.1));
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* ===================================================================
-   EFECTOS DE TEXTO CON GRADIENTES TEAMZEN
-   =================================================================== */
-
-.text-gradient {
-  background: linear-gradient(135deg, #55C2A2, #9D83C6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.text-gradient-alt {
-  background: linear-gradient(135deg, #2E2E3A, #55C2A2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 /* ===================================================================

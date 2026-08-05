@@ -191,7 +191,7 @@ export default function EditTeamModal({ isOpen, onClose, team, onTeamUpdated }) 
             type="button"
             onClick={handleClose}
             disabled={loading}
-            className="flex-1 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 disabled:opacity-50"
+            className="flex-1 px-4 py-2 text-sm font-medium text-[#5B5B6B] hover:text-[#2E2E3A] hover:bg-[#DAD5E4]/30 disabled:opacity-50 rounded-xl transition-all duration-200"
           >
             Cancelar
           </button>

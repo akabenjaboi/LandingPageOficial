@@ -47,7 +47,7 @@ export default function ServiceCard({
         </div>
 
         <h4 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-2 md:mb-3
-                       text-[#2E2E3A] group-hover:text-gradient transition-all duration-300">
+                       text-[#2E2E3A] group-hover:text-[#9D83C6] transition-all duration-300">
           {title}
         </h4>
 

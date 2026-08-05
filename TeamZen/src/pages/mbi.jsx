@@ -256,7 +256,7 @@ export default function MBIPage() {
                     {SCALE.map((s) => {
                       const disabled = alreadyAnswered || (teamId ? !activeCycle : false);
                       return (
-                        <label key={s.value} className={`cursor-pointer px-2 py-2 rounded-xl border transition-all duration-300 text-center ${answers[it.id] === s.value ? 'bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] text-white border-[#55C2A2] shadow-lg' : disabled ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-[#55C2A2]/30'}`}>
+                        <label key={s.value} className={`cursor-pointer px-2 py-2 rounded-xl border transition-all duration-300 text-center ${answers[it.id] === s.value ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white border-[#55C2A2] shadow-lg' : disabled ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-[#55C2A2]/30'}`}>
                           <input
                             type="radio"
                             name={`item-${it.id}`}
@@ -295,7 +295,7 @@ export default function MBIPage() {
               </button>
               <button
                 type="submit"
-                className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] disabled:from-[#55C2A2]/50 disabled:to-[#7DDFC7]/50 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center justify-center gap-2"
+                className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] disabled:from-[#55C2A2]/50 disabled:to-[#9D83C6]/50 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center justify-center gap-2"
                 disabled={submitting || !allAnswered || (teamId && !activeCycle) || alreadyAnswered}
               >
                 {alreadyAnswered ? (
