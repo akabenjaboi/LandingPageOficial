@@ -38,7 +38,7 @@
 
 ### 👥 **Gestión de equipos**
 - 🔗 Creación de equipos con códigos de invitación
-- 📊 Ciclos de evaluación configurables
+- 📊 Rondas de evaluación configurables
 - 👤 Roles diferenciados (Líder/Miembro)
 - 📧 Sistema de invitaciones integrado
 
