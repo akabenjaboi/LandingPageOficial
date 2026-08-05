@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
+import AppNavbar from '../components/AppNavbar';
 
 // Minimal MBI-HSS (22 items). Subscales: AE (Agotamiento Emocional), D (Despersonalización), RP (Realización Personal)
 // Note: The exact copyrighted item texts are not included. Use placeholders; replace with licensed content if you have rights.
@@ -248,58 +249,46 @@ export default function MBIPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <img src="/img/pandalogo.png" alt="TeamZen" className="w-8 h-8" />
-            <span className="font-semibold">MBI</span>
-          </div>
-          <button
-            className="text-sm text-gray-600 hover:text-gray-900"
-            onClick={() => navigate('/dashboard')}
-            disabled={submitting}
-          >
-            Volver al panel
-          </button>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-[#FAF9F6]">
+      <AppNavbar user={user} />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Cuestionario MBI (22 ítems)</h1>
-            <div className="text-sm text-gray-600">Completado: {completion}%</div>
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 md:pb-8">
+        <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4] p-6">
+          <div className="flex items-center justify-between mb-4 gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#2E2E3A] tracking-tight">Cuestionario MBI (22 ítems)</h1>
+            <div className="text-sm font-semibold text-[#2C7B64] whitespace-nowrap">
+              <span className="tabular-nums">{completion}%</span> completado
+            </div>
           </div>
 
-          <p className="text-gray-600 mb-6">
+          <p className="text-sm sm:text-base text-[#5B5B6B] leading-relaxed mb-6">
             Responde según tu experiencia reciente. Esta versión usa textos de ejemplo. Sustituye por el instrumento autorizado cuando corresponda.
           </p>
 
           {teamId && !activeCycle && !error && (
-            <div className="mb-6 p-4 rounded border border-amber-300 bg-amber-50 text-amber-700 text-sm">
+            <div className="mb-6 p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-700 text-sm">
               No hay una ronda activa en este momento para este equipo.
             </div>
           )}
           {alreadyAnswered && (
-            <div className="mb-6 p-4 rounded border border-green-300 bg-green-50 text-green-700 text-sm">
+            <div className="mb-6 p-4 rounded-xl border border-[#55C2A2]/30 bg-[#55C2A2]/10 text-[#2C7B64] text-sm">
               Ya has respondido esta evaluación. Gracias por tu participación.
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {ITEMS.map((it) => (
-              <div key={it.id} className="border border-gray-200 rounded-lg p-4">
+              <div key={it.id} className="border border-[#DAD5E4] rounded-xl p-4 bg-[#FAF9F6]">
                 <div className="flex flex-col gap-4">
                   <div>
-                    <p className="font-medium text-gray-900">{it.id}. {it.text}</p>
-                    <p className="text-xs text-gray-500">Subescala: {it.sub}</p>
+                    <p className="text-sm sm:text-base font-medium text-[#2E2E3A]">{it.id}. {it.text}</p>
+                    <p className="text-xs text-[#5B5B6B]">Subescala: {it.sub}</p>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
                     {SCALE.map((s) => {
                       const disabled = alreadyAnswered || (teamId ? !activeCycle : false);
                       return (
-                        <label key={s.value} className={`cursor-pointer px-2 py-2 rounded-xl border transition-all duration-300 text-center ${answers[it.id] === s.value ? 'bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] text-white border-[#55C2A2] shadow-lg' : disabled ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-[#55C2A2]/30'}`}>
+                        <label key={s.value} className={`cursor-pointer px-2 py-2 rounded-xl border transition-all duration-300 text-center ${answers[it.id] === s.value ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white border-[#55C2A2] shadow-lg' : disabled ? 'bg-[#DAD5E4]/30 text-[#5B5B6B] border-[#DAD5E4]' : 'bg-[#FAF9F6] text-[#2E2E3A] border-[#DAD5E4] hover:bg-white hover:border-[#55C2A2]/50'}`}>
                           <input
                             type="radio"
                             name={`item-${it.id}`}
@@ -321,16 +310,16 @@ export default function MBIPage() {
             {/* Removed real-time puntajes estimados to simplify UI per request */}
 
             {error && (
-              <div className="rounded-lg p-3 bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>
+              <div className="rounded-xl p-3 bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>
             )}
             {success && (
-              <div className="rounded-lg p-3 bg-green-50 border border-green-200 text-green-700 text-sm">{success}</div>
+              <div className="rounded-xl p-3 bg-[#55C2A2]/10 border border-[#55C2A2]/30 text-[#2C7B64] text-sm">{success}</div>
             )}
 
             <div className="flex items-center justify-between pt-2">
               <button
                 type="button"
-                className="text-gray-600 hover:text-gray-900"
+                className="text-sm font-medium text-[#5B5B6B] hover:text-[#2E2E3A] transition-colors duration-200"
                 onClick={() => navigate('/dashboard')}
                 disabled={submitting}
               >
@@ -338,7 +327,7 @@ export default function MBIPage() {
               </button>
               <button
                 type="submit"
-                className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] disabled:from-[#55C2A2]/50 disabled:to-[#7DDFC7]/50 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center justify-center gap-2"
+                className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] disabled:from-[#55C2A2]/50 disabled:to-[#9D83C6]/50 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center justify-center gap-2"
                 disabled={submitting || !allAnswered || (teamId && !activeCycle) || alreadyAnswered}
               >
                 {alreadyAnswered ? (

@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-05T00:00:00.000Z",
+  "title": "Design System: TeamZen",
+  "extensions": {
+    "colorMeta": {
+      "charcoal": { "role": "neutral", "displayName": "Deep Charcoal", "canonical": "oklch(24% 0.02 280)", "tonalRamp": ["oklch(12% 0.02 280)", "oklch(20% 0.02 280)", "oklch(28% 0.02 280)", "oklch(38% 0.02 280)", "oklch(50% 0.02 280)", "oklch(65% 0.015 280)", "oklch(80% 0.01 280)", "oklch(95% 0.005 280)"] },
+      "lavender": { "role": "neutral", "displayName": "Lavender Gray", "canonical": "oklch(87% 0.02 300)", "tonalRamp": ["oklch(20% 0.02 300)", "oklch(32% 0.02 300)", "oklch(44% 0.02 300)", "oklch(58% 0.02 300)", "oklch(70% 0.02 300)", "oklch(80% 0.02 300)", "oklch(87% 0.02 300)", "oklch(95% 0.01 300)"] },
+      "mint": { "role": "primary", "displayName": "Mint Teal", "canonical": "oklch(72% 0.12 165)", "tonalRamp": ["oklch(20% 0.08 165)", "oklch(32% 0.1 165)", "oklch(44% 0.11 165)", "oklch(56% 0.12 165)", "oklch(64% 0.12 165)", "oklch(72% 0.12 165)", "oklch(83% 0.09 165)", "oklch(93% 0.05 165)"] },
+      "mint-deep": { "role": "primary-hover", "displayName": "Mint Deep", "canonical": "oklch(64% 0.12 165)", "tonalRamp": ["oklch(18% 0.08 165)", "oklch(28% 0.1 165)", "oklch(38% 0.11 165)", "oklch(48% 0.12 165)", "oklch(56% 0.12 165)", "oklch(64% 0.12 165)", "oklch(76% 0.1 165)", "oklch(88% 0.06 165)"] },
+      "purple": { "role": "secondary", "displayName": "Soft Purple", "canonical": "oklch(65% 0.1 305)", "tonalRamp": ["oklch(20% 0.07 305)", "oklch(30% 0.09 305)", "oklch(40% 0.1 305)", "oklch(50% 0.1 305)", "oklch(58% 0.1 305)", "oklch(65% 0.1 305)", "oklch(78% 0.07 305)", "oklch(90% 0.04 305)"] },
+      "purple-deep": { "role": "secondary-hover", "displayName": "Purple Deep", "canonical": "oklch(56% 0.1 305)", "tonalRamp": ["oklch(16% 0.07 305)", "oklch(26% 0.09 305)", "oklch(36% 0.1 305)", "oklch(46% 0.1 305)", "oklch(56% 0.1 305)", "oklch(64% 0.1 305)", "oklch(76% 0.07 305)", "oklch(88% 0.04 305)"] },
+      "cream": { "role": "neutral-bg", "displayName": "Off-White Cream", "canonical": "oklch(98% 0.005 90)", "tonalRamp": ["oklch(20% 0.01 90)", "oklch(35% 0.01 90)", "oklch(50% 0.008 90)", "oklch(65% 0.006 90)", "oklch(80% 0.006 90)", "oklch(90% 0.005 90)", "oklch(96% 0.005 90)", "oklch(98% 0.005 90)"] },
+      "gray": { "role": "neutral-text", "displayName": "Slate Gray", "canonical": "oklch(42% 0.02 275)", "tonalRamp": ["oklch(14% 0.02 275)", "oklch(24% 0.02 275)", "oklch(33% 0.02 275)", "oklch(42% 0.02 275)", "oklch(54% 0.02 275)", "oklch(67% 0.015 275)", "oklch(80% 0.01 275)", "oklch(92% 0.005 275)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero headline on the landing page only (HeroSection)." },
+      "headline": { "displayName": "Headline", "purpose": "Marketing section titles (Cómo funciona, Lo que incluye, Nuestro equipo)." },
+      "title": { "displayName": "Title", "purpose": "In-app page headers (dashboard, crear/unirse equipo)." },
+      "metric": { "displayName": "Metric", "purpose": "Tabular-nums scores: hero before/after vignette, dashboard stat tiles (miembros, participación, bienestar)." },
+      "body": { "displayName": "Body", "purpose": "Paragraph copy across marketing and app." },
+      "label": { "displayName": "Label", "purpose": "Nav links, form labels, button text." },
+      "micro": { "displayName": "Micro", "purpose": "Dense meta-text (role badges, response counts, MBI history table cells) — text-xs is the real floor, no arbitrary sub-12px values." }
+    },
+    "shadows": [
+      { "name": "teamzen", "value": "0 10px 25px rgba(85,194,162,0.15), 0 4px 10px rgba(157,131,198,0.1)", "purpose": "Resting elevation for cards and containers." },
+      { "name": "teamzen-strong", "value": "0 25px 50px rgba(85,194,162,0.25), 0 10px 20px rgba(157,131,198,0.15)", "purpose": "Hover/elevated state for cards and modal panels." }
+    ],
+    "motion": [
+      { "name": "fade-in-up", "value": "fadeInUp 0.8s ease-out", "purpose": "Marketing section entrance on scroll." },
+      { "name": "slide-in-left", "value": "slideInFromLeft 0.6s ease-out", "purpose": "Left-entering marketing content." },
+      { "name": "slide-in-right", "value": "slideInFromRight 0.6s ease-out", "purpose": "Right-entering marketing content." },
+      { "name": "scale-in", "value": "scaleIn 0.5s ease-out", "purpose": "Pop-in emphasis for cards/icons." },
+      { "name": "float", "value": "float 6s ease-in-out infinite", "purpose": "Ambient decorative circles and illustrations." },
+      { "name": "pulse-glow", "value": "pulse-glow 2s infinite", "purpose": "Attention pulse on mint-colored elements." },
+      { "name": "modal-enter", "value": "modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)", "purpose": "Modal panel entrance (bouncy ease)." },
+      { "name": "modal-exit", "value": "modalSlideDown 0.2s ease-in-out", "purpose": "Modal panel exit." },
+      { "name": "gentle-rotate", "value": "gentleRotate 20s linear infinite", "purpose": "Slow ambient rotation for decorative elements." },
+      { "name": "glow-teamzen", "value": "glowTeamzen 3s ease-in-out infinite", "purpose": "Ambient mint/purple glow pulse." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main CTA — gradient fill, the system's most recognizable action element.",
+      "html": "<button class=\"ds-btn-primary\">Crear equipo</button>",
+      "css": ".ds-btn-primary { background: linear-gradient(135deg, #55C2A2 0%, #9D83C6 100%); color: #FFFFFF; font-weight: 600; padding: 12px 24px; border-radius: 12px; border: none; box-shadow: 0 10px 15px rgba(0,0,0,0.1); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: linear-gradient(135deg, #4AA690 0%, #8B6FB8 100%); transform: scale(1.05); box-shadow: 0 20px 25px rgba(0,0,0,0.1); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(85,194,162,0.3); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Low-emphasis action — used for secondary actions like Cancel.",
+      "html": "<button class=\"ds-btn-ghost\">Cancelar</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: #9D83C6; font-weight: 600; padding: 12px 24px; border-radius: 12px; border: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-ghost:hover { background: rgba(218,213,228,0.3); } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(85,194,162,0.3); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Standard content container — cream surface with tinted glow shadow.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Equipo de Producto</h3><p class=\"ds-card-body\">3 miembros · última ronda hace 5 días</p></div>",
+      "css": ".ds-card { background: #FAF9F6; border: 1px solid #DAD5E4; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(85,194,162,0.15), 0 4px 10px rgba(157,131,198,0.1); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); } .ds-card:hover { border-color: #55C2A2; transform: translateY(-4px) scale(1.02); box-shadow: 0 25px 50px rgba(85,194,162,0.25), 0 10px 20px rgba(157,131,198,0.15); } .ds-card-title { color: #2E2E3A; font-weight: 700; font-size: 1.125rem; margin: 0 0 8px; } .ds-card-body { color: #5B5B6B; font-size: 0.875rem; margin: 0; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text input — cream fill, mint focus ring, red error state.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Nombre del equipo\" />",
+      "css": ".ds-input { width: 100%; background: #FAF9F6; color: #2E2E3A; border: 1px solid #DAD5E4; border-radius: 12px; padding: 12px 16px; font-size: 1rem; transition: all 0.2s ease; } .ds-input::placeholder { color: #5B5B6B; } .ds-input:focus { outline: none; background: #FFFFFF; border-color: transparent; box-shadow: 0 0 0 2px #55C2A2, 0 10px 15px rgba(0,0,0,0.1); } .ds-input.ds-input-error { border-color: #F87171; } .ds-input.ds-input-error:focus { box-shadow: 0 0 0 2px #F87171; }"
+    },
+    {
+      "name": "Modal Panel",
+      "kind": "custom",
+      "refersTo": "modal",
+      "description": "Dialog panel — cream surface, blurred tinted backdrop, bouncy entrance.",
+      "html": "<div class=\"ds-modal-backdrop\"><div class=\"ds-modal-panel\"><button class=\"ds-modal-close\" aria-label=\"Cerrar\">&times;</button><h2 class=\"ds-modal-title\">Transferir liderazgo</h2><p class=\"ds-modal-body\">Elige un nuevo líder para el equipo.</p></div></div>",
+      "css": ".ds-modal-backdrop { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); backdrop-filter: blur(4px); } .ds-modal-panel { background: #FAF9F6; border: 1px solid #DAD5E4; border-radius: 12px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); padding: 24px; max-width: 32rem; width: 100%; animation: ds-modal-enter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); } @keyframes ds-modal-enter { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } } .ds-modal-close { color: #5B5B6B; background: transparent; border: none; padding: 4px; border-radius: 8px; font-size: 1.25rem; cursor: pointer; } .ds-modal-close:hover { color: #2E2E3A; background: rgba(218,213,228,0.3); } .ds-modal-title { color: #2E2E3A; font-weight: 700; font-size: 1.25rem; margin: 0 0 8px; } .ds-modal-body { color: #5B5B6B; font-size: 0.9375rem; margin: 0; }"
+    },
+    {
+      "name": "Desktop Nav Pill",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Floating marketing navigation — blurred cream pill with layered mint/purple glow on hover.",
+      "html": "<nav class=\"ds-nav-pill\"><a class=\"ds-nav-link\" href=\"#\">Inicio</a><a class=\"ds-nav-link\" href=\"#\">Servicios</a><a class=\"ds-nav-link\" href=\"#\">Equipo</a></nav>",
+      "css": ".ds-nav-pill { display: inline-flex; gap: 8px; background: rgba(250,249,246,0.8); backdrop-filter: blur(10px); border: 1px solid #DAD5E4; border-radius: 16px; box-shadow: 0 20px 25px rgba(0,0,0,0.1); padding: 12px 32px; } .ds-nav-link { position: relative; color: #2E2E3A; font-weight: 600; font-size: 0.875rem; padding: 8px 12px; border-radius: 8px; text-decoration: none; transition: color 0.3s ease; } .ds-nav-link:hover { color: #FFFFFF; background: linear-gradient(135deg, #55C2A2, #9D83C6); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "El Jardín Zen",
+    "overview": "TeamZen no se ve como un dashboard corporativo de métricas: se ve como un jardín cultivado para respirar. Las superficies son cálidas y redondeadas, los acentos (mint y púrpura) brillan como resplandor difuso en vez de proyectar sombra dura, y el fondo lleva círculos borrosos flotando como si el sistema mismo estuviera en calma. Es una identidad deliberadamente distinta del \"SaaS frío\" — sin grises planos, sin ángulos rectos agresivos, sin sombras de tarjeta genéricas — porque el producto mide y trata burnout: la interfaz no puede sentirse como otra fuente de estrés corporativo.\n\nEl acento mint (#55C2A2) es el color de la acción y el progreso positivo — botones primarios, CTAs, iconografía activa. El púrpura suave (#9D83C6) es el color de la reflexión — enlaces, estados hover, elementos analíticos e introspectivos. Juntos forman un degradado que aparece en botones primarios, en el resplandor de hover de la navegación, y en el scrollbar — es la firma cromática más reconocible del sistema.\n\nLos componentes deben sentirse suaves en reposo pero con respuesta clara al interactuar: un botón o card no es rígido ni seco, responde con un leve scale-up, un resplandor de sombra teñido, un cambio de borde a mint. La calma no significa inercia — significa que la interfaz responde con confianza, no con fricción.",
+    "keyCharacteristics": [
+      "Esquinas redondeadas en todo, nunca ángulos rectos duros.",
+      "Sombras como resplandor teñido de mint/púrpura, nunca gris plano.",
+      "Un solo color de acción (mint) y un solo color de reflexión (púrpura); no hay un tercer acento.",
+      "Roboto como única familia tipográfica; la jerarquía viene de peso y escala, no de mezclar fuentes.",
+      "Fondo crema con círculos decorativos difuminados — el \"jardín\" literal detrás del contenido."
+    ],
+    "rules": [
+      { "name": "The Tinted Glow Rule", "body": "Toda sombra visible lleva tinte mint/púrpura, incluso cuando es sutil. Una sombra gris plana es una desviación a corregir, no una variante válida.", "section": "colors" },
+      { "name": "The Six-Color Rule", "body": "Solo seis tonos son parte de la paleta oficial. Los acentos fuera de marca #845EC2 y #7DDFC7 encontrados en el código son deriva a reconciliar, no nuevos tokens.", "section": "colors" },
+      { "name": "The Monotonic Scale Rule", "body": "Los pasos responsivos de tamaño de texto solo crecen al ensanchar el viewport, nunca encogen y luego vuelven a crecer.", "section": "typography" },
+      { "name": "The Real Scale Rule", "body": "Todo tamaño de texto usa un paso documentado (text-xs es el piso). Un valor arbitrario en píxeles (text-[10px], text-[9px]) es deriva a corregir — la tabla de historial de reportes.jsx conserva algunos por revisar en un pase futuro; no agregar más.", "section": "typography" },
+      { "name": "The No Sharp Corners Rule", "body": "Todo elemento interactivo o contenedor lleva radio ≥8px. rounded-xl es el default para interactivos, rounded-2xl para contenedores.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do usar Roboto en los pesos 400/600/700/800 únicamente.",
+      "Do teñir toda sombra con mint/púrpura — nunca planas.",
+      "Do mantener las escalas tipográficas monótonas entre breakpoints.",
+      "Do reutilizar Button, Card, Input de UIComponents.jsx en vez de variantes ad hoc.",
+      "Do mantener esquinas redondeadas en todo.",
+      "Do usar únicamente los seis colores de la paleta."
+    ],
+    "donts": [
+      "Don't introducir grises planos de Tailwind (shadow-sm, border-gray-200, bg-gray-50, text-gray-600/900).",
+      "Don't usar el púrpura #845EC2 ni el mint #7DDFC7 fuera de marca.",
+      "Don't referenciar clases no definidas como hover:shadow-teamzen-glow o animate-fadein/fadeout/slideup.",
+      "Don't construir un nuevo header de app sin consolidar los cinco existentes.",
+      "Don't detener el tratamiento responsivo en sm: y saltar directo a lg:."
+    ]
+  }
+}

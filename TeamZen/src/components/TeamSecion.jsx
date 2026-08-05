@@ -26,9 +26,9 @@ const team = [
 function TeamCard({ member, show, animationDelay }) {
   return (
     <div
-      className={`group flex flex-col items-center bg-white rounded-2xl border-4 border-[#DAD5E4] shadow-[0_4px_24px_0_rgba(46,46,58,0.10)] p-8 min-h-[340px] max-w-[320px] w-full transition-all duration-700
+      className={`group flex flex-col items-center bg-[#FAF9F6] rounded-2xl border-4 border-[#DAD5E4] shadow-teamzen p-8 min-h-[340px] max-w-[320px] w-full transition-all duration-700
         ${show ? "animate-fadein-up opacity-100" : "opacity-0 translate-y-8"}
-        hover:scale-105 hover:shadow-2xl hover:border-[#55C2A2]
+        hover:scale-105 hover:shadow-teamzen-strong hover:border-[#55C2A2]
         cursor-pointer
       `}
       style={{ animationDelay }}
@@ -46,7 +46,7 @@ function TeamCard({ member, show, animationDelay }) {
       <h4 className="text-lg md:text-xl font-semibold mb-1 text-[#2E2E3A] text-center">
         {member.name}
       </h4>
-      <p className="text-base md:text-lg text-[#9D83C6] font-semibold text-center">
+      <p className="text-base md:text-lg text-[#8160B6] font-semibold text-center">
         {member.role}
       </p>
       <p className="text-base md:text-lg text-[#5B5B6B] text-center mt-2">{member.desc}</p>
@@ -63,13 +63,20 @@ export default function TeamSecion() {
       ref={teamRef}
       className="scroll-mt-32 w-full max-w-6xl mx-auto my-16 px-2 sm:px-4 flex flex-col items-center"
     >
-      <h3
-        className={`text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#2E2E3A] text-center mb-20 drop-shadow-lg tracking-tight transition-all duration-700
+      <h2
+        className={`text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#2E2E3A] text-center mb-4 tracking-tight transition-all duration-700
           ${teamInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
         `}
       >
-        Nuestro Equipo
-      </h3>
+        Nuestro equipo
+      </h2>
+      <p
+        className={`text-base sm:text-lg text-[#5B5B6B] text-center max-w-2xl mb-16 leading-relaxed transition-all duration-700 delay-100
+          ${teamInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
+        `}
+      >
+        Las personas reales detrás de TeamZen, no un logo de cliente inventado.
+      </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 w-full justify-items-center">
         {team.map((member, idx) => (
           <TeamCard

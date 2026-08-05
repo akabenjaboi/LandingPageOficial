@@ -24,7 +24,7 @@ export default {
         'scale-in': 'scaleIn 0.5s ease-out',
         'float': 'float 6s ease-in-out infinite',
         'pulse-glow': 'pulse-glow 2s infinite',
-        'modal-enter': 'modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'modal-enter': 'modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         'modal-exit': 'modalSlideDown 0.2s ease-in-out',
         'gentle-rotate': 'gentleRotate 20s linear infinite',
         'glow-teamzen': 'glowTeamzen 3s ease-in-out infinite',
@@ -78,6 +78,7 @@ export default {
       boxShadow: {
         'teamzen': '0 10px 25px rgba(85, 194, 162, 0.15), 0 4px 10px rgba(157, 131, 198, 0.1)',
         'teamzen-strong': '0 25px 50px rgba(85, 194, 162, 0.25), 0 10px 20px rgba(157, 131, 198, 0.15)',
+        'teamzen-glow': '0 25px 60px rgba(85, 194, 162, 0.35), 0 10px 25px rgba(157, 131, 198, 0.25)',
       },
       backdropBlur: {
         'xs': '2px',
@@ -96,7 +97,6 @@ export default {
       },
       transitionTimingFunction: {
         'teamzen': 'cubic-bezier(0.4, 0, 0.2, 1)',
-        'bounce-in': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
       },
     },
   },

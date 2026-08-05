@@ -93,9 +93,9 @@ export default function UnirseEquipo() {
                 alt="TeamZen Logo" 
                 className="w-8 h-8 sm:w-10 sm:h-10"
               />
-              <h1 className="text-lg sm:text-2xl font-bold text-[#2E2E3A]">
+              <span className="text-lg sm:text-2xl font-bold text-[#2E2E3A]">
                 Team<span className="text-[#55C2A2]">Zen</span>
-              </h1>
+              </span>
             </div>
             <Button 
               variant="ghost" 
@@ -195,7 +195,7 @@ export default function UnirseEquipo() {
                     id="shareResults"
                     checked={shareResults}
                     onChange={(e) => setShareResults(e.target.checked)}
-                    className="mt-1 w-4 h-4 text-[#845EC2] border-gray-300 rounded focus:ring-[#845EC2]"
+                    className="mt-1 w-4 h-4 text-[#9D83C6] border-[#DAD5E4] rounded focus:ring-[#9D83C6]"
                   />
                   <label htmlFor="shareResults" className="text-sm font-medium text-[#2E2E3A] cursor-pointer">
                     Compartir mis resultados individuales con el líder de este equipo
@@ -290,7 +290,6 @@ export default function UnirseEquipo() {
           </div>
         </div>
       </div>
-
     </div>
   );
 }

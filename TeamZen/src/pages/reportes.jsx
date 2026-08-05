@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import LoadingSpinner from '../components/LoadingSpinner';
+import AppNavbar from '../components/AppNavbar';
 import TrendChart from '../components/TrendChart';
 import { generateAdvice, getAIAdviceWithCache } from '../utils/adviceEngine';
 import { classifyMBI, computeBurnoutStatus, WELLBEING_NORMALIZATION, computeWellbeingFromScores } from '../utils/mbiClassification';
@@ -260,29 +261,8 @@ export default function ReportesPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F6]">
-      <nav className="bg-white border-b border-[#DAD5E4] sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <img src="/img/pandalogo.png" alt="TeamZen" className="w-6 h-6 sm:w-8 sm:h-8" />
-            <span className="font-semibold text-[#2E2E3A] text-sm sm:text-base">Reportes</span>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-            <button 
-              onClick={() => navigate('/dashboard')} 
-              className="text-[#55C2A2] hover:text-[#2E2E3A] font-medium transition-colors duration-200 px-2 py-1"
-            >
-              Dashboard
-            </button>
-            <button 
-              onClick={() => navigate('/evaluaciones')} 
-              className="text-[#5B5B6B] hover:text-[#2E2E3A] font-medium transition-colors duration-200 px-2 py-1"
-            >
-              Evaluaciones
-            </button>
-          </div>
-        </div>
-      </nav>
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-8">
+      <AppNavbar user={user} profile={profile} />
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8 space-y-4 sm:space-y-8">
         {error && !fetching && teams.length === 0 && (
           <div className="mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
             {error}
@@ -363,7 +343,7 @@ export default function ReportesPage() {
                       >
                         Reintentar
                       </button>
-                      <span className="text-[11px] text-[#9D83C6]">
+                      <span className="text-xs text-[#8160B6]">
                         (Si ya respondieron hace segundos, espera y refresca)
                       </span>
                     </div>
@@ -499,7 +479,7 @@ export default function ReportesPage() {
 
                     {membersLoading ? (
                       <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin w-5 h-5 border-2 border-[#845EC2] border-t-transparent rounded-full"></div>
+                        <div className="animate-spin w-5 h-5 border-2 border-[#9D83C6] border-t-transparent rounded-full"></div>
                         <span className="ml-2 text-sm text-gray-600">Cargando miembros...</span>
                       </div>
                     ) : !canSeeOthers ? (
@@ -527,7 +507,7 @@ export default function ReportesPage() {
                           return (
                             <div key={member.user_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-[#845EC2] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                <div className="w-8 h-8 bg-[#9D83C6] rounded-full flex items-center justify-center text-white text-sm font-medium">
                                   {fullName.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
@@ -744,7 +724,7 @@ function CycleHelp() {
             </h4>
             <p className="text-[#5B5B6B] ml-4">
               Índice sintético que normaliza e invierte AE y D, y normaliza RP. 
-              <span className="font-medium text-[#9D83C6]"> Solo para tendencia general</span>, 
+              <span className="font-medium text-[#8160B6]"> Solo para tendencia general</span>,
               siempre interpretar las 3 dimensiones por separado.
             </p>
           </div>
@@ -1156,8 +1136,8 @@ function AdvicePanel({ data, teamId }) {
             onClick={() => {setMode('local'); setError('');}}
             className={`px-3 py-1 rounded-xl border transition-colors ${
               mode === 'local' 
-                ? 'bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] text-white border-[#55C2A2] shadow-lg' 
-                : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white border-[#55C2A2] shadow-lg'
+                : 'border-[#DAD5E4] text-[#5B5B6B] hover:bg-[#DAD5E4]/20'
             }`}
           >
             🧠 Local
@@ -1526,7 +1506,7 @@ function UserPersonalReports({ user, profile }) {
           </p>
           <button
             onClick={() => window.location.href = '/mbi'}
-            className="bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] hover:from-[#4AB393] hover:to-[#6ED4B8] text-white px-4 py-2 sm:px-6 sm:py-3 rounded-xl font-medium text-sm sm:text-base transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow"
+            className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AA690] hover:to-[#8B6FB8] text-white px-4 py-2 sm:px-6 sm:py-3 rounded-xl font-medium text-sm sm:text-base transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow"
           >
             Completar primera evaluación
           </button>
@@ -1535,11 +1515,11 @@ function UserPersonalReports({ user, profile }) {
 
       {/* Análisis Personal */}
       {mbiHistory.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-4 sm:p-6 border-b border-gray-200">
+        <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4]">
+          <div className="p-4 sm:p-6 border-b border-[#DAD5E4]">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#9D83C6] to-[#8160B6] rounded-xl flex items-center justify-center flex-shrink-0">
                   <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>

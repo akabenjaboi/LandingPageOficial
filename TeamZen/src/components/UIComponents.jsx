@@ -45,8 +45,8 @@ export function Button({
     primary: "bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AA690] hover:to-[#8B6FB8] text-white shadow-lg hover:shadow-xl",
     secondary: "bg-[#DAD5E4] hover:bg-gradient-to-r hover:from-[#55C2A2] hover:to-[#9D83C6] text-[#2E2E3A] hover:text-white border border-[#DAD5E4]",
     danger: "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg",
-    outline: "border-2 border-[#55C2A2] text-[#55C2A2] hover:bg-gradient-to-r hover:from-[#55C2A2] hover:to-[#9D83C6] hover:text-white hover:border-transparent",
-    ghost: "text-[#9D83C6] hover:text-[#55C2A2] hover:bg-[#DAD5E4]/30 transition-colors duration-200"
+    outline: "border-2 border-[#55C2A2] text-[#2C7B64] hover:bg-gradient-to-r hover:from-[#55C2A2] hover:to-[#9D83C6] hover:text-white hover:border-transparent",
+    ghost: "text-[#8160B6] hover:text-[#2C7B64] hover:bg-[#DAD5E4]/30 transition-colors duration-200"
   };
 
   // Tamaños disponibles
@@ -80,22 +80,30 @@ export function Button({
 // ===================================================================
 // COMPONENTE INPUT - Campo de entrada con label y validación
 // ===================================================================
-export function Input({ 
-  label, 
-  error, 
-  className = "", 
+export function Input({
+  label,
+  error,
+  className = "",
   required = false,
-  ...props 
+  id,
+  ...props
 }) {
+  const generatedId = React.useId();
+  const inputId = id || generatedId;
+  const errorId = error ? `${inputId}-error` : undefined;
+
   return (
     <div className="flex flex-col gap-2">
       {label && (
-        <label className="font-semibold text-[#2E2E3A] text-sm">
+        <label htmlFor={inputId} className="font-semibold text-[#2E2E3A] text-sm">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <input
+        id={inputId}
+        aria-describedby={errorId}
+        aria-invalid={error ? true : undefined}
         className={`
           w-full border rounded-xl px-4 py-3 transition-all duration-200
           bg-[#FAF9F6] text-[#2E2E3A] placeholder-[#5B5B6B]
@@ -107,7 +115,7 @@ export function Input({
         {...props}
       />
       {error && (
-        <span className="text-red-500 text-sm font-medium">{error}</span>
+        <span id={errorId} className="text-red-500 text-sm font-medium">{error}</span>
       )}
     </div>
   );

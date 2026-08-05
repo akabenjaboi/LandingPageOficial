@@ -56,7 +56,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
-              className="text-[#9D83C6] hover:text-[#55C2A2] transition-colors text-2xl"
+              className="text-[#8160B6] hover:text-[#4AA690] transition-colors text-2xl"
             >
               <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2zm0 1.5A4.25 4.25 0 0 0 3.5 7.75v8.5A4.25 4.25 0 0 0 7.75 20.5h8.5A4.25 4.25 0 0 0 20.5 16.25v-8.5A4.25 4.25 0 0 0 16.25 3.5h-8.5zm4.25 3.25a5.25 5.25 0 1 1 0 10.5 5.25 5.25 0 0 1 0-10.5zm0 1.5a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5zm5.25.75a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
@@ -67,7 +67,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn"
-              className="text-[#9D83C6] hover:text-[#55C2A2] transition-colors text-2xl"
+              className="text-[#8160B6] hover:text-[#4AA690] transition-colors text-2xl"
             >
               <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11.75 20h-3v-10h3v10zm-1.5-11.25c-.97 0-1.75-.78-1.75-1.75s.78-1.75 1.75-1.75 1.75.78 1.75 1.75-.78 1.75-1.75 1.75zm15.25 11.25h-3v-5.5c0-1.1-.9-2-2-2s-2 .9-2 2v5.5h-3v-10h3v1.25c.41-.59 1.36-1.25 2.5-1.25 1.93 0 3.5 1.57 3.5 3.5v6.5z" />
@@ -78,7 +78,7 @@ export default function Footer() {
       </div>
 
       {/* Línea y copyright */}
-      <div className="mt-10 border-t border-[#DAD5E4] pt-4 text-center text-sm text-[#1F1F1F] opacity-80">
+      <div className="mt-10 border-t border-[#DAD5E4] pt-4 text-center text-sm text-[#5B5B6B]">
         © {new Date().getFullYear()} TeamZen — Plataforma digital para equipos.
       </div>
     </footer>

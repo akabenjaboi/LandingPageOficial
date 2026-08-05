@@ -6,6 +6,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function CrearEquipo() {
   const navigate = useNavigate();
+  const descriptionId = React.useId();
   const [userId, setUserId] = useState("");
   const [teamName, setTeamName] = useState("");
   const [description, setDescription] = useState("");
@@ -83,9 +84,9 @@ export default function CrearEquipo() {
                 alt="TeamZen Logo" 
                 className="w-8 h-8 sm:w-10 sm:h-10"
               />
-              <h1 className="text-lg sm:text-2xl font-bold text-[#2E2E3A]">
+              <span className="text-lg sm:text-2xl font-bold text-[#2E2E3A]">
                 Team<span className="text-[#55C2A2]">Zen</span>
-              </h1>
+              </span>
             </div>
             <Button 
               variant="ghost" 
@@ -129,10 +130,11 @@ export default function CrearEquipo() {
               />
 
               <div className="space-y-2">
-                <label className="font-semibold text-[#2E2E3A] text-sm">
+                <label htmlFor={descriptionId} className="font-semibold text-[#2E2E3A] text-sm">
                   Descripción del equipo
                 </label>
                 <textarea
+                  id={descriptionId}
                   placeholder="Describe brevemente el área, departamento o función del equipo..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
