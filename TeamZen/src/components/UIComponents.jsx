@@ -80,22 +80,30 @@ export function Button({
 // ===================================================================
 // COMPONENTE INPUT - Campo de entrada con label y validación
 // ===================================================================
-export function Input({ 
-  label, 
-  error, 
-  className = "", 
+export function Input({
+  label,
+  error,
+  className = "",
   required = false,
-  ...props 
+  id,
+  ...props
 }) {
+  const generatedId = React.useId();
+  const inputId = id || generatedId;
+  const errorId = error ? `${inputId}-error` : undefined;
+
   return (
     <div className="flex flex-col gap-2">
       {label && (
-        <label className="font-semibold text-[#2E2E3A] text-sm">
+        <label htmlFor={inputId} className="font-semibold text-[#2E2E3A] text-sm">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <input
+        id={inputId}
+        aria-describedby={errorId}
+        aria-invalid={error ? true : undefined}
         className={`
           w-full border rounded-xl px-4 py-3 transition-all duration-200
           bg-[#FAF9F6] text-[#2E2E3A] placeholder-[#5B5B6B]
@@ -107,7 +115,7 @@ export function Input({
         {...props}
       />
       {error && (
-        <span className="text-red-500 text-sm font-medium">{error}</span>
+        <span id={errorId} className="text-red-500 text-sm font-medium">{error}</span>
       )}
     </div>
   );

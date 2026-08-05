@@ -1165,7 +1165,7 @@ function ProfileForm({ profile, firstName, setFirstName, lastName, setLastName, 
           <h3 className="text-xl font-bold text-[#2E2E3A]">
             {!profile?.first_name && !profile?.last_name ? "Completar Perfil" : "Actualizar Perfil"}
           </h3>
-          <button onClick={onCancel} className="text-[#5B5B6B] hover:text-[#2E2E3A]">
+          <button onClick={onCancel} aria-label="Cerrar" className="text-[#5B5B6B] hover:text-[#2E2E3A]">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -1299,6 +1299,7 @@ function ProfileFormModal({
           {!isNewUser && (
             <button
               onClick={onCancel}
+              aria-label="Cerrar"
               className="text-[#5B5B6B] hover:text-[#2E2E3A] transition-colors duration-200 p-1 rounded-lg hover:bg-[#DAD5E4]/30"
               disabled={saving}
             >

@@ -91,9 +91,9 @@ export default function UnirseEquipo() {
                 alt="TeamZen Logo" 
                 className="w-8 h-8 sm:w-10 sm:h-10"
               />
-              <h1 className="text-lg sm:text-2xl font-bold text-[#2E2E3A]">
+              <span className="text-lg sm:text-2xl font-bold text-[#2E2E3A]">
                 Team<span className="text-[#55C2A2]">Zen</span>
-              </h1>
+              </span>
             </div>
             <Button 
               variant="ghost" 

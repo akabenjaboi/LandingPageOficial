@@ -61,7 +61,8 @@ export default function Navbar() {
         <button
           className="p-2 rounded-lg bg-[#FAF9F6]/80 border border-[#DAD5E4] shadow-md"
           onClick={() => setOpen(!open)}
-          aria-label="Abrir menú"
+          aria-label={open ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={open}
         >
           <svg
             className="w-7 h-7 text-[#2E2E3A]"

@@ -115,12 +115,14 @@ export default function AppNavbar({ user, profile, onProfileEdit, onLogout }) {
               </p>
             </div>
             <div className="relative profile-menu-container">
-              <button 
-                className="w-10 h-10 bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] 
-                           rounded-full flex items-center justify-center text-white font-medium 
+              <button
+                className="w-10 h-10 bg-gradient-to-r from-[#55C2A2] to-[#9D83C6]
+                           rounded-full flex items-center justify-center text-white font-medium
                            hover:from-[#4AA690] hover:to-[#8B6FB8] transition-all duration-300
                            hover:scale-110 hover:shadow-lg"
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
+                aria-label="Menú de perfil"
+                aria-expanded={showProfileMenu}
               >
                 {profile?.first_name?.charAt(0) || user?.email?.charAt(0).toUpperCase()}
               </button>

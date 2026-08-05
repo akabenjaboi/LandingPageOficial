@@ -4,6 +4,7 @@ import Modal from './Modal';
 import { Input, Alert } from './UIComponents';
 
 export default function EditTeamModal({ isOpen, onClose, team, onTeamUpdated }) {
+  const descriptionId = React.useId();
   const [teamName, setTeamName] = useState("");
   const [description, setDescription] = useState("");
   const [includeLeader, setIncludeLeader] = useState(true);
@@ -105,10 +106,11 @@ export default function EditTeamModal({ isOpen, onClose, team, onTeamUpdated }) 
         />
 
         <div className="space-y-2">
-          <label className="font-semibold text-[#2E2E3A] text-sm">
+          <label htmlFor={descriptionId} className="font-semibold text-[#2E2E3A] text-sm">
             Descripción del equipo
           </label>
           <textarea
+            id={descriptionId}
             placeholder="Describe brevemente el área, departamento o función del equipo..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
