@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-04T00:00:00.000Z",
+  "generatedAt": "2026-08-05T00:00:00.000Z",
   "title": "Design System: TeamZen",
   "extensions": {
     "colorMeta": {
@@ -15,10 +15,12 @@
     },
     "typographyMeta": {
       "display": { "displayName": "Display", "purpose": "Hero headline on the landing page only (HeroSection)." },
-      "headline": { "displayName": "Headline", "purpose": "Marketing section titles (About, Services, Team)." },
+      "headline": { "displayName": "Headline", "purpose": "Marketing section titles (Cómo funciona, Lo que incluye, Nuestro equipo)." },
       "title": { "displayName": "Title", "purpose": "In-app page headers (dashboard, crear/unirse equipo)." },
+      "metric": { "displayName": "Metric", "purpose": "Tabular-nums scores: hero before/after vignette, dashboard stat tiles (miembros, participación, bienestar)." },
       "body": { "displayName": "Body", "purpose": "Paragraph copy across marketing and app." },
-      "label": { "displayName": "Label", "purpose": "Nav links, form labels, button text." }
+      "label": { "displayName": "Label", "purpose": "Nav links, form labels, button text." },
+      "micro": { "displayName": "Micro", "purpose": "Dense meta-text (role badges, response counts, MBI history table cells) — text-xs is the real floor, no arbitrary sub-12px values." }
     },
     "shadows": [
       { "name": "teamzen", "value": "0 10px 25px rgba(85,194,162,0.15), 0 4px 10px rgba(157,131,198,0.1)", "purpose": "Resting elevation for cards and containers." },
@@ -106,6 +108,7 @@
       { "name": "The Tinted Glow Rule", "body": "Toda sombra visible lleva tinte mint/púrpura, incluso cuando es sutil. Una sombra gris plana es una desviación a corregir, no una variante válida.", "section": "colors" },
       { "name": "The Six-Color Rule", "body": "Solo seis tonos son parte de la paleta oficial. Los acentos fuera de marca #845EC2 y #7DDFC7 encontrados en el código son deriva a reconciliar, no nuevos tokens.", "section": "colors" },
       { "name": "The Monotonic Scale Rule", "body": "Los pasos responsivos de tamaño de texto solo crecen al ensanchar el viewport, nunca encogen y luego vuelven a crecer.", "section": "typography" },
+      { "name": "The Real Scale Rule", "body": "Todo tamaño de texto usa un paso documentado (text-xs es el piso). Un valor arbitrario en píxeles (text-[10px], text-[9px]) es deriva a corregir — la tabla de historial de reportes.jsx conserva algunos por revisar en un pase futuro; no agregar más.", "section": "typography" },
       { "name": "The No Sharp Corners Rule", "body": "Todo elemento interactivo o contenedor lleva radio ≥8px. rounded-xl es el default para interactivos, rounded-2xl para contenedores.", "section": "elevation" }
     ],
     "dos": [
