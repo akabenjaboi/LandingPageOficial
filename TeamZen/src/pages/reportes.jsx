@@ -472,6 +472,7 @@ export default function ReportesPage() {
                     Sugerencias personalizadas
                   </h2>
                   <AdvicePanel
+                    key={activeTeamId}
                     data={aggregated}
                     teamId={activeTeamId}
                   />
@@ -997,7 +998,7 @@ function AdvicePanel({ data, teamId }) {
         timeoutPromise
       ]);
       
-      setAiAdvice(result);
+      setAiAdvice({ ...result, _forCycleId: analysisId, _forTeamId: teamId });
       setMode('ai');
     } catch (err) {
       console.error('Error IA:', err);
@@ -1015,6 +1016,7 @@ function AdvicePanel({ data, teamId }) {
 
   React.useEffect(() => {
     if (mode !== 'ai' || !aiAdvice?.actions?.length || !currentForTracking?.cycle?.id) return;
+    if (aiAdvice._forCycleId !== currentForTracking.cycle.id || aiAdvice._forTeamId !== teamId) return;
     const actionsList = aiAdvice.actions;
     let cancelled = false;
     (async () => {
@@ -1068,7 +1070,8 @@ function AdvicePanel({ data, teamId }) {
         .select('action_text, status')
         .eq('team_id', teamId)
         .eq('cycle_id', prevForTracking.cycle.id)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .order('action_text', { ascending: true });
       if (cancelled) return;
       if (error) { console.warn('No se pudieron cargar las acciones de la ronda anterior', error); setPrevActionStatuses([]); return; }
       setPrevActionStatuses(loaded || []);
@@ -1079,7 +1082,8 @@ function AdvicePanel({ data, teamId }) {
   // Auto-generar análisis de IA cuando hay datos válidos
   React.useEffect(() => {
     const valid = data.filter(r => r.count > 0 && r.aeAvg != null && r.dAvg != null && r.rpAvg != null && r.wellbeing != null);
-    if (valid.length > 0 && !aiAdvice && !loading && mode === 'ai') {
+    const adviceIsCurrent = aiAdvice?._forCycleId === valid[0]?.cycle.id && aiAdvice?._forTeamId === teamId;
+    if (valid.length > 0 && !adviceIsCurrent && !loading && mode === 'ai') {
       handleAIFetch(false);
     }
   }, [data, teamId, aiAdvice, loading, mode, handleAIFetch]);
@@ -1127,13 +1131,14 @@ function AdvicePanel({ data, teamId }) {
 
   const handleToggleActionStatus = async (cycleId, actionText, currentStatus, isCurrentCycle) => {
     const nextStatus = STATUS_CYCLE[currentStatus] || 'en_curso';
-    const { error: toggleError } = await supabase
+    const { data: updated, error: toggleError } = await supabase
       .from('mbi_action_tracking')
       .update({ status: nextStatus, updated_at: new Date().toISOString() })
       .eq('team_id', teamId)
       .eq('cycle_id', cycleId)
-      .eq('action_text', actionText);
-    if (toggleError) { console.warn('No se pudo actualizar el estado de la acción', toggleError); return; }
+      .eq('action_text', actionText)
+      .select('id');
+    if (toggleError || !updated?.length) { console.warn('No se pudo actualizar el estado de la acción', toggleError); return; }
     if (isCurrentCycle) {
       setCurrentActionStatuses(m => ({ ...m, [actionText]: nextStatus }));
     } else {
