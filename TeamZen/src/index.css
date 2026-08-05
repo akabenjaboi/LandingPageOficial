@@ -122,6 +122,22 @@
   }
 }
 
+/* Menú móvil de navegación (overlay + enlaces escalonados) */
+@keyframes fadein {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes fadeout {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes slideup {
+  0% { opacity: 0; transform: translateY(24px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 /* ===================================================================
    CLASES DE UTILIDAD PERSONALIZADAS
    =================================================================== */
@@ -164,6 +180,18 @@
 
 .animate-glow-teamzen {
   animation: glowTeamzen 3s ease-in-out infinite;
+}
+
+.animate-fadein {
+  animation: fadein 0.3s ease-out both;
+}
+
+.animate-fadeout {
+  animation: fadeout 0.35s ease-in both;
+}
+
+.animate-slideup {
+  animation: slideup 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* ===================================================================
@@ -341,12 +369,28 @@
   .animate-fade-in-up,
   .animate-scale-in,
   .animate-gentle-rotate,
-  .animate-glow-teamzen {
+  .animate-glow-teamzen,
+  .animate-fadein,
+  .animate-fadeout,
+  .animate-slideup,
+  .animate-modal-enter,
+  .animate-modal-exit {
     animation: none;
   }
-  
+
   .card-hover:hover,
   .button-hover:hover {
     transform: none;
+  }
+
+  /* Modal.jsx / LaunchMBIModal.jsx: mantener el cambio de estado (opacidad)
+     como retroalimentación, pero sin el movimiento de escala/traslado */
+  .modal-backdrop-motion,
+  .modal-panel-motion {
+    transition-duration: 150ms !important;
+  }
+
+  .modal-panel-motion {
+    transform: none !important;
   }
 }

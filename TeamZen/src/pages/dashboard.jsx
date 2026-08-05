@@ -1295,9 +1295,9 @@ function ProfileFormModal({
   }, []);
   
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ease-out
+    <div className={`modal-backdrop-motion fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ease-out
       ${isAnimating ? 'backdrop-blur-sm bg-white/10' : 'backdrop-blur-none bg-white/0'}`}>
-      <div className={`bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl shadow-teamzen-strong max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 transition-all duration-300 ease-out
+      <div className={`modal-panel-motion bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl shadow-teamzen-strong max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 transition-all duration-300 ease-out
         ${isAnimating ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

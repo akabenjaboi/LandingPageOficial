@@ -81,13 +81,13 @@ export default function Modal({
   
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 transition-all duration-200 ease-out
+      className={`modal-backdrop-motion fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 transition-all duration-200 ease-out
         ${isAnimating ? 'backdrop-blur-sm bg-white/10' : 'backdrop-blur-none bg-white/0'}`}
       role="dialog"
       aria-modal="true"
       onClick={handleBackdropClick}
     >
-      <div className={`bg-[#FAF9F6] border border-[#DAD5E4] rounded-xl shadow-2xl ${maxWidth} w-full max-h-[85vh] sm:max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out
+      <div className={`modal-panel-motion bg-[#FAF9F6] border border-[#DAD5E4] rounded-xl shadow-2xl ${maxWidth} w-full max-h-[85vh] sm:max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out
         ${isAnimating ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
         {/* Header del modal */}
         <div className="flex items-start justify-between p-4 sm:p-6 border-b border-[#DAD5E4]">
