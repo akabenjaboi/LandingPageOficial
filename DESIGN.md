@@ -36,6 +36,16 @@ typography:
     fontSize: "0.875rem"
     fontWeight: 600
     letterSpacing: "normal"
+  metric:
+    fontFamily: "Roboto, Arial, Helvetica, sans-serif"
+    fontSize: "clamp(1.25rem, 2vw, 1.875rem)"
+    fontWeight: 700
+    letterSpacing: "normal"
+  micro:
+    fontFamily: "Roboto, Arial, Helvetica, sans-serif"
+    fontSize: "0.75rem"
+    fontWeight: 500
+    letterSpacing: "normal"
 rounded:
   sm: "8px"
   md: "12px"
@@ -123,13 +133,16 @@ Paleta de seis tonos: dos acentos (mint de acción, púrpura de reflexión) y cu
 
 ### Hierarchy
 - **Display** (800, `text-5xl sm:text-6xl md:text-7xl`, leading ajustado): titular hero de la landing. Uso único, solo en `HeroSection`.
-- **Headline** (800, `text-3xl sm:text-4xl md:text-5xl`, `tracking-tight`, con `drop-shadow-lg`): títulos de sección de marketing ("Sobre nosotros", "Servicios", "Equipo").
+- **Headline** (800, `text-3xl sm:text-4xl md:text-5xl`, `tracking-tight`, con `drop-shadow-lg`): títulos de sección de marketing ("Cómo funciona", "Lo que incluye", "Nuestro equipo").
 - **Title** (700, `text-2xl sm:text-3xl`): encabezados de página dentro de la app (dashboard, crear/unirse equipo).
+- **Metric** (700, `text-xl sm:text-2xl md:text-3xl`, `tabular-nums`): puntajes y cifras protagonistas — el score antes/después del hero de la landing, las estadísticas rápidas de cada equipo en el dashboard (miembros, participación, bienestar).
 - **Body** (400, `text-base`, `leading-relaxed`): párrafos de contenido.
 - **Label** (600, `text-sm`): links de navegación, etiquetas de formulario, texto de botón.
+- **Micro** (500, `text-xs`): meta-texto secundario en contextos de alta densidad — badges de rol, conteos de respuesta, celdas de la tabla de historial MBI en `reportes.jsx`. Es el piso real de la escala; no bajar de `text-xs` con valores arbitrarios (`text-[10px]`, `text-[11px]`).
 
 ### Named Rules
-**The Monotonic Scale Rule.** Los pasos responsivos de tamaño de texto solo crecen al ensanchar el viewport (`sm:` → `md:` → `lg:`), nunca encogen y luego vuelven a crecer. `ServiceCard.jsx` viola esta regla hoy (`text-5xl sm:text-4xl md:text-6xl` en su ícono; patrón similar en título y cuerpo) — es la única instancia y debe corregirse a una progresión creciente.
+**The Monotonic Scale Rule.** Los pasos responsivos de tamaño de texto solo crecen al ensanchar el viewport (`sm:` → `md:` → `lg:`), nunca encogen y luego vuelven a crecer.
+**The Real Scale Rule.** Todo tamaño de texto usa un paso documentado (`text-xs` es el piso). Un valor arbitrario en píxeles (`text-[10px]`, `text-[9px]`) es deriva a corregir, no una micro-optimización válida — la tabla de historial de `reportes.jsx` conserva algunos por revisar en un pase futuro; no agregar más.
 
 ## Layout
 

@@ -1693,11 +1693,11 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
             </div>
           </div>
           <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
-            <span className="bg-gradient-to-r from-[#55C2A2]/20 to-[#9D83C6]/20 text-[#2E2E3A] text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded-full border border-[#55C2A2]/30">
+            <span className="bg-gradient-to-r from-[#55C2A2]/20 to-[#9D83C6]/20 text-[#2E2E3A] text-xs font-medium px-2 py-0.5 rounded-full border border-[#55C2A2]/30">
               Líder
             </span>
             {team.include_leader_in_metrics === false && (
-              <span className="bg-[#DAD5E4] text-[#5B5B6B] text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded-full hidden sm:inline" title="El líder no se contabiliza en métricas">
+              <span className="bg-[#DAD5E4] text-[#5B5B6B] text-xs font-medium px-2 py-0.5 rounded-full hidden sm:inline" title="El líder no se contabiliza en métricas">
                 Líder excluido
               </span>
             )}
@@ -1786,7 +1786,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                     }}
                   />
                 </div>
-                <p className="mt-1 text-[10px] sm:text-[11px] text-[#5B5B6B] font-medium">{respondedCount} / {totalParticipantes}</p>
+                <p className="mt-1 text-xs text-[#5B5B6B] font-medium">{respondedCount} / {totalParticipantes}</p>
               </div>
             )}
           </div>
@@ -1818,7 +1818,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                     }}
                   />
                 </div>
-                <p className="mt-1 text-[10px] sm:text-[11px] text-gray-500 font-medium">{wellbeingMetric.count} resp.</p>
+                <p className="mt-1 text-xs text-[#5B5B6B] font-medium">{wellbeingMetric.count} resp.</p>
               </div>
             )}
           </div>
@@ -1835,7 +1835,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                 <span className="flex-1">Código de invitación</span>
                 <button
                   onClick={() => setShowInvite(v => !v)}
-                  className="text-[10px] sm:text-xs px-2 py-0.5 rounded-lg border border-[#55C2A2]/50 text-[#2C7B64] hover:bg-[#55C2A2]/20 transition-all duration-200 flex-shrink-0"
+                  className="text-xs px-2 py-0.5 rounded-lg border border-[#55C2A2]/50 text-[#2C7B64] hover:bg-[#55C2A2]/20 transition-all duration-200 flex-shrink-0"
                 >{showInvite ? 'Ocultar' : 'Mostrar'}</button>
               </p>
               <p className="text-sm sm:text-lg font-mono font-bold text-[#2E2E3A] select-all break-all bg-[#FAF9F6] px-2 sm:px-3 py-2 rounded-lg border border-[#DAD5E4]">
@@ -1845,14 +1845,14 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
               </p>
               {team.team_invite_codes?.length > 0 && team.team_invite_codes[0].expires_at && (
                 new Date(team.team_invite_codes[0].expires_at) <= new Date() ? (
-                  <span className="text-[10px] sm:text-xs text-red-600 font-medium">Expirado — genera uno nuevo</span>
+                  <span className="text-xs text-red-600 font-medium">Expirado — genera uno nuevo</span>
                 ) : (
-                  <span className="text-[10px] sm:text-xs text-[#5B5B6B]">
+                  <span className="text-xs text-[#5B5B6B]">
                     Expira el {new Date(team.team_invite_codes[0].expires_at).toLocaleDateString()}
                   </span>
                 )
               )}
-              {copied && <span className="text-[10px] text-green-700 font-medium block">Copiado</span>}
+              {copied && <span className="text-xs text-green-700 font-medium block">Copiado</span>}
             </div>
             <div className="flex flex-col gap-1.5 flex-shrink-0 mt-6 sm:mt-0">
               <button
@@ -2114,7 +2114,7 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="bg-[#55C2A2]/15 text-[#2C7B64] text-[10px] sm:text-xs font-medium px-2.5 py-0.5 rounded-full">
+            <span className="bg-[#55C2A2]/15 text-[#2C7B64] text-xs font-medium px-2.5 py-0.5 rounded-full">
               Miembro
             </span>
 
