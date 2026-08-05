@@ -1,4 +1,5 @@
 # Tool-generated / local tooling state — not part of the project itself
 .claude/
 .impeccable/
+.mcp.json
 **/docs/superpowers/
