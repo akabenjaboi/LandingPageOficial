@@ -222,7 +222,7 @@ export default function MBIPage() {
     <div className="min-h-screen bg-gray-50">
       <AppNavbar user={user} />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 md:pb-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-gray-900">Cuestionario MBI (22 ítems)</h1>

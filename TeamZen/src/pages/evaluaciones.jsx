@@ -185,7 +185,7 @@ export default function EvaluacionesPage() {
     <div className="min-h-screen bg-gray-50">
       <AppNavbar user={user} profile={profile} />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 md:pb-8 space-y-10">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Evaluaciones</h1>
         {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}
         {success && <p className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg px-4 py-3">{success}</p>}

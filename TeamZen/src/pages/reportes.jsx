@@ -362,7 +362,7 @@ export default function ReportesPage() {
   return (
     <div className="min-h-screen bg-[#FAF9F6]">
       <AppNavbar user={user} profile={profile} />
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8 space-y-4 sm:space-y-8">
         {error && !fetching && teams.length === 0 && (
           <div className="mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
             {error}
