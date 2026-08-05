@@ -184,7 +184,7 @@ export default function EditTeamModal({ isOpen, onClose, team, onTeamUpdated }) 
           </Alert>
         )}
 
-        <div className="flex gap-3 pt-4">
+        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
           <button
             type="button"
             onClick={handleClose}

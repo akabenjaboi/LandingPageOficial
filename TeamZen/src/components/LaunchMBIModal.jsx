@@ -33,14 +33,14 @@ export default function LaunchMBIModal({ open, context, launching, onClose, onCo
   const { teamId, teamName, activeCycleId, pendingMembers = [], totalMembers = 0 } = context;
   
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ease-out
-      ${isAnimating ? 'backdrop-blur-sm bg-white/10' : 'backdrop-blur-none bg-white/0'}`} 
-      role="dialog" 
+    <div className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 transition-all duration-200 ease-out
+      ${isAnimating ? 'backdrop-blur-sm bg-white/10' : 'backdrop-blur-none bg-white/0'}`}
+      role="dialog"
       aria-modal="true">
-      <div className={`bg-[#FAF9F6] border border-[#DAD5E4] rounded-xl shadow-2xl max-w-lg w-full p-6 transition-all duration-300 ease-out
+      <div className={`bg-[#FAF9F6] border border-[#DAD5E4] rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6 transition-all duration-300 ease-out
         ${isAnimating ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
         <div className="flex items-start justify-between mb-4">
-          <h3 className="text-lg font-semibold text-[#2E2E3A]">
+          <h3 className="text-base sm:text-lg font-semibold text-[#2E2E3A]">
             {activeCycleId ? 'Iniciar nuevo ciclo MBI' : 'Lanzar MBI'}
           </h3>
           <button
@@ -109,10 +109,10 @@ export default function LaunchMBIModal({ open, context, launching, onClose, onCo
           )}
         </div>
         
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#DAD5E4]">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 pt-4 border-t border-[#DAD5E4]">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 text-sm font-medium text-[#5B5B6B] hover:text-[#2E2E3A] transition-colors duration-200 rounded-lg hover:bg-[#DAD5E4]/30"
+            className="w-full sm:w-auto px-6 py-2.5 text-sm font-medium text-[#5B5B6B] hover:text-[#2E2E3A] transition-colors duration-200 rounded-lg hover:bg-[#DAD5E4]/30"
             disabled={launching}
           >
             Cancelar
@@ -120,7 +120,7 @@ export default function LaunchMBIModal({ open, context, launching, onClose, onCo
           <button
             onClick={() => onConfirm(teamId)}
             disabled={launching}
-            className="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AA690] hover:to-[#8B6FB8] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AA690] hover:to-[#8B6FB8] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center"
           >
             {launching ? (
               <span className="flex items-center gap-2">

@@ -1,10 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '../../supabaseClient';
 
+// Nav de app compartida por todas las páginas internas (dashboard, evaluaciones,
+// reportes, mbi). onProfileEdit/onLogout son opcionales: páginas que no tienen
+// su propio modal de perfil o flujo de logout (evaluaciones, reportes, mbi)
+// obtienen un fallback razonable (ir a /dashboard, cerrar sesión y volver a
+// /login) en vez de tener que reimplementarlo cada una.
 export default function AppNavbar({ user, profile, onProfileEdit, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  const handleProfileEditClick = () => {
+    if (onProfileEdit) {
+      onProfileEdit();
+    } else {
+      navigate('/dashboard');
+    }
+    setShowProfileMenu(false);
+  };
+
+  const handleLogoutClick = async () => {
+    if (onLogout) {
+      onLogout();
+    } else {
+      await supabase.auth.signOut();
+      navigate('/login');
+    }
+    setShowProfileMenu(false);
+  };
 
   // Cerrar menú de perfil al hacer clic fuera
   useEffect(() => {
@@ -53,19 +78,17 @@ export default function AppNavbar({ user, profile, onProfileEdit, onLogout }) {
               >
                 Dashboard
               </a>
-              {profile?.role === "leader" && (
-                <a 
-                  href="#" 
-                  onClick={(e) => { e.preventDefault(); navigate('/evaluaciones'); }}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
-                    location.pathname === '/evaluaciones'
-                      ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white shadow-lg'
-                      : 'text-[#5B5B6B] hover:text-[#2E2E3A] hover:bg-[#DAD5E4]/30'
-                  }`}
-                >
-                  Evaluaciones
-                </a>
-              )}
+              <a
+                href="#"
+                onClick={(e) => { e.preventDefault(); navigate('/evaluaciones'); }}
+                className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
+                  location.pathname === '/evaluaciones'
+                    ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white shadow-lg'
+                    : 'text-[#5B5B6B] hover:text-[#2E2E3A] hover:bg-[#DAD5E4]/30'
+                }`}
+              >
+                Evaluaciones
+              </a>
               <a 
                 href="#" 
                 onClick={(e) => { e.preventDefault(); navigate('/reportes'); }}
@@ -125,28 +148,22 @@ export default function AppNavbar({ user, profile, onProfileEdit, onLogout }) {
                   </div>
                   
                   <button
-                    onClick={() => {
-                      onProfileEdit();
-                      setShowProfileMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-3 text-sm text-[#5B5B6B] 
-                               hover:text-[#2E2E3A] hover:bg-[#DAD5E4]/30 
+                    onClick={handleProfileEditClick}
+                    className="w-full text-left px-4 py-3 text-sm text-[#5B5B6B]
+                               hover:text-[#2E2E3A] hover:bg-[#DAD5E4]/30
                                flex items-center space-x-3 transition-colors duration-200"
                   >
                     <svg className="w-4 h-4 text-[#55C2A2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                     <span>Editar perfil</span>
                   </button>
-                  
+
                   <button
-                    onClick={() => {
-                      onLogout();
-                      setShowProfileMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-3 text-sm text-red-600 
-                               hover:text-red-700 hover:bg-red-50 
+                    onClick={handleLogoutClick}
+                    className="w-full text-left px-4 py-3 text-sm text-red-600
+                               hover:text-red-700 hover:bg-red-50
                                flex items-center space-x-3 transition-colors duration-200"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

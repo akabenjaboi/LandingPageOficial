@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
+import AppNavbar from '../components/AppNavbar';
 import LaunchMBIModal from '../components/LaunchMBIModal';
 import { classifyMBI, computeBurnoutStatus, CLASSIFICATION_NOTE } from '../utils/mbiClassification';
 
@@ -182,18 +183,7 @@ export default function EvaluacionesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <img src="/img/pandalogo.png" alt="TeamZen" className="w-8 h-8" />
-            <span className="font-semibold">Evaluaciones</span>
-          </div>
-          <div className="flex items-center gap-4 text-sm">
-            <button onClick={() => navigate('/dashboard')} className="text-gray-600 hover:text-gray-900">Volver al Dashboard</button>
-            <button onClick={() => navigate('/mbi')} className="text-gray-600 hover:text-gray-900">Responder MBI</button>
-          </div>
-        </div>
-      </nav>
+      <AppNavbar user={user} profile={profile} />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
         {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>}

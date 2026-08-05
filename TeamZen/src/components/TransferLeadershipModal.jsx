@@ -89,7 +89,7 @@ export default function TransferLeadershipModal({ isOpen, onClose, team, members
           </Alert>
         )}
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
           <button
             type="button"
             onClick={handleClose}

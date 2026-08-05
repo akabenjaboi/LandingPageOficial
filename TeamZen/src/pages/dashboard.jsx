@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { Card, Button, Alert, Badge, Input } from "../components/UIComponents";
+import AppNavbar from "../components/AppNavbar";
 import LaunchMBIModal from "../components/LaunchMBIModal";
 import CreateTeamModal from "../components/CreateTeamModal";
 import TeamOptionsMenu from "../components/TeamOptionsMenu";
@@ -34,7 +35,6 @@ export default function Dashboard() {
   // ===================================================================
   const [profile, setProfile] = useState(null);
   const [showProfileForm, setShowProfileForm] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [role, setRole] = useState("");
@@ -392,24 +392,10 @@ export default function Dashboard() {
     }
   }, [loading, user, profile]);
 
-  // Cerrar menú de perfil al hacer clic fuera
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showProfileMenu && !event.target.closest('.profile-menu-container')) {
-        setShowProfileMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showProfileMenu]);
-
   // ===================================================================
   // HANDLERS - AUTENTICACIÓN Y NAVEGACIÓN
   // ===================================================================
-  
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
@@ -784,114 +770,12 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#FAF9F6]">
       {/* Header Navigation */}
-      <nav className="bg-white border-b border-[#DAD5E4] sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14 sm:h-16">
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <img 
-                src="/img/pandazen_favicon.png" 
-                alt="TeamZen Logo" 
-                className="w-8 h-8 sm:w-10 sm:h-10"
-              />
-              <span className="text-lg sm:text-xl font-bold text-[#2E2E3A]">TeamZen</span>
-            </div>
-            
-            {/* Navigation Links - Hidden on mobile, shown on desktop */}
-            <div className="hidden lg:flex items-center space-x-6">
-              <button 
-                className="text-[#55C2A2] hover:text-[#4AB393] font-medium transition-colors duration-200 px-3 py-2 rounded-lg"
-                onClick={() => navigate('/dashboard')}
-              >
-                Equipos
-              </button>
-              <button 
-                className="text-[#5B5B6B] hover:text-[#2E2E3A] font-medium transition-colors duration-200 px-3 py-2 rounded-lg"
-                onClick={() => navigate('/evaluaciones')}
-              >
-                Evaluaciones
-              </button>
-              <button 
-                className="text-[#5B5B6B] hover:text-[#2E2E3A] font-medium transition-colors duration-200 px-3 py-2 rounded-lg"
-                onClick={() => navigate('/reportes')}
-              >
-                Reportes
-              </button>
-            </div>
-
-            {/* User Menu */}
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <div className="text-right hidden md:block">
-                <p className="text-xs sm:text-sm text-[#55C2A2]">Bienvenido,</p>
-                <p className="font-medium text-sm sm:text-base text-[#2E2E3A] truncate max-w-32">
-                  {profile?.first_name && profile?.last_name 
-                    ? `${profile.first_name} ${profile.last_name}`
-                    : user?.email?.split('@')[0] || user?.email
-                  }
-                </p>
-              </div>
-              <div className="relative profile-menu-container">
-                <button 
-                  className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-[#55C2A2] to-[#7DDFC7] rounded-full 
-                             flex items-center justify-center text-white font-medium hover:from-[#4AB393] hover:to-[#6ED4B8] 
-                             transition-all duration-300 shadow-lg hover:shadow-teamzen-glow text-sm sm:text-base"
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
-                >
-                  {profile?.first_name?.charAt(0) || user?.email?.charAt(0).toUpperCase()}
-                </button>
-                
-                {/* Dropdown Menu */}
-                {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-56 sm:w-48 bg-white rounded-xl shadow-teamzen-strong 
-                                  border border-[#DAD5E4] py-1 z-50 animate-modal-enter">
-                    <div className="px-4 py-3 border-b border-[#DAD5E4]">
-                      <p className="text-sm font-medium text-[#2E2E3A] truncate">
-                        {profile?.first_name && profile?.last_name 
-                          ? `${profile.first_name} ${profile.last_name}`
-                          : 'Usuario'
-                        }
-                      </p>
-                      <p className="text-xs text-[#55C2A2] truncate">{user?.email}</p>
-                      {profile?.role && (
-                        <span className="inline-block mt-2 bg-gradient-to-r from-[#55C2A2]/20 to-[#9D83C6]/20 
-                                         text-[#2E2E3A] text-xs font-medium px-2 py-1 rounded-full 
-                                         border border-[#55C2A2]/30">
-                          {profile.role === "leader" ? "Líder" : "Miembro"}
-                        </span>
-                      )}
-                    </div>
-                    
-                    <button
-                      onClick={() => {
-                        setShowProfileForm(true);
-                        setShowProfileMenu(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-[#2E2E3A] hover:bg-[#FAF9F6] flex items-center space-x-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      <span>Editar perfil</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => {
-                        handleLogout();
-                        setShowProfileMenu(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
-                      <span>Cerrar sesión</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <AppNavbar
+        user={user}
+        profile={profile}
+        onProfileEdit={() => setShowProfileForm(true)}
+        onLogout={handleLogout}
+      />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8"

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import LoadingSpinner from '../components/LoadingSpinner';
+import AppNavbar from '../components/AppNavbar';
 import TrendChart from '../components/TrendChart';
 import { generateAdvice, getAIAdviceWithCache } from '../utils/adviceEngine';
 import { classifyMBI, computeBurnoutStatus, WELLBEING_NORMALIZATION } from '../utils/mbiClassification';
@@ -349,28 +350,7 @@ export default function ReportesPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F6]">
-      <nav className="bg-white border-b border-[#DAD5E4] sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <img src="/img/pandalogo.png" alt="TeamZen" className="w-6 h-6 sm:w-8 sm:h-8" />
-            <span className="font-semibold text-[#2E2E3A] text-sm sm:text-base">Reportes</span>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-            <button 
-              onClick={() => navigate('/dashboard')} 
-              className="text-[#55C2A2] hover:text-[#2E2E3A] font-medium transition-colors duration-200 px-2 py-1"
-            >
-              Dashboard
-            </button>
-            <button 
-              onClick={() => navigate('/evaluaciones')} 
-              className="text-[#5B5B6B] hover:text-[#2E2E3A] font-medium transition-colors duration-200 px-2 py-1"
-            >
-              Evaluaciones
-            </button>
-          </div>
-        </div>
-      </nav>
+      <AppNavbar user={user} profile={profile} />
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-8">
         {error && !fetching && teams.length === 0 && (
           <div className="mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">

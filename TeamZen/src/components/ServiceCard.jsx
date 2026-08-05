@@ -39,19 +39,19 @@ export default function ServiceCard({
           <div className="absolute inset-0 bg-gradient-to-r from-[#55C2A2]/20 to-[#9D83C6]/20 
                           rounded-full blur-xl opacity-0 group-hover:opacity-100 
                           transition-opacity duration-300 scale-150"></div>
-          <span className={`text-5xl sm:text-4xl md:text-6xl ${iconColor} 
+          <span className={`text-4xl sm:text-5xl md:text-6xl ${iconColor}
                            relative z-10 block group-hover:animate-gentle-rotate
                            transition-all duration-300 group-hover:scale-110`}>
             {icon}
           </span>
         </div>
-        
-        <h4 className="text-xl sm:text-lg md:text-2xl font-bold mb-3 sm:mb-2 md:mb-3 
+
+        <h4 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-2 md:mb-3
                        text-[#2E2E3A] group-hover:text-gradient transition-all duration-300">
           {title}
         </h4>
-        
-        <p className="text-base sm:text-sm md:text-lg text-[#5B5B6B] mb-4 sm:mb-3 md:mb-4 
+
+        <p className="text-sm sm:text-base md:text-lg text-[#5B5B6B] mb-4 sm:mb-3 md:mb-4
                       leading-relaxed group-hover:text-[#2E2E3A] transition-colors duration-300">
           {description}
         </p>

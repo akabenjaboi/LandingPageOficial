@@ -8,19 +8,19 @@ import { ThemeSupa } from '@supabase/auth-ui-shared'
 // Componente separado para el formulario de login
 function LoginForm() {
   return (
-    <div className="w-full flex justify-center items-center min-h-screen px-4 py-12">
+    <div className="w-full flex justify-center items-center min-h-screen px-4 sm:px-6 py-8 sm:py-12">
       <div className="w-full max-w-lg">
-        <div className="text-center mb-10">
-         
-          <h1 className="text-4xl font-bold text-[#2E2E3A] mb-3">
+        <div className="text-center mb-8 sm:mb-10">
+
+          <h1 className="text-3xl sm:text-4xl font-bold text-[#2E2E3A] mb-3">
             Team<span className="text-[#55C2A2]">Zen</span>
           </h1>
-          <p className="text-[#5B5B6B] text-lg">Mide y reduce el burnout en tu equipo</p>
+          <p className="text-[#5B5B6B] text-base sm:text-lg">Mide y reduce el burnout en tu equipo</p>
         </div>
-        
+
 
         <div
-          className="bg-white rounded-3xl shadow-2xl p-10 border border-[#DAD5E4]/50 animate-fadein backdrop-blur-sm"
+          className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10 border border-[#DAD5E4]/50 animate-fadein backdrop-blur-sm"
           style={{
             boxShadow: "0 20px 50px 0 rgba(44, 62, 80, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.8)",
             background: "rgba(250, 249, 246, 0.95)",
@@ -156,7 +156,7 @@ function FloatingBackButton() {
   return (
     <a
       href="/"
-      className="fixed top-8 right-8 z-50 px-6 py-3 rounded-2xl shadow-2xl bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#9D83C6] hover:to-[#55C2A2] text-white font-bold text-base flex items-center gap-3 transition-all duration-500 animate-float backdrop-blur-sm"
+      className="fixed top-3 right-3 sm:top-8 sm:right-8 z-50 px-3 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl shadow-2xl bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#9D83C6] hover:to-[#55C2A2] text-white font-bold text-sm sm:text-base flex items-center gap-2 sm:gap-3 transition-all duration-500 animate-float backdrop-blur-sm"
       style={{
         boxShadow: "0 15px 35px 0 rgba(44,62,80,0.2), 0 5px 15px 0 rgba(85, 194, 162, 0.4)",
         letterSpacing: "0.02em",
@@ -164,7 +164,7 @@ function FloatingBackButton() {
       aria-label="Volver al landing"
     >
       <svg
-        className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1"
+        className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 transition-transform duration-300 group-hover:-translate-x-1"
         fill="none"
         stroke="currentColor"
         strokeWidth={2.5}
@@ -172,7 +172,7 @@ function FloatingBackButton() {
       >
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
       </svg>
-      <span>Volver al landing</span>
+      <span className="whitespace-nowrap">Volver al landing</span>
       <style>
         {`
           .animate-float {

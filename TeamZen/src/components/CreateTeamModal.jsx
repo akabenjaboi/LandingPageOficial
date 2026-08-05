@@ -240,7 +240,7 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
             </Alert>
           )}
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
             <button
               type="button"
               onClick={handleClose}
@@ -298,8 +298,8 @@ export default function CreateTeamModal({ isOpen, onClose, onTeamCreated }) {
             </p>
           </div>
 
-          <div className="flex gap-3">
-            <button 
+          <div className="flex flex-col-reverse sm:flex-row gap-3">
+            <button
               onClick={copyToClipboard}
               className="flex-1 border-2 border-[#55C2A2] text-[#55C2A2] px-4 py-2 rounded-xl font-medium hover:bg-[#55C2A2] hover:text-white transition-all duration-300 flex items-center justify-center gap-2"
             >
