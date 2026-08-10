@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import AppNavbar from '../components/AppNavbar';
@@ -56,6 +56,11 @@ export default function MBIPage() {
   const [activeCycle, setActiveCycle] = useState(null);
   const [alreadyAnswered, setAlreadyAnswered] = useState(false);
   const [teamName, setTeamName] = useState('');
+  // Guarda de re-entrancia sincrónica: `submitting` (estado de React) no basta
+  // para bloquear un doble clic/doble submit muy rápido, porque el botón no
+  // se deshabilita hasta el siguiente render. Esta ref se marca de inmediato,
+  // antes de cualquier await, cerrando esa ventana de carrera por completo.
+  const submittingRef = useRef(false);
 
   const teamId = searchParams.get('team');
 
@@ -168,6 +173,8 @@ export default function MBIPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current) return; // ya hay un envío en curso — ignora clics/submits repetidos
+    submittingRef.current = true;
     setSubmitting(true);
     setError('');
     setSuccess('');
@@ -195,12 +202,36 @@ export default function MBIPage() {
       }
       if (alreadyAnswered) throw new Error('Ya respondiste esta evaluación.');
 
+      // Defensa adicional al gate visual de "allAnswered": nunca crear una
+      // respuesta en el servidor si falta algún ítem, para no dejar una fila
+      // huérfana en mbi_responses (sin mbi_answers/mbi_scores) que después
+      // bloquee cualquier reintento con un error de llave duplicada.
+      const missingItems = ITEMS.filter((it) => answers[it.id] == null);
+      if (missingItems.length > 0) {
+        throw new Error(`Faltan ${missingItems.length} respuesta(s) por completar. Revisa el cuestionario antes de enviar.`);
+      }
+
       const { data: resp, error: insertRespErr } = await supabase
         .from('mbi_responses')
         .insert([{ user_id: currentUser.id, team_id: teamId || null, cycle_id: cycleId }])
         .select('id')
         .single();
-      if (insertRespErr) throw insertRespErr;
+      if (insertRespErr) {
+        // Violación de la restricción única (cycle_id, user_id): esta respuesta
+        // ya se había guardado antes (p. ej. un doble clic mandó dos envíos, o
+        // la página quedó abierta en dos pestañas). El envío en sí NO falló
+        // desde la perspectiva del usuario — sus respuestas ya están guardadas
+        // — así que se trata igual que un envío exitoso en vez de mostrar el
+        // error crudo de Postgres y dejarlo varado sin redirigir.
+        if (insertRespErr.code === '23505') {
+          setAlreadyAnswered(true);
+          if (draftKey) localStorage.removeItem(draftKey);
+          setSuccess('Ya habías enviado esta evaluación. ¡Gracias por tu participación!');
+          setTimeout(() => navigate('/dashboard'), 1500);
+          return;
+        }
+        throw insertRespErr;
+      }
 
       const responseId = resp.id;
 
@@ -229,6 +260,7 @@ export default function MBIPage() {
       console.error(err);
       setError(err.message || 'No se pudo enviar la respuesta. Verifica que las tablas MBI existan.');
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
