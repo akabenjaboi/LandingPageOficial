@@ -2,12 +2,12 @@
 import { supabase } from '../../supabaseClient';
 
 /**
- * Genera un hash simple de los datos MBI para detectar cambios
+ * Genera un hash simple de los datos IBDL-6 para detectar cambios
  */
-function generateDataHash(mbiData) {
-  const { ae, d, rp, wellbeing, teamContext, history } = mbiData;
+function generateDataHash(ibdlData) {
+  const { ag, ci, ef, wellbeing, teamContext, history } = ibdlData;
   const dataString = JSON.stringify({
-    ae, d, rp, wellbeing, 
+    ag, ci, ef, wellbeing,
     teamName: teamContext?.name,
     teamDesc: teamContext?.description,
     historyLength: history?.length || 0,
@@ -29,11 +29,11 @@ function generateDataHash(mbiData) {
  * Busca análisis de IA en cache
  * @param {string} teamId - ID del equipo
  * @param {string} analysisId - ID del ciclo o identificador semanal
- * @param {object} mbiData - Datos MBI para verificar si cambió
+ * @param {object} ibdlData - Datos IBDL-6 para verificar si cambió
  * @param {string} analysisType - Tipo de análisis: 'cycle' o 'weekly'
  * @returns {object|null} - Análisis cacheado o null si no existe/expiró
  */
-export async function getCachedAnalysis(teamId, analysisId, mbiData, analysisType = 'cycle') {
+export async function getCachedAnalysis(teamId, analysisId, ibdlData, analysisType = 'cycle') {
   try {
     console.log('🔍 Buscando análisis en cache...', { teamId, analysisId, analysisType });
     
@@ -62,9 +62,9 @@ export async function getCachedAnalysis(teamId, analysisId, mbiData, analysisTyp
     }
     
     // Verificar si los datos cambiaron
-    const currentHash = generateDataHash(mbiData);
+    const currentHash = generateDataHash(ibdlData);
     if (data.mbi_data_hash !== currentHash) {
-      console.log('🔄 Datos MBI cambiaron, invalidando cache');
+      console.log('🔄 Datos IBDL-6 cambiaron, invalidando cache');
       // Eliminar cache obsoleto
       await supabase
         .from('ai_analysis_cache')
@@ -96,11 +96,11 @@ export async function getCachedAnalysis(teamId, analysisId, mbiData, analysisTyp
  * @param {string} teamId - ID del equipo
  * @param {string} analysisId - ID del ciclo o identificador semanal
  * @param {object} analysis - Análisis de IA a guardar
- * @param {object} mbiData - Datos MBI originales
+ * @param {object} ibdlData - Datos IBDL-6 originales
  * @param {string} analysisType - Tipo de análisis: 'cycle' o 'weekly'
  * @param {number} ttlDays - Días hasta expiración (default: 7)
  */
-export async function saveCachedAnalysis(teamId, analysisId, analysis, mbiData, analysisType = 'cycle', ttlDays = 7) {
+export async function saveCachedAnalysis(teamId, analysisId, analysis, ibdlData, analysisType = 'cycle', ttlDays = 7) {
   try {
     console.log('💾 Guardando análisis en cache...', { teamId, analysisId, analysisType, ttlDays });
     
@@ -111,7 +111,7 @@ export async function saveCachedAnalysis(teamId, analysisId, analysis, mbiData, 
       team_id: teamId,
       analysis_type: analysisType,
       analysis_data: analysis,
-      mbi_data_hash: generateDataHash(mbiData),
+      mbi_data_hash: generateDataHash(ibdlData),
       expires_at: expiresAt.toISOString()
     };
     

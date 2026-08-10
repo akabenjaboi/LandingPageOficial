@@ -4,44 +4,29 @@ import { supabase } from '../../supabaseClient';
 import AppNavbar from '../components/AppNavbar';
 import { Alert, Notice } from '../components/app-ui';
 
-// Minimal MBI-HSS (22 items). Subscales: AE (Agotamiento Emocional), D (Despersonalización), RP (Realización Personal)
-// Note: The exact copyrighted item texts are not included. Use placeholders; replace with licensed content if you have rights.
+// Inventario Breve de Desgaste Laboral, versión corta (IBDL-6).
+// Ver inventario-breve-burnout.md en la raíz del repo para el instrumento
+// completo (IBDL-12) y las notas de validación/calibración pendientes.
+// Reemplaza al MBI de 22 ítems: mismo rol (una evaluación por ronda), ruta
+// y tablas conceptualmente equivalentes (ibdl_* en vez de mbi_*).
 const ITEMS = [
-  { id: 1, sub: 'AE', text: 'Me siento emocionalmente defraudado en mi trabajo' },
-  { id: 2, sub: 'AE', text: 'Cuando termino mi jornada de trabajo me siento agotado' },
-  { id: 3, sub: 'AE', text: 'Cuando me levanto por la mañana y me enfrento a otra jornada de trabajo me siento agotado' },
-  { id: 4, sub: 'RP', text: 'Siento que puedo entender fácilmente a las personas que tengo que atender ' },
-  { id: 5, sub: 'D', text: 'Siento que estoy tratando a algunos beneficiados de mí, como si fuesen objetos impersonales ' },
-  { id: 6, sub: 'AE', text: 'Siento que trabajar todo el día con la gente me cansa ' },
-  { id: 7, sub: 'RP', text: 'Siento que trato con mucha efectividad los problemas de las personas a las que tengo que atender' },
-  { id: 8, sub: 'AE', text: 'Siento que mi trabajo me está desgastando ' },
-  { id: 9, sub: 'RP', text: 'Siento que estoy influyendo positivamente en las vidas de otras personas a través de mi trabajo ' },
-  { id: 10, sub: 'D', text: 'Siento que me he hecho más duro con la gente ' },
-  { id: 11, sub: 'D', text: 'Me preocupa que este trabajo me está endureciendo emocionalmente' },
-  { id: 12, sub: 'RP', text: 'Me siento muy enérgico en mi trabajo' },
-  { id: 13, sub: 'AE', text: 'Me siento frustrado por el trabajo' },
-  { id: 14, sub: 'AE', text: 'Siento que estoy demasiado tiempo en mi trabajo ' },
-  { id: 15, sub: 'D', text: 'Siento que realmente no me importa lo que les ocurra a las personas a las que tengo que atender profesionalmente ' },
-  { id: 16, sub: 'AE', text: 'Siento que trabajar en contacto directo con la gente me cansa' },
-  { id: 17, sub: 'RP', text: 'Siento que puedo crear con facilidad un clima agradable en mi trabajo ' },
-  { id: 18, sub: 'RP', text: 'Me siento estimulado después de haber trabajado íntimamente con quienes tengo que atender ' },
-  { id: 19, sub: 'RP', text: 'Creo que consigo muchas cosas valiosas en este trabajo' },
-  { id: 20, sub: 'AE', text: 'Me siento como si estuviera al límite de mis posibilidades ' },
-  { id: 21, sub: 'RP', text: 'Siento que en mi trabajo los problemas emocionales son tratados de forma adecuada ' },
-  { id: 22, sub: 'D', text: 'Me parece que los beneficiarios de mi trabajo me culpan de algunos problemas' },
+  { id: 1, sub: 'AG', text: 'Termino mi jornada sintiéndome completamente sin energía.' },
+  { id: 2, sub: 'AG', text: 'Me cuesta reponerme del cansancio, incluso después de descansar.' },
+  { id: 3, sub: 'CI', text: 'He perdido el interés genuino por las personas con las que trabajo.' },
+  { id: 4, sub: 'CI', text: 'Trato mi trabajo como una obligación mecánica, sin involucrarme de verdad.' },
+  { id: 5, sub: 'EF', text: 'Siento que estoy logrando cosas valiosas en mi trabajo.' },
+  { id: 6, sub: 'EF', text: 'Confío en mi capacidad para resolver los problemas que surgen en mi puesto.' },
 ];
 
-const SUBSCALE_LABEL = { AE: 'Agotamiento emocional', D: 'Despersonalización', RP: 'Realización personal' };
+const SUBSCALE_LABEL = { AG: 'Agotamiento', CI: 'Cinismo / distanciamiento', EF: 'Eficacia percibida' };
 
-// Escala oficial 0–6
+// Escala oficial 1–5
 const SCALE = [
-  { value: 0, label: 'Nunca' },
-  { value: 1, label: 'Pocas veces al año' },
-  { value: 2, label: 'Una vez al mes o menos' },
-  { value: 3, label: 'Pocas veces al mes' },
-  { value: 4, label: 'Una vez a la semana' },
-  { value: 5, label: 'Pocas veces a la semana' },
-  { value: 6, label: 'Todos los días' },
+  { value: 1, label: 'Nunca' },
+  { value: 2, label: 'Rara vez' },
+  { value: 3, label: 'A veces' },
+  { value: 4, label: 'Frecuentemente' },
+  { value: 5, label: 'Siempre' },
 ];
 
 export default function MBIPage() {
@@ -74,7 +59,7 @@ export default function MBIPage() {
       }
       setUser(u);
 
-      const { error: closeExpiredError } = await supabase.rpc('close_expired_mbi_cycles');
+      const { error: closeExpiredError } = await supabase.rpc('close_expired_ibdl_cycles');
       if (closeExpiredError) {
         console.warn('No se pudieron cerrar rondas vencidas', closeExpiredError);
       }
@@ -87,7 +72,7 @@ export default function MBIPage() {
         try {
           // Simplified: any cycle with status='active' counts. We ignore start/end windows to avoid blocking selection.
           const { data: cycle, error: cycleErr } = await supabase
-            .from('mbi_evaluation_cycles')
+            .from('ibdl_evaluation_cycles')
             .select('*')
             .eq('team_id', teamId)
             .eq('status', 'active')
@@ -102,7 +87,7 @@ export default function MBIPage() {
 
           // If there's an end_at in the past, treat as no active cycle (defensive)
             if (!cycle || (cycle?.end_at && new Date(cycle.end_at) <= new Date())) {
-              setError('No hay una evaluación MBI activa para este equipo.');
+              setError('No hay una evaluación activa para este equipo.');
               return;
             }
             setActiveCycle(cycle);
@@ -110,7 +95,7 @@ export default function MBIPage() {
             // Scope the draft key by user + team + cycle so answers never
             // leak across users on a shared machine, across teams, or
             // across evaluation rounds for the same team.
-            const key = `mbi_draft_${u.id}_${teamId}_${cycle.id}`;
+            const key = `ibdl_draft_${u.id}_${teamId}_${cycle.id}`;
             setDraftKey(key);
             const saved = localStorage.getItem(key);
             if (saved) {
@@ -123,7 +108,7 @@ export default function MBIPage() {
 
             // Check if user already responded in this active cycle
             const { data: existing, error: existingErr } = await supabase
-              .from('mbi_responses')
+              .from('ibdl_responses')
               .select('id')
               .eq('user_id', u.id)
               .eq('cycle_id', cycle.id)
@@ -140,7 +125,7 @@ export default function MBIPage() {
           setError('Error verificando ronda activa.');
         }
       } else {
-        const key = `mbi_draft_${u.id}_personal`;
+        const key = `ibdl_draft_${u.id}_personal`;
         setDraftKey(key);
         const saved = localStorage.getItem(key);
         if (saved) {
@@ -161,10 +146,10 @@ export default function MBIPage() {
   }, [answers, draftKey]);
 
   const scores = useMemo(() => {
-    const ae = ITEMS.filter(i => i.sub === 'AE').reduce((acc, i) => acc + (answers[i.id] != null ? answers[i.id] : 0), 0);
-    const d = ITEMS.filter(i => i.sub === 'D').reduce((acc, i) => acc + (answers[i.id] != null ? answers[i.id] : 0), 0);
-    const rp = ITEMS.filter(i => i.sub === 'RP').reduce((acc, i) => acc + (answers[i.id] != null ? answers[i.id] : 0), 0);
-    return { ae, d, rp };
+    const ag = ITEMS.filter(i => i.sub === 'AG').reduce((acc, i) => acc + (answers[i.id] != null ? answers[i.id] : 0), 0);
+    const ci = ITEMS.filter(i => i.sub === 'CI').reduce((acc, i) => acc + (answers[i.id] != null ? answers[i.id] : 0), 0);
+    const ef = ITEMS.filter(i => i.sub === 'EF').reduce((acc, i) => acc + (answers[i.id] != null ? answers[i.id] : 0), 0);
+    return { ag, ci, ef };
   }, [answers]);
 
   const answeredCount = Object.keys(answers).length;
@@ -190,7 +175,7 @@ export default function MBIPage() {
         if (!activeCycle) throw new Error('No hay ronda activa.');
         // Comprobar que el ciclo todavía existe en la BD
         const { data: cycleExists, error: cycleCheckErr } = await supabase
-          .from('mbi_evaluation_cycles')
+          .from('ibdl_evaluation_cycles')
           .select('id,status')
           .eq('id', activeCycle.id)
           .maybeSingle();
@@ -204,15 +189,15 @@ export default function MBIPage() {
 
       // Defensa adicional al gate visual de "allAnswered": nunca crear una
       // respuesta en el servidor si falta algún ítem, para no dejar una fila
-      // huérfana en mbi_responses (sin mbi_answers/mbi_scores) que después
-      // bloquee cualquier reintento con un error de llave duplicada.
+      // huérfana (sin ibdl_answers/ibdl_scores) que después bloquee cualquier
+      // reintento con un error de llave duplicada.
       const missingItems = ITEMS.filter((it) => answers[it.id] == null);
       if (missingItems.length > 0) {
         throw new Error(`Faltan ${missingItems.length} respuesta(s) por completar. Revisa el cuestionario antes de enviar.`);
       }
 
       const { data: resp, error: insertRespErr } = await supabase
-        .from('mbi_responses')
+        .from('ibdl_responses')
         .insert([{ user_id: currentUser.id, team_id: teamId || null, cycle_id: cycleId }])
         .select('id')
         .single();
@@ -243,14 +228,15 @@ export default function MBIPage() {
         value: answers[it.id] ?? null,
       }));
       const { error: insertAnsErr } = await supabase
-        .from('mbi_answers')
+        .from('ibdl_answers')
         .insert(answersRows);
       if (insertAnsErr) throw insertAnsErr;
 
-      // Insert aggregate scores
+      // Insert aggregate scores (crudos, sin invertir EF — la inversión se
+      // aplica al calcular riesgo/bienestar, no al guardar)
       const { error: insertScoreErr } = await supabase
-        .from('mbi_scores')
-        .insert([{ response_id: responseId, ae_score: scores.ae, d_score: scores.d, rp_score: scores.rp }]);
+        .from('ibdl_scores')
+        .insert([{ response_id: responseId, ag_score: scores.ag, ci_score: scores.ci, ef_score: scores.ef }]);
       if (insertScoreErr) throw insertScoreErr;
 
       if (draftKey) localStorage.removeItem(draftKey);
@@ -258,7 +244,7 @@ export default function MBIPage() {
       setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {
       console.error(err);
-      setError(err.message || 'No se pudo enviar la respuesta. Verifica que las tablas MBI existan.');
+      setError(err.message || 'No se pudo enviar la respuesta. Verifica que las tablas del inventario existan.');
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
@@ -276,9 +262,9 @@ export default function MBIPage() {
               {teamName}
             </span>
           )}
-          <h1 className="font-['Poppins',_Arial,_sans-serif] text-[26px] font-bold tracking-[-.02em] text-[#2E2E3A] sm:text-[30px]">Cuestionario MBI (22 ítems)</h1>
+          <h1 className="font-['Poppins',_Arial,_sans-serif] text-[26px] font-bold tracking-[-.02em] text-[#2E2E3A] sm:text-[30px]">Inventario Breve de Desgaste Laboral</h1>
           <p className="text-base text-[#5B5B6B]">
-            Responde según tu experiencia de las últimas semanas. No hay respuestas correctas; tus respuestas individuales no se comparten con tu líder.
+            Indica con qué frecuencia te ha pasado en las últimas 2-4 semanas. No hay respuestas correctas; tus respuestas individuales no se comparten con tu líder.
           </p>
         </div>
 
@@ -312,7 +298,7 @@ export default function MBIPage() {
                   <span className="text-xs font-bold uppercase tracking-[.06em] text-[#5B5B6B]">{SUBSCALE_LABEL[it.sub]}</span>
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+              <div className="grid grid-cols-5 gap-2">
                 {SCALE.map((s) => {
                   const on = answers[it.id] === s.value;
                   return (
@@ -322,7 +308,7 @@ export default function MBIPage() {
                       aria-pressed={on}
                       disabled={disabled}
                       onClick={() => setAnswers((a) => ({ ...a, [it.id]: s.value }))}
-                      className={`flex min-h-[74px] flex-col items-center justify-center gap-[5px] rounded-[14px] px-1.5 py-[11px] transition disabled:cursor-not-allowed ${
+                      className={`flex min-h-[74px] flex-col items-center justify-center gap-[5px] rounded-[14px] px-1 py-[11px] transition disabled:cursor-not-allowed ${
                         on
                           ? 'bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] text-white shadow-[0_10px_20px_rgba(85,194,162,.26)]'
                           : disabled

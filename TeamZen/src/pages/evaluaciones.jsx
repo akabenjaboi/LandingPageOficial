@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import AppNavbar from '../components/AppNavbar';
 import LaunchMBIPanel from '../components/LaunchMBIPanel';
-import { classifyMBI, computeBurnoutStatus, CLASSIFICATION_NOTE } from '../utils/mbiClassification';
+import { classifyIbdl, IBDL_CLASSIFICATION_NOTE } from '../utils/ibdlClassification';
 
 export default function EvaluacionesPage() {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ export default function EvaluacionesPage() {
       if (!currentUser) { navigate('/login'); return; }
       setUser(currentUser);
 
-      const { error: closeExpiredError } = await supabase.rpc('close_expired_mbi_cycles');
+      const { error: closeExpiredError } = await supabase.rpc('close_expired_ibdl_cycles');
       if (closeExpiredError) {
         console.warn('No se pudieron cerrar rondas vencidas', closeExpiredError);
       }
@@ -40,10 +40,10 @@ export default function EvaluacionesPage() {
       }
       setProfile(prof);
 
-      // Load personal MBI history (scores join)
+      // Load personal evaluation history (scores join)
       const { data: respData, error: respError } = await supabase
-        .from('mbi_responses')
-        .select('id, created_at, team_id, teams(name), mbi_scores(ae_score,d_score,rp_score)')
+        .from('ibdl_responses')
+        .select('id, created_at, team_id, teams(name), ibdl_scores(ag_score,ci_score,ef_score)')
         .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false });
       if (respError) {
@@ -64,7 +64,7 @@ export default function EvaluacionesPage() {
           if (leaderTeams && leaderTeams.length > 0) {
             try {
               const { data: cycles, error: cyclesError } = await supabase
-                .from('mbi_evaluation_cycles')
+                .from('ibdl_evaluation_cycles')
                 .select('id, team_id, status')
                 .in('team_id', leaderTeams.map(t => t.id))
                 .eq('status', 'active');
@@ -113,10 +113,10 @@ export default function EvaluacionesPage() {
     let pendingMembers = members.slice();
     if (activeCycleId) {
       try {
-        // Uses mbi_cycle_respondents (participation only, no scores) so opted-out
+        // Uses ibdl_cycle_respondents (participation only, no scores) so opted-out
         // members who did respond aren't nudged with a reminder.
         const { data: responded, error: respondedError } = await supabase
-          .rpc('mbi_cycle_respondents', { p_cycle_id: activeCycleId });
+          .rpc('ibdl_cycle_respondents', { p_cycle_id: activeCycleId });
         if (respondedError) {
           setError('No se pudo verificar quién ha respondido.');
           return;
@@ -145,27 +145,27 @@ export default function EvaluacionesPage() {
     try {
       // Cerrar ciclo activo previo
       const { error: closeError } = await supabase
-        .from('mbi_evaluation_cycles')
+        .from('ibdl_evaluation_cycles')
         .update({ status: 'closed', end_at: new Date().toISOString() })
         .eq('team_id', teamId)
         .eq('status', 'active');
       if (closeError) {
-        setError('No se pudo cerrar la ronda anterior. Intenta iniciar el MBI de nuevo.');
+        setError('No se pudo cerrar la ronda anterior. Intenta iniciar la evaluación de nuevo.');
         return;
       }
       // Crear nuevo
       const { data: newCycle, error } = await supabase
-        .from('mbi_evaluation_cycles')
+        .from('ibdl_evaluation_cycles')
         .insert([{ team_id: teamId, status: 'active' }])
         .select('id, team_id')
         .single();
       if (error) throw error;
       setActiveCycles(prev => ({ ...prev, [teamId]: newCycle.id }));
-      setSuccess('Nueva ronda MBI creada correctamente.');
+      setSuccess('Nueva ronda creada correctamente.');
       setShowLaunchPanel(false);
       setLaunchContext(null);
     } catch (e) {
-      setError(e.message || 'Error al iniciar la ronda MBI');
+      setError(e.message || 'Error al iniciar la ronda');
     } finally {
       setLaunching(false);
     }
@@ -181,12 +181,12 @@ export default function EvaluacionesPage() {
 
   // Utilizamos la versión centralizada (clasificación + estado)
 
-  const statusColor = (status) => {
-    switch (status) {
-      case 'Burnout': return 'bg-red-100 text-red-700';
-      case 'Riesgo Alto': return 'bg-orange-100 text-orange-700';
-      case 'Riesgo': return 'bg-yellow-100 text-yellow-700';
-      case 'Sin indicios': return 'bg-green-100 text-green-700';
+  const statusColor = (level) => {
+    switch (level) {
+      case 'Muy alto': return 'bg-red-100 text-red-700';
+      case 'Alto': return 'bg-orange-100 text-orange-700';
+      case 'Moderado': return 'bg-yellow-100 text-yellow-700';
+      case 'Bajo': return 'bg-green-100 text-green-700';
       default: return 'bg-[#DAD5E4]/50 text-[#5B5B6B]';
     }
   };
@@ -202,7 +202,7 @@ export default function EvaluacionesPage() {
         {profile?.role === 'leader' && (
           <section className="bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl shadow-teamzen p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E3A]">Iniciar ronda MBI en un equipo</h2>
+              <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E3A]">Iniciar ronda de evaluación en un equipo</h2>
             </div>
 
             {/* Información importante sobre duración de ciclos — acción operativa, tono mint */}
@@ -214,7 +214,7 @@ export default function EvaluacionesPage() {
                 <div>
                   <p className="text-xs font-medium text-[#2E2E3A] mb-1">Gestión de rondas</p>
                   <p className="text-xs text-[#5B5B6B]">
-                    Las rondas MBI duran <strong className="text-[#2E2E3A]">7 días calendario</strong> desde su inicio y se cierran automáticamente.
+                    Las rondas duran <strong className="text-[#2E2E3A]">7 días calendario</strong> desde su inicio y se cierran automáticamente.
                     Puedes ver el progreso y generar reportes en cualquier momento durante este período.
                   </p>
                 </div>
@@ -238,7 +238,7 @@ export default function EvaluacionesPage() {
                       onClick={() => prepareLaunch(t)}
                       aria-expanded={isLaunchingThisTeam}
                     >
-                      {activeCycles[t.id] ? (launching ? 'Iniciando...' : 'Nueva ronda MBI') : (launching ? 'Iniciando...' : 'Iniciar ronda MBI')}
+                      {activeCycles[t.id] ? (launching ? 'Iniciando...' : 'Nueva ronda') : (launching ? 'Iniciando...' : 'Iniciar ronda')}
                     </button>
                     <button
                       className="text-[#8160B6] text-xs font-medium underline underline-offset-2 self-start"
@@ -263,15 +263,14 @@ export default function EvaluacionesPage() {
         )}
 
         <section className="bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl shadow-teamzen p-6">
-            <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E3A] mb-4">Mi historial MBI</h2>
+            <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E3A] mb-4">Mi historial</h2>
             {responses.length === 0 && (
-              <p className="text-sm text-[#5B5B6B]">Aún no has enviado respuestas MBI.</p>
+              <p className="text-sm text-[#5B5B6B]">Aún no has enviado respuestas.</p>
             )}
             <div className="space-y-3">
               {responses.map(r => {
-                const ae = r.mbi_scores?.ae_score; const d = r.mbi_scores?.d_score; const rp = r.mbi_scores?.rp_score;
-                const { catAE, catD, catRP } = classifyMBI(ae, d, rp);
-                const status = computeBurnoutStatus({catAE, catD, catRP});
+                const ag = r.ibdl_scores?.ag_score; const ci = r.ibdl_scores?.ci_score; const ef = r.ibdl_scores?.ef_score;
+                const { level } = classifyIbdl(ag, ci, ef);
                 return (
                   <div key={r.id} className="border border-[#DAD5E4] rounded-xl p-3 space-y-2 bg-[#FAF9F6]">
                     <div className="flex items-center justify-between">
@@ -279,27 +278,25 @@ export default function EvaluacionesPage() {
                         <p className="text-sm font-medium text-[#2E2E3A]">{new Date(r.created_at).toLocaleString()}</p>
                         <p className="text-xs text-[#5B5B6B]">Equipo: {r.team_id ? (r.teams?.name || '—') : 'Individual'}</p>
                       </div>
-                      {status && (
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor(status)}`}>{status}</span>
+                      {level && (
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor(level)}`}>{level}</span>
                       )}
                     </div>
                     {/* Desglose analítico por subescala — tono púrpura (medición/analítico) */}
                     <div className="flex flex-wrap gap-2 text-xs">
-                      <span className="px-2 py-1 rounded-full bg-[#9D83C6]/10 text-[#8160B6] font-medium tabular-nums">AE {ae ?? '—'} {catAE && `· ${catAE}`}</span>
-                      <span className="px-2 py-1 rounded-full bg-[#9D83C6]/10 text-[#8160B6] font-medium tabular-nums">D {d ?? '—'} {catD && `· ${catD}`}</span>
-                      <span className="px-2 py-1 rounded-full bg-[#9D83C6]/10 text-[#8160B6] font-medium tabular-nums">RP {rp ?? '—'} {catRP && `· ${catRP}`}</span>
+                      <span className="px-2 py-1 rounded-full bg-[#9D83C6]/10 text-[#8160B6] font-medium tabular-nums">AG {ag ?? '—'}</span>
+                      <span className="px-2 py-1 rounded-full bg-[#9D83C6]/10 text-[#8160B6] font-medium tabular-nums">CI {ci ?? '—'}</span>
+                      <span className="px-2 py-1 rounded-full bg-[#9D83C6]/10 text-[#8160B6] font-medium tabular-nums">EF {ef ?? '—'}</span>
                     </div>
                   </div>
                 );
               })}
             </div>
             <div className="mt-6 text-xs text-[#5B5B6B] space-y-1">
-              <p>{CLASSIFICATION_NOTE}</p>
-              <p>Estado: Burnout (orientativo) si al menos dos subescalas en Alto incluyendo AE. Riesgo Alto = 2 (sin AE) o AE + otra Altas antes de síndrome; Riesgo = 1 Alto; Sin indicios = 0.</p>
-              <p>RP se invierte solo para evaluar riesgo (puntajes bajos en RP reflejan mayor riesgo).</p>
+              <p>{IBDL_CLASSIFICATION_NOTE}</p>
             </div>
             <div className="mt-6 flex justify-end">
-              <button onClick={() => navigate('/mbi')} className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white px-5 py-2 rounded-xl text-sm font-medium transition-all duration-300 ease-out transform hover:scale-105 shadow-lg hover:shadow-teamzen-glow">Responder MBI</button>
+              <button onClick={() => navigate('/mbi')} className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white px-5 py-2 rounded-xl text-sm font-medium transition-all duration-300 ease-out transform hover:scale-105 shadow-lg hover:shadow-teamzen-glow">Responder evaluación</button>
             </div>
         </section>
       </main>

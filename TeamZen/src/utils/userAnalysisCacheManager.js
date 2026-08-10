@@ -1,31 +1,31 @@
-// Gestor de caché para análisis personales de MBI
+// Gestor de caché para análisis personales de IBDL-6
 import { supabase } from '../../supabaseClient';
 
 /**
  * Genera un hash simple de los datos del usuario para detectar cambios
  */
 function generateUserDataHash(userData) {
-  const { mbiHistory, profile } = userData;
-  
+  const { ibdlHistory, profile } = userData;
+
   const dataToHash = {
     // Datos del perfil relevantes para el análisis
     jobTitle: profile?.job_title,
     jobDescription: profile?.job_description,
     employmentType: profile?.employment_type,
     startDate: profile?.start_date,
-    
-    // Historial MBI resumido (ordenado por fecha para consistencia del hash)
-    mbiSummary: mbiHistory
+
+    // Historial IBDL-6 resumido (ordenado por fecha para consistencia del hash)
+    ibdlSummary: ibdlHistory
       ?.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) // Ordenar por fecha
       ?.map(response => ({
-        ae: response.mbi_scores?.ae_score,
-        d: response.mbi_scores?.d_score,
-        rp: response.mbi_scores?.rp_score,
+        ag: response.ibdl_scores?.ag_score,
+        ci: response.ibdl_scores?.ci_score,
+        ef: response.ibdl_scores?.ef_score,
         date: response.created_at ? new Date(response.created_at).toDateString() : null // Solo fecha, sin hora
         // REMOVIDO: teamId porque causa inconsistencias y no es relevante para análisis personal
       })) || []
   };
-  
+
   // Generar hash simple (no criptográfico)
   const dataString = JSON.stringify(dataToHash);
   let hash = 0;
@@ -35,15 +35,15 @@ function generateUserDataHash(userData) {
     hash = hash & hash; // Convertir a 32-bit integer
   }
   const finalHash = Math.abs(hash).toString(16);
-  
+
   console.log('🔑 Generando hash para datos:', {
-    profileKeys: Object.keys(dataToHash).filter(k => k !== 'mbiSummary'),
-    mbiCount: dataToHash.mbiSummary.length,
-    mbiSummary: dataToHash.mbiSummary, // Ver orden y contenido exacto
+    profileKeys: Object.keys(dataToHash).filter(k => k !== 'ibdlSummary'),
+    ibdlCount: dataToHash.ibdlSummary.length,
+    ibdlSummary: dataToHash.ibdlSummary, // Ver orden y contenido exacto
     dataStringLength: dataString.length,
     hash: finalHash
   });
-  
+
   return finalHash;
 }
 

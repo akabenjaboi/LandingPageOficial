@@ -1,7 +1,7 @@
 // ================================
 // GROQ CLIENT - VERSIÓN SEGURA VIA PROXY CON CACHÉ
 // ================================
-import { classifyMBI, computeBurnoutStatus, interpretBurnoutLevel } from './mbiClassification';
+import { classifyIbdl } from './ibdlClassification';
 import { supabase } from '../../supabaseClient';
 import { getCachedAnalysis, saveCachedAnalysis } from './aiCacheManager';
 
@@ -19,13 +19,13 @@ function extractFunctionError(error) {
 
 /**
  * Genera consejos externos usando Groq AI con sistema de caché inteligente
- * @param {Object} mbiData - Datos del Maslach Burnout Inventory
+ * @param {Object} ibdlData - Datos del Inventario Breve de Desgaste Laboral (IBDL-6)
  * @param {string} teamId - ID del equipo (requerido para caché)
  * @param {string} cycleId - ID del ciclo actual (requerido para caché)
  * @param {boolean} forceRegenerate - Forzar regeneración ignorando caché
  * @returns {Promise<Object>} - Consejos estructurados con metadatos de caché
  */
-export async function generateAdviceWithCache(mbiData, teamId, analysisId, forceRegenerate = false) {
+export async function generateAdviceWithCache(ibdlData, teamId, analysisId, forceRegenerate = false) {
   const isWeeklyAnalysis = analysisId.startsWith('weekly-');
   const analysisType = isWeeklyAnalysis ? 'weekly' : 'cycle';
   
@@ -39,7 +39,7 @@ export async function generateAdviceWithCache(mbiData, teamId, analysisId, force
   try {
     // 1. Si no se fuerza regeneración, intentar obtener desde caché
     if (!forceRegenerate) {
-      const cachedResult = await getCachedAnalysis(teamId, analysisId, mbiData, analysisType);
+      const cachedResult = await getCachedAnalysis(teamId, analysisId, ibdlData, analysisType);
       if (cachedResult) {
         console.log('✅ Análisis obtenido desde caché');
         return {
@@ -60,11 +60,11 @@ export async function generateAdviceWithCache(mbiData, teamId, analysisId, force
     console.log('🔄 Generando nuevo análisis de IA...', { 
       analysisType 
     });
-    const freshAnalysis = await generateExternalAdvice(mbiData);
+    const freshAnalysis = await generateExternalAdvice(ibdlData);
 
     // 3. Guardar en caché (no bloquear si falla)
     try {
-      await saveCachedAnalysis(teamId, analysisId, freshAnalysis, mbiData, analysisType);
+      await saveCachedAnalysis(teamId, analysisId, freshAnalysis, ibdlData, analysisType);
     } catch (cacheError) {
       console.warn('⚠️ Error guardando en caché (continuando):', cacheError);
     }
@@ -89,10 +89,10 @@ export async function generateAdviceWithCache(mbiData, teamId, analysisId, force
 
 /**
  * Genera consejos externos usando Groq AI a través de proxy seguro (función original)
- * @param {Object} mbiData - Datos del Maslach Burnout Inventory
+ * @param {Object} ibdlData - Datos del Inventario Breve de Desgaste Laboral (IBDL-6)
  * @returns {Promise<Object>} - Consejos estructurados
  */
-export async function generateExternalAdvice(mbiData) {
+export async function generateExternalAdvice(ibdlData) {
   // ✅ Obtener token de autenticación de Supabase
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
   
@@ -102,7 +102,7 @@ export async function generateExternalAdvice(mbiData) {
   }
   
   try {
-    const prompt = buildPrompt(mbiData);
+    const prompt = buildPrompt(ibdlData);
     
     console.log('🤖 Conectando con Groq via proxy seguro...', { 
       model: 'llama-3.1-8b-instant',
@@ -114,7 +114,7 @@ export async function generateExternalAdvice(mbiData) {
         messages: [
           {
             role: 'system',
-            content: 'Eres un psicólogo organizacional experto en prevención de burnout. Genera sugerencias específicas y prácticas basadas en los puntajes del Maslach Burnout Inventory. Responde siempre en formato JSON válido.'
+            content: 'Eres un psicólogo organizacional experto en prevención de burnout. Genera sugerencias específicas y prácticas basadas en los puntajes del Inventario Breve de Desgaste Laboral (IBDL-6). Responde siempre en formato JSON válido.'
           },
           {
             role: 'user',
@@ -148,14 +148,13 @@ export async function generateExternalAdvice(mbiData) {
   }
 }
 
-function buildPrompt(mbiData) {
-  const { ae, d, rp, wellbeing, previous, history, teamContext } = mbiData;
-  
+function buildPrompt(ibdlData) {
+  const { ag, ci, ef, wellbeing, previous, history, teamContext } = ibdlData;
+
   // Usar EXACTAMENTE la misma lógica de clasificación que el sistema local
-  const { catAE, catD, catRP } = classifyMBI(ae, d, rp);
-  const burnoutStatus = computeBurnoutStatus({ catAE, catD, catRP });
-  
-  let prompt = `Analiza estos resultados del Maslach Burnout Inventory:
+  const { total, level } = classifyIbdl(ag, ci, ef);
+
+  let prompt = `Analiza estos resultados del Inventario Breve de Desgaste Laboral (IBDL-6), un instrumento de screening de 6 ítems con 3 dimensiones:
 
 CONTEXTO DEL EQUIPO:
 - Nombre: ${teamContext?.name || 'Equipo'}${teamContext?.description ? `
@@ -163,50 +162,45 @@ CONTEXTO DEL EQUIPO:
 - Incluye líder en métricas: ${teamContext?.includeLeaderInMetrics ? 'Sí' : 'No'}
 
 ESTADO ACTUAL (última ronda):
-- Agotamiento Emocional: ${ae}/54 → Nivel de burnout: ${catAE}
-  * ${interpretBurnoutLevel(catAE, 'AE')}
-  
-- Despersonalización: ${d}/30 → Nivel de burnout: ${catD}
-  * ${interpretBurnoutLevel(catD, 'D')}
-  
-- Realización Personal: ${rp}/48 → Nivel de burnout: ${catRP}
-  * ${interpretBurnoutLevel(catRP, 'RP')}
+- Agotamiento (AG): ${ag}/10 — desgaste y cansancio mental, menor es mejor
+- Cinismo / distanciamiento (CI): ${ci}/10 — distancia hacia el trabajo, menor es mejor
+- Eficacia percibida (EF): ${ef}/10 — sensación de logro y capacidad, mayor es mejor
 
 - Índice de Bienestar: ${wellbeing}/100
-- DIAGNÓSTICO ACTUAL: ${burnoutStatus}`;
+- Riesgo total (AG + CI + (12-EF), rango 6-30): ${total}
+- NIVEL DE RIESGO ACTUAL: ${level}`;
 
   // Si hay datos históricos (múltiples ciclos), analizar la evolución
   if (history && history.length > 1) {
     prompt += `\n\nEVOLUCIÓN HISTÓRICA (${history.length} rondas):`;
-    
+
     history.forEach((cycle, index) => {
       const cycleNum = history.length - index; // Más reciente = mayor número
-      const { catAE: hAE, catD: hD, catRP: hRP } = classifyMBI(cycle.ae, cycle.d, cycle.rp);
-      const hStatus = computeBurnoutStatus({ catAE: hAE, catD: hD, catRP: hRP });
-      
-      prompt += `\nRonda ${cycleNum}: AE=${cycle.ae} (${hAE}), D=${cycle.d} (${hD}), RP=${cycle.rp} (${hRP}) → ${hStatus}`;
+      const { level: hLevel } = classifyIbdl(cycle.ag, cycle.ci, cycle.ef);
+
+      prompt += `\nRonda ${cycleNum}: AG=${cycle.ag} (2-10), CI=${cycle.ci} (2-10), EF=${cycle.ef} (2-10) → ${hLevel}`;
     });
-    
+
     // Análisis de tendencias
     const first = history[history.length - 1]; // Más antiguo
     const current = history[0]; // Más reciente
-    
+
     prompt += `\n\nTENDENCIAS GENERALES:`;
-    prompt += `\n- Agotamiento Emocional: ${first.ae} → ${current.ae} (${current.ae > first.ae ? 'EMPEORÓ ↑' : current.ae < first.ae ? 'MEJORÓ ↓' : 'ESTABLE →'})`;
-    prompt += `\n- Despersonalización: ${first.d} → ${current.d} (${current.d > first.d ? 'EMPEORÓ ↑' : current.d < first.d ? 'MEJORÓ ↓' : 'ESTABLE →'})`;
-    prompt += `\n- Realización Personal: ${first.rp} → ${current.rp} (${current.rp > first.rp ? 'MEJORÓ ↑' : current.rp < first.rp ? 'EMPEORÓ ↓' : 'ESTABLE →'})`;
+    prompt += `\n- Agotamiento: ${first.ag} → ${current.ag} (${current.ag > first.ag ? 'EMPEORÓ ↑' : current.ag < first.ag ? 'MEJORÓ ↓' : 'ESTABLE →'})`;
+    prompt += `\n- Cinismo / distanciamiento: ${first.ci} → ${current.ci} (${current.ci > first.ci ? 'EMPEORÓ ↑' : current.ci < first.ci ? 'MEJORÓ ↓' : 'ESTABLE →'})`;
+    prompt += `\n- Eficacia percibida: ${first.ef} → ${current.ef} (${current.ef > first.ef ? 'MEJORÓ ↑' : current.ef < first.ef ? 'EMPEORÓ ↓' : 'ESTABLE →'})`;
     prompt += `\n- Bienestar Global: ${first.wellbeing} → ${current.wellbeing} (${current.wellbeing > first.wellbeing ? 'MEJORÓ ↑' : current.wellbeing < first.wellbeing ? 'EMPEORÓ ↓' : 'ESTABLE →'})`;
-    
+
   } else if (previous) {
     // Análisis simple con ciclo anterior
-    const trendAE = ae > previous.ae ? 'EMPEORÓ ↑' : ae < previous.ae ? 'MEJORÓ ↓' : 'ESTABLE →';
-    const trendD = d > previous.d ? 'EMPEORÓ ↑' : d < previous.d ? 'MEJORÓ ↓' : 'ESTABLE →';
-    const trendRP = rp > previous.rp ? 'MEJORÓ ↑' : rp < previous.rp ? 'EMPEORÓ ↓' : 'ESTABLE →';
-    
+    const trendAG = ag > previous.ag ? 'EMPEORÓ ↑' : ag < previous.ag ? 'MEJORÓ ↓' : 'ESTABLE →';
+    const trendCI = ci > previous.ci ? 'EMPEORÓ ↑' : ci < previous.ci ? 'MEJORÓ ↓' : 'ESTABLE →';
+    const trendEF = ef > previous.ef ? 'MEJORÓ ↑' : ef < previous.ef ? 'EMPEORÓ ↓' : 'ESTABLE →';
+
     prompt += `\n\nCOMPARACIÓN CON RONDA ANTERIOR:`;
-    prompt += `\n- AE: ${previous.ae} → ${ae} (${trendAE})`;
-    prompt += `\n- D: ${previous.d} → ${d} (${trendD})`;
-    prompt += `\n- RP: ${previous.rp} → ${rp} (${trendRP})`;
+    prompt += `\n- AG: ${previous.ag} → ${ag} (${trendAG})`;
+    prompt += `\n- CI: ${previous.ci} → ${ci} (${trendCI})`;
+    prompt += `\n- EF: ${previous.ef} → ${ef} (${trendEF})`;
     prompt += `\n- Bienestar: ${previous.wellbeing} → ${wellbeing}`;
   }
 
@@ -222,7 +216,7 @@ ESTADO ACTUAL (última ronda):
 REGLAS CRÍTICAS:
 - Responde SOLO el JSON, sin explicaciones adicionales
 - Usa exactamente los nombres de campos mostrados arriba
-- El diagnóstico actual es "${burnoutStatus}" - basa todo en esto
+- El nivel de riesgo actual es "${level}" - basa todo en esto
 - Si es primera ronda o sin historia, usa "null" en trend_analysis y prognosis
 - Máximo 4 riesgos, máximo 6 acciones
 - Considera el contexto del equipo (${teamContext?.description || 'equipo general'}) para sugerencias específicas
@@ -295,7 +289,7 @@ function extractArray(value) {
 
 /**
  * Genera análisis personal para un usuario específico con caché
- * @param {Object} userData - Datos del usuario (perfil + historial MBI)
+ * @param {Object} userData - Datos del usuario (perfil + historial IBDL-6)
  * @param {boolean} forceRegenerate - Forzar regeneración ignorando caché
  * @returns {Promise<Object>} - Análisis personal estructurado
  */
@@ -306,7 +300,7 @@ export async function generatePersonalAnalysisWithCache(userData, forceRegenerat
     userId: userData.userId,
     forceRegenerate,
     profileExists: !!userData.profile,
-    mbiHistoryCount: userData.mbiHistory?.length || 0
+    ibdlHistoryCount: userData.ibdlHistory?.length || 0
   });
 
   try {
@@ -355,11 +349,11 @@ export async function generatePersonalAnalysisWithCache(userData, forceRegenerat
  * Genera análisis personal usando IA (función principal)
  */
 async function generatePersonalAdvice(userData) {
-  const { mbiHistory, profile } = userData;
-  
+  const { ibdlHistory } = userData;
+
   // Validar datos mínimos
-  if (!mbiHistory || mbiHistory.length === 0) {
-    throw new Error('No hay historial de evaluaciones MBI disponible');
+  if (!ibdlHistory || ibdlHistory.length === 0) {
+    throw new Error('No hay historial de evaluaciones disponible');
   }
 
   // Obtener sesión de Supabase para autenticación
@@ -403,9 +397,9 @@ async function generatePersonalAdvice(userData) {
  * Construye el prompt para análisis personal
  */
 function buildPersonalPrompt(userData) {
-  const { mbiHistory, profile } = userData;
-  
-  let prompt = `Eres un psicólogo experto en burnout laboral. Analiza el historial MBI personal de este empleado y genera recomendaciones personalizadas.
+  const { ibdlHistory, profile } = userData;
+
+  let prompt = `Eres un psicólogo experto en burnout laboral. Analiza el historial personal de este empleado en el Inventario Breve de Desgaste Laboral (IBDL-6) y genera recomendaciones personalizadas.
 
 INFORMACIÓN DEL EMPLEADO:
 - Cargo: ${profile?.job_title || 'No especificado'}
@@ -416,23 +410,22 @@ INFORMACIÓN DEL EMPLEADO:
     prompt += `\n- Descripción del trabajo: ${profile.job_description}`;
   }
 
-  prompt += `\n\nHISTORIAL DE EVALUACIONES MBI (${mbiHistory.length} evaluaciones):`;
-  
+  prompt += `\n\nHISTORIAL DE EVALUACIONES (${ibdlHistory.length} evaluaciones):`;
+
   // Mostrar las últimas 6 evaluaciones máximo, ordenadas cronológicamente
-  const recentHistory = mbiHistory
+  const recentHistory = ibdlHistory
     .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
     .slice(-6);
 
   recentHistory.forEach((response, index) => {
-    const scores = response.mbi_scores;
+    const scores = response.ibdl_scores;
     if (!scores) return;
-    
-    const { catAE, catD, catRP } = classifyMBI(scores.ae_score, scores.d_score, scores.rp_score);
-    const status = computeBurnoutStatus({ catAE, catD, catRP });
+
+    const { level } = classifyIbdl(scores.ag_score, scores.ci_score, scores.ef_score);
     const date = new Date(response.created_at).toLocaleDateString();
-    
-    prompt += `\n${index + 1}. ${date}: AE=${scores.ae_score}/54 (${catAE}), D=${scores.d_score}/30 (${catD}), RP=${scores.rp_score}/48 (${catRP}) → ${status}`;
-    
+
+    prompt += `\n${index + 1}. ${date}: AG=${scores.ag_score}/10, CI=${scores.ci_score}/10, EF=${scores.ef_score}/10 → ${level}`;
+
     if (response.team_id) {
       prompt += ` [Equipo: ${response.teams?.name || 'Desconocido'}]`;
     } else {
@@ -442,13 +435,13 @@ INFORMACIÓN DEL EMPLEADO:
 
   // Análisis de tendencias si hay múltiples evaluaciones
   if (recentHistory.length > 1) {
-    const first = recentHistory[0].mbi_scores;
-    const latest = recentHistory[recentHistory.length - 1].mbi_scores;
-    
+    const first = recentHistory[0].ibdl_scores;
+    const latest = recentHistory[recentHistory.length - 1].ibdl_scores;
+
     prompt += `\n\nTENDENCIAS OBSERVADAS:`;
-    prompt += `\n- Agotamiento Emocional: ${first.ae_score} → ${latest.ae_score} (${latest.ae_score - first.ae_score > 0 ? 'Incremento' : latest.ae_score - first.ae_score < 0 ? 'Mejora' : 'Estable'})`;
-    prompt += `\n- Despersonalización: ${first.d_score} → ${latest.d_score} (${latest.d_score - first.d_score > 0 ? 'Incremento' : latest.d_score - first.d_score < 0 ? 'Mejora' : 'Estable'})`;
-    prompt += `\n- Realización Personal: ${first.rp_score} → ${latest.rp_score} (${latest.rp_score - first.rp_score > 0 ? 'Mejora' : latest.rp_score - first.rp_score < 0 ? 'Declive' : 'Estable'})`;
+    prompt += `\n- Agotamiento: ${first.ag_score} → ${latest.ag_score} (${latest.ag_score - first.ag_score > 0 ? 'Incremento' : latest.ag_score - first.ag_score < 0 ? 'Mejora' : 'Estable'})`;
+    prompt += `\n- Cinismo / distanciamiento: ${first.ci_score} → ${latest.ci_score} (${latest.ci_score - first.ci_score > 0 ? 'Incremento' : latest.ci_score - first.ci_score < 0 ? 'Mejora' : 'Estable'})`;
+    prompt += `\n- Eficacia percibida: ${first.ef_score} → ${latest.ef_score} (${latest.ef_score - first.ef_score > 0 ? 'Mejora' : latest.ef_score - first.ef_score < 0 ? 'Declive' : 'Estable'})`;
   }
 
   prompt += `\n\nResponde ÚNICAMENTE con JSON válido (sin texto antes o después, sin comillas dobles dentro de strings):

@@ -4,7 +4,7 @@
 // Este componente maneja:
 // - Autenticación y perfiles de usuario
 // - Gestión de equipos (crear, editar, eliminar)
-// - Lanzamiento y gestión de ciclos MBI
+// - Lanzamiento y gestión de rondas de evaluación (IBDL-6)
 // - Dashboard diferenciado por rol (líder vs miembro)
 // - Métricas y estado en tiempo real
 // ===================================================================
@@ -12,6 +12,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
+import { computeWellbeingFromIbdlScores } from "../utils/ibdlClassification";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { Card, Btn, Field, Badge, Stat, Dot, Check, Notice, Alert, PageTitle } from "../components/app-ui";
 import AppNavbar from "../components/AppNavbar";
@@ -99,7 +100,7 @@ export default function Dashboard() {
       // Cierra automáticamente rondas activas que ya pasaron su plazo de 7 días.
       // Best-effort: si falla, no bloquea la carga de la página — es limpieza de
       // datos, no una dependencia funcional de lo que sigue.
-      const { error: closeExpiredError } = await supabase.rpc('close_expired_mbi_cycles');
+      const { error: closeExpiredError } = await supabase.rpc('close_expired_ibdl_cycles');
       if (closeExpiredError) {
         console.warn('No se pudieron cerrar rondas vencidas', closeExpiredError);
       }
@@ -156,7 +157,7 @@ export default function Dashboard() {
           try {
             const teamIds = leaderTeamsData.map(t => t.id);
             const { data: cycles, error: cyclesError } = await supabase
-              .from('mbi_evaluation_cycles')
+              .from('ibdl_evaluation_cycles')
               .select('id, team_id, status')
               .in('team_id', teamIds)
               .eq('status', 'active');
@@ -170,19 +171,19 @@ export default function Dashboard() {
 
             const activeCycleIds = Object.values(cycleMap);
             if (activeCycleIds.length > 0) {
-              // Uses mbi_cycle_respondents (participation only, no scores) per active
+              // Uses ibdl_cycle_respondents (participation only, no scores) per active
               // cycle, so opted-out members who did respond still count as "responded".
               const cycleResults = await Promise.all(
                 Object.entries(cycleMap).map(async ([teamId, cycleId]) => {
                   const { data, error } = await supabase
-                    .rpc('mbi_cycle_respondents', { p_cycle_id: cycleId });
+                    .rpc('ibdl_cycle_respondents', { p_cycle_id: cycleId });
                   return { teamId, cycleId, data, error };
                 })
               );
 
               const allResponsesError = cycleResults.find(r => r.error)?.error;
               if (allResponsesError) {
-                console.warn('Error cargando respuestas MBI (líder):', allResponsesError);
+                console.warn('Error cargando respuestas (líder):', allResponsesError);
                 setDataError('No se pudieron cargar algunas respuestas de bienestar. Algunos datos podrían faltar.');
               }
 
@@ -198,29 +199,22 @@ export default function Dashboard() {
               setRespondedMembersByTeam(prev => ({ ...prev, ...teamResponded }));
 
               const { data: scoreRows, error: scoreErr } = await supabase
-                .from('mbi_scores')
-                .select('response_id, ae_score, d_score, rp_score, mbi_responses (cycle_id, team_id)')
-                .in('mbi_responses.cycle_id', activeCycleIds);
+                .from('ibdl_scores')
+                .select('response_id, ag_score, ci_score, ef_score, ibdl_responses (cycle_id, team_id)')
+                .in('ibdl_responses.cycle_id', activeCycleIds);
               if (scoreErr) {
                 console.warn('Error obteniendo scores para wellbeing', scoreErr);
               }
 
               const wb = {};
-              const MIN_AE = 0, MAX_AE = 54, MIN_D = 0, MAX_D = 30, MIN_RP = 0, MAX_RP = 48;
-              const rangeAE = MAX_AE - MIN_AE, rangeD = MAX_D - MIN_D, rangeRP = MAX_RP - MIN_RP;
               (scoreRows || []).forEach(row => {
-                const cycleId = row.mbi_responses?.cycle_id;
-                const teamId = row.mbi_responses?.team_id;
+                const cycleId = row.ibdl_responses?.cycle_id;
+                const teamId = row.ibdl_responses?.team_id;
                 if (!teamId || !cycleId) return;
-                const ae = row.ae_score ?? MIN_AE;
-                const d = row.d_score ?? MIN_D;
-                const rp = row.rp_score ?? MIN_RP;
-                const aeWell = 1 - ((ae - MIN_AE) / (rangeAE || 1));
-                const dWell = 1 - ((d - MIN_D) / (rangeD || 1));
-                const rpWell = (rp - MIN_RP) / (rangeRP || 1);
-                const wellbeing = (aeWell + dWell + rpWell) / 3;
+                const wellbeing = computeWellbeingFromIbdlScores(row.ag_score, row.ci_score, row.ef_score);
+                if (wellbeing == null) return;
                 if (!wb[teamId]) wb[teamId] = { sum: 0, count: 0 };
-                wb[teamId].sum += wellbeing;
+                wb[teamId].sum += wellbeing / 100; // computeWellbeingFromIbdlScores ya devuelve 0-100
                 wb[teamId].count += 1;
               });
               const formatted = {};
@@ -230,7 +224,7 @@ export default function Dashboard() {
               setWellbeingByTeam(prev => ({ ...prev, ...formatted }));
             }
           } catch (e) {
-            console.warn('Tabla mbi_evaluation_cycles no disponible aún', e);
+            console.warn('Tabla ibdl_evaluation_cycles no disponible aún', e);
           }
 
           const leaderMembersObj = {};
@@ -318,7 +312,7 @@ export default function Dashboard() {
 
             try {
               const { data: cycles, error: cyclesError } = await supabase
-                .from('mbi_evaluation_cycles')
+                .from('ibdl_evaluation_cycles')
                 .select('id, team_id, status')
                 .in('team_id', teamIds)
                 .eq('status', 'active');
@@ -332,11 +326,11 @@ export default function Dashboard() {
               const cycleIds = Object.values(cycleMap);
               if (cycleIds.length > 0) {
                 const { data: respRows, error: respRowsError } = await supabase
-                  .from('mbi_responses')
+                  .from('ibdl_responses')
                   .select('cycle_id, user_id')
                   .in('cycle_id', cycleIds);
                 if (respRowsError) {
-                  console.warn('Error cargando respuestas MBI (miembro):', respRowsError);
+                  console.warn('Error cargando respuestas (miembro):', respRowsError);
                   setDataError('No se pudieron cargar algunas respuestas de bienestar. Algunos datos podrían faltar.');
                 }
                 const respMap = {};
@@ -353,7 +347,7 @@ export default function Dashboard() {
                 setRespondedMembersByTeam(prev => ({ ...prev, ...teamResponded }));
               }
             } catch (e) {
-              console.warn('Tabla mbi_evaluation_cycles no disponible para miembros', e);
+              console.warn('Tabla ibdl_evaluation_cycles no disponible para miembros', e);
             }
           }
         }
@@ -372,8 +366,8 @@ export default function Dashboard() {
     if (!user) return;
     if (!activeCycles || Object.keys(activeCycles).length === 0) return;
     const channel = supabase
-      .channel('mbi_responses_rt')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mbi_responses' }, (payload) => {
+      .channel('ibdl_responses_rt')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ibdl_responses' }, (payload) => {
         const { cycle_id, user_id } = payload.new || {};
         if (!cycle_id || !user_id) return;
         // Encontrar teamId asociado a ese ciclo activo
@@ -421,17 +415,17 @@ export default function Dashboard() {
     setLaunchingTeam(teamId);
     try {
       const { error: closeError } = await supabase
-        .from('mbi_evaluation_cycles')
+        .from('ibdl_evaluation_cycles')
         .update({ status: 'closed', end_at: new Date().toISOString() })
         .eq('team_id', teamId)
         .eq('status', 'active');
       if (closeError) {
         console.error('Error cerrando ciclo anterior:', closeError);
-        setDataError('No se pudo cerrar la ronda anterior. Intenta iniciar el MBI de nuevo.');
+        setDataError('No se pudo cerrar la ronda anterior. Intenta iniciar la evaluación de nuevo.');
         return;
       }
       const { data: newCycle, error } = await supabase
-        .from('mbi_evaluation_cycles')
+        .from('ibdl_evaluation_cycles')
         .insert([{ team_id: teamId, status: 'active' }])
         .select('id, team_id')
         .single();
@@ -456,7 +450,7 @@ export default function Dashboard() {
     setEndingTeam(teamId);
     try {
       const { error } = await supabase
-        .from('mbi_evaluation_cycles')
+        .from('ibdl_evaluation_cycles')
         .update({ status: 'closed', end_at: new Date().toISOString() })
         .eq('id', cycleId)
         .eq('status', 'active');
@@ -479,10 +473,10 @@ export default function Dashboard() {
     const activeCycleId = activeCycles[teamId];
     let pendingMembers = [];
     if (activeCycleId) {
-      // Uses mbi_cycle_respondents (participation only, no scores) so opted-out
+      // Uses ibdl_cycle_respondents (participation only, no scores) so opted-out
       // members who did respond aren't nudged with a reminder.
       const { data: responded, error } = await supabase
-        .rpc('mbi_cycle_respondents', { p_cycle_id: activeCycleId });
+        .rpc('ibdl_cycle_respondents', { p_cycle_id: activeCycleId });
       if (error) {
         console.error('Error cargando respuestas del ciclo:', error);
         setDataError('No se pudo verificar quién ha respondido. Intenta de nuevo.');
@@ -817,7 +811,7 @@ export default function Dashboard() {
           id: `nocycle-${team.id}`,
           tone: 'mint',
           message: `${team.name} no tiene una ronda de evaluación activa`,
-          ctaLabel: 'Iniciar MBI',
+          ctaLabel: 'Iniciar evaluación',
           onClick: () => prepareLaunch(team),
         });
       }
@@ -851,8 +845,8 @@ export default function Dashboard() {
         items.push({
           id: `respond-${team.id}`,
           tone: 'mint',
-          message: `Tienes una evaluación MBI pendiente en "${team.name}"`,
-          ctaLabel: 'Completar MBI',
+          message: `Tienes una evaluación pendiente en "${team.name}"`,
+          ctaLabel: 'Completar evaluación',
           onClick: () => navigate(`/mbi?team=${team.id}`),
         });
       }
@@ -1810,7 +1804,7 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
           ) : respondedCycles[activeCycleId] ? (
             <span className="flex min-w-[150px] flex-1 items-center justify-center rounded-xl border border-[rgba(85,194,162,.3)] bg-[rgba(85,194,162,.1)] px-4 py-2.5 text-sm font-medium text-[#3d8a74]">Respondido</span>
           ) : (
-            <Btn onClick={() => navigate(`/mbi?team=${team.id}`)} className="min-w-[150px] flex-1 justify-center">Completar MBI</Btn>
+            <Btn onClick={() => navigate(`/mbi?team=${team.id}`)} className="min-w-[150px] flex-1 justify-center">Completar evaluación</Btn>
           )}
           <Btn variant="ghost" className="min-w-[150px] flex-1 justify-center">Ver Historial</Btn>
         </div>
