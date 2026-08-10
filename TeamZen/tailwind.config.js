@@ -67,11 +67,11 @@ export default {
           '100%': { transform: 'rotate(360deg)' },
         },
         glowTeamzen: {
-          '0%, 100%': { 
-            boxShadow: '0 0 5px rgba(85, 194, 162, 0.3), 0 0 10px rgba(157, 131, 198, 0.2)' 
+          '0%, 100%': {
+            boxShadow: '0 0 5px rgba(85, 194, 162, 0.3), 0 0 10px rgba(157, 131, 198, 0.2)'
           },
-          '50%': { 
-            boxShadow: '0 0 20px rgba(85, 194, 162, 0.6), 0 0 30px rgba(157, 131, 198, 0.4)' 
+          '50%': {
+            boxShadow: '0 0 20px rgba(85, 194, 162, 0.6), 0 0 30px rgba(157, 131, 198, 0.4)'
           },
         },
       },

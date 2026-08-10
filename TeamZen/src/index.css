@@ -138,6 +138,12 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
+/* Ilustracion flotante del hero del landing (design_handoff_teamzen_landing) */
+@keyframes tzfloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
 /* ===================================================================
    CLASES DE UTILIDAD PERSONALIZADAS
    =================================================================== */
@@ -180,6 +186,10 @@
 
 .animate-glow-teamzen {
   animation: glowTeamzen 3s ease-in-out infinite;
+}
+
+.animate-tzfloat {
+  animation: tzfloat 7s ease-in-out infinite;
 }
 
 .animate-fadein {
@@ -356,7 +366,8 @@
   .animate-fadeout,
   .animate-slideup,
   .animate-modal-enter,
-  .animate-modal-exit {
+  .animate-modal-exit,
+  .animate-tzfloat {
     animation: none;
   }
 
@@ -383,3 +394,16 @@
   }
 }
 
+
+/* ===================================================================
+   ESTILOS GLOBALES DEL LANDING (design_handoff_teamzen_landing)
+   =================================================================== */
+
+::selection {
+  background: rgba(85, 194, 162, 0.25);
+}
+
+:focus-visible {
+  outline: 2px solid #55C2A2;
+  outline-offset: 3px;
+}
