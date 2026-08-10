@@ -156,9 +156,26 @@ export default function MBIPage() {
   const allAnswered = answeredCount === ITEMS.length;
   const disabled = alreadyAnswered || (teamId ? !activeCycle : false) || submitting;
 
+  // El botón de enviar se mantiene inactivo un instante tras completar la
+  // última respuesta: evita que el mismo toque/click que marca la última
+  // opción también active "Enviar" si ambos elementos quedan próximos en
+  // pantalla (con solo 6 preguntas, la última tarjeta puede caer cerca de
+  // la barra de acciones fija).
+  const [justCompleted, setJustCompleted] = useState(true);
+  useEffect(() => {
+    if (!allAnswered) {
+      setJustCompleted(true);
+      return;
+    }
+    setJustCompleted(true);
+    const t = setTimeout(() => setJustCompleted(false), 450);
+    return () => clearTimeout(t);
+  }, [allAnswered]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submittingRef.current) return; // ya hay un envío en curso — ignora clics/submits repetidos
+    if (justCompleted) return; // ignora envíos disparados en el mismo instante en que se completó la última respuesta
     submittingRef.current = true;
     setSubmitting(true);
     setError('');
@@ -255,7 +272,7 @@ export default function MBIPage() {
     <div className="min-h-screen bg-[#FAF9F6]">
       <AppNavbar user={user} />
 
-      <main className="mx-auto flex max-w-[860px] flex-col gap-[22px] px-4 pb-[140px] pt-6 sm:px-6 sm:pt-8">
+      <main className="mx-auto flex max-w-[860px] flex-col gap-[22px] px-4 pb-[180px] pt-6 sm:px-6 sm:pt-8">
         <div className="flex flex-col gap-2.5">
           {teamId && teamName && (
             <span className="self-start rounded-full bg-[#DAD5E4]/55 px-3.5 py-1.5 font-['Poppins',_Arial,_sans-serif] text-xs font-semibold uppercase tracking-[.08em] text-[#8B6FB8]">
@@ -328,8 +345,8 @@ export default function MBIPage() {
           {error && <Alert>{error}</Alert>}
           {success && <Alert tone="success">{success}</Alert>}
 
-          <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center bg-[linear-gradient(180deg,rgba(250,249,246,0),rgba(250,249,246,.96)_40%)] px-4 py-4 sm:px-6">
-            <div className="flex w-full max-w-[860px] flex-wrap items-center gap-3.5 rounded-[20px] border border-[#DAD5E4] bg-white px-5 py-4 shadow-teamzen-strong">
+          <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center bg-[linear-gradient(180deg,rgba(250,249,246,0),rgba(250,249,246,.96)_40%)] px-4 py-4 sm:px-6">
+            <div className="pointer-events-auto flex w-full max-w-[860px] flex-wrap items-center gap-3.5 rounded-[20px] border border-[#DAD5E4] bg-white px-5 py-4 shadow-teamzen-strong">
               <span className="min-w-[200px] flex-1 text-sm text-[#5B5B6B]">
                 {alreadyAnswered
                   ? 'Ya enviaste tus respuestas para esta ronda.'
@@ -347,7 +364,7 @@ export default function MBIPage() {
               </button>
               <button
                 type="submit"
-                disabled={submitting || !allAnswered || (teamId && !activeCycle) || alreadyAnswered}
+                disabled={submitting || !allAnswered || justCompleted || (teamId && !activeCycle) || alreadyAnswered}
                 className="rounded-xl bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] px-[22px] py-[13px] font-['Poppins',_Arial,_sans-serif] text-[15px] font-semibold text-white shadow-[0_12px_26px_rgba(85,194,162,.28)] transition hover:scale-[1.02] hover:bg-[linear-gradient(135deg,#4AA690,#8B6FB8)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:scale-100"
               >
                 {alreadyAnswered ? 'Ya enviado' : submitting ? 'Enviando...' : 'Enviar respuestas'}
