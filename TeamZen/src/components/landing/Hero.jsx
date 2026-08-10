@@ -37,7 +37,8 @@ export default function Hero({ onRequestDemo }) {
           <img
             src={IMG.pandaDescansando}
             alt=""
-            className="animate-tzfloat absolute -top-14 right-4 h-[132px] w-[132px] rounded-full border-[6px] border-cream object-cover shadow-[0_16px_30px_rgba(157,131,198,.22)]"
+            decoding="async"
+            className="animate-tzfloat absolute -top-14 right-4 h-[100px] w-[100px] rounded-full border-[6px] border-cream object-cover shadow-[0_16px_30px_rgba(157,131,198,.22)] sm:h-[132px] sm:w-[132px]"
           />
           <div className="flex items-center justify-between gap-3">
             <div className="flex flex-col gap-0.5">

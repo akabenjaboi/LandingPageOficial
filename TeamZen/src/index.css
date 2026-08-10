@@ -190,6 +190,7 @@
 
 .animate-tzfloat {
   animation: tzfloat 7s ease-in-out infinite;
+  will-change: transform;
 }
 
 .animate-fadein {
