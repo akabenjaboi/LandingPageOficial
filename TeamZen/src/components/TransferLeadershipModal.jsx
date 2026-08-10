@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import Modal from './Modal';
-import { Alert } from './UIComponents';
+import { Alert, Btn } from './app-ui';
 
 export default function TransferLeadershipModal({ isOpen, onClose, team, members, onTransferred }) {
   const [selectedUserId, setSelectedUserId] = useState(null);
@@ -42,27 +42,21 @@ export default function TransferLeadershipModal({ isOpen, onClose, team, members
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Transferir liderazgo"
-      maxWidth="max-w-lg"
-      preventCloseOnOutsideClick={loading}
-    >
-      <div className="space-y-4">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Transferir liderazgo" maxWidth="max-w-lg" preventCloseOnOutsideClick={loading}>
+      <div className="flex flex-col gap-4">
         <p className="text-sm text-[#5B5B6B]">
           Elige qué miembro será el nuevo líder de "{team?.name}". Tú pasarás a ser un miembro normal del equipo.
         </p>
 
         {!members || members.length === 0 ? (
-          <p className="text-sm text-gray-500 italic">Este equipo no tiene otros miembros todavía.</p>
+          <p className="text-sm italic text-[#5B5B6B]">Este equipo no tiene otros miembros todavía.</p>
         ) : (
-          <div className="space-y-2 max-h-64 overflow-y-auto">
+          <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
             {members.map((member) => (
               <label
                 key={member.user_id}
-                className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer ${
-                  selectedUserId === member.user_id ? 'border-[#55C2A2] bg-[#55C2A2]/10' : 'border-[#DAD5E4]'
+                className={`flex cursor-pointer items-center justify-between rounded-xl border p-3 transition-colors ${
+                  selectedUserId === member.user_id ? 'border-[#55C2A2] bg-[rgba(85,194,162,.1)]' : 'border-[#DAD5E4] hover:border-[#9D83C6]'
                 }`}
               >
                 <span className="text-sm font-medium text-[#2E2E3A]">
@@ -76,36 +70,22 @@ export default function TransferLeadershipModal({ isOpen, onClose, team, members
                   checked={selectedUserId === member.user_id}
                   onChange={() => setSelectedUserId(member.user_id)}
                   disabled={loading}
-                  className="w-4 h-4 text-[#55C2A2] focus:ring-[#55C2A2]"
+                  className="h-4 w-4 accent-[#55C2A2]"
                 />
               </label>
             ))}
           </div>
         )}
 
-        {error && (
-          <Alert type="error" title="Error al transferir liderazgo">
-            {error}
-          </Alert>
-        )}
+        {error && <Alert title="Error al transferir liderazgo">{error}</Alert>}
 
-        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={loading}
-            className="flex-1 px-4 py-2 text-sm font-medium text-[#5B5B6B] hover:text-[#2E2E3A] hover:bg-[#DAD5E4]/30 disabled:opacity-50 rounded-xl transition-all duration-200"
-          >
+        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
+          <Btn type="button" variant="ghost" onClick={handleClose} disabled={loading} className="flex-1 justify-center">
             Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleTransfer}
-            disabled={loading || !selectedUserId}
-            className="flex-1 bg-[#55C2A2] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#4AA690] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
+          </Btn>
+          <Btn type="button" onClick={handleTransfer} disabled={loading || !selectedUserId} className="flex-1 justify-center">
             {loading ? "Transfiriendo..." : "Transferir liderazgo"}
-          </button>
+          </Btn>
         </div>
       </div>
     </Modal>

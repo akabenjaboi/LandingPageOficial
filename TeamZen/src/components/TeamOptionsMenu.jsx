@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export default function TeamOptionsMenu({ team, onEdit, onDelete, onTransferLeadership }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,46 +41,40 @@ export default function TeamOptionsMenu({ team, onEdit, onDelete, onTransferLead
   return (
     <div className="relative" ref={menuRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+        className="rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] p-2 text-[#5B5B6B] transition-colors hover:border-[#9D83C6] hover:text-[#2E2E3A]"
         aria-label="Opciones del equipo"
+        aria-expanded={isOpen}
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
         </svg>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-          <div className="py-1">
-            <button
-              onClick={handleEdit}
-              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Editar equipo
-            </button>
-            <button
-              onClick={handleTransfer}
-              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
-              Transferir liderazgo
-            </button>
-            <button
-              onClick={handleDelete}
-              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Eliminar equipo
-            </button>
-          </div>
+        <div className="absolute right-0 top-[calc(100%+8px)] z-10 flex w-52 flex-col gap-1 rounded-2xl border border-[#DAD5E4] bg-white p-2 shadow-teamzen-strong">
+          <button
+            type="button"
+            onClick={handleEdit}
+            className="rounded-xl px-3 py-2 text-left font-['Poppins',_Arial,_sans-serif] text-sm font-medium text-[#2E2E3A] transition-colors hover:bg-[#DAD5E4]/40"
+          >
+            Editar equipo
+          </button>
+          <button
+            type="button"
+            onClick={handleTransfer}
+            className="rounded-xl px-3 py-2 text-left font-['Poppins',_Arial,_sans-serif] text-sm font-medium text-[#2E2E3A] transition-colors hover:bg-[#DAD5E4]/40"
+          >
+            Transferir liderazgo
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="rounded-xl px-3 py-2 text-left font-['Poppins',_Arial,_sans-serif] text-sm font-medium text-[#c0392b] transition-colors hover:bg-[rgba(192,57,43,.08)]"
+          >
+            Eliminar equipo
+          </button>
         </div>
       )}
     </div>

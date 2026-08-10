@@ -13,13 +13,14 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { Card, Button, Alert, Badge, Input } from "../components/UIComponents";
+import { Card, Btn, Field, Badge, Stat, Dot, Check, Notice, Alert, PageTitle } from "../components/app-ui";
 import AppNavbar from "../components/AppNavbar";
 import LaunchMBIPanel from "../components/LaunchMBIPanel";
 import CreateTeamPanel from "../components/CreateTeamPanel";
 import TeamOptionsMenu from "../components/TeamOptionsMenu";
 import EditTeamPanel from "../components/EditTeamPanel";
 import TransferLeadershipModal from "../components/TransferLeadershipModal";
+import Modal from "../components/Modal";
 
 export default function Dashboard() {
   // ===================================================================
@@ -45,7 +46,7 @@ export default function Dashboard() {
   const [jobDescription, setJobDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
-  
+
   // ===================================================================
   // ESTADO - EQUIPOS Y MIEMBROS
   // ===================================================================
@@ -53,7 +54,7 @@ export default function Dashboard() {
   const [teamsLoading, setTeamsLoading] = useState(false);
   const [teamMembers, setTeamMembers] = useState({}); // { team_id: [members] }
   const [membersLoading, setMembersLoading] = useState(false);
-  
+
   // ===================================================================
   // ESTADO - CICLOS MBI Y RESPUESTAS
   // ===================================================================
@@ -61,13 +62,13 @@ export default function Dashboard() {
   const [respondedCycles, setRespondedCycles] = useState({}); // { cycle_id: true }
   const [respondedMembersByTeam, setRespondedMembersByTeam] = useState({}); // { team_id: Set(user_ids) }
   const [wellbeingByTeam, setWellbeingByTeam] = useState({}); // { team_id: { avg: number, count: number } }
-  
+
   // ===================================================================
   // ESTADO - OPERACIONES DE EQUIPOS
   // ===================================================================
   const [launchingTeam, setLaunchingTeam] = useState(null);
   const [endingTeam, setEndingTeam] = useState(null);
-  
+
   // ===================================================================
   // ESTADO - PANELES EN LÍNEA Y MODALES
   // ===================================================================
@@ -415,13 +416,13 @@ export default function Dashboard() {
   // ===================================================================
   // HANDLERS - GESTIÓN DE CICLOS MBI
   // ===================================================================
-  
+
   const launchMBI = async (teamId) => {
     setLaunchingTeam(teamId);
     try {
       const { error: closeError } = await supabase
         .from('mbi_evaluation_cycles')
-  .update({ status: 'closed', end_at: new Date().toISOString() })
+        .update({ status: 'closed', end_at: new Date().toISOString() })
         .eq('team_id', teamId)
         .eq('status', 'active');
       if (closeError) {
@@ -437,9 +438,9 @@ export default function Dashboard() {
       if (error) throw error;
       setActiveCycles(prev => ({ ...prev, [teamId]: newCycle.id }));
       setRespondedCycles(prev => ({ ...prev }));
-  // Reset responded members list for the new active cycle
-  setRespondedMembersByTeam(prev => ({ ...prev, [teamId]: new Set() }));
-  setWellbeingByTeam(prev => ({ ...prev, [teamId]: { avg: null, count: 0 } }));
+      // Reset responded members list for the new active cycle
+      setRespondedMembersByTeam(prev => ({ ...prev, [teamId]: new Set() }));
+      setWellbeingByTeam(prev => ({ ...prev, [teamId]: { avg: null, count: 0 } }));
       setShowLaunchPanel(false);
       setLaunchContext(null);
     } catch (e) {
@@ -456,7 +457,7 @@ export default function Dashboard() {
     try {
       const { error } = await supabase
         .from('mbi_evaluation_cycles')
-  .update({ status: 'closed', end_at: new Date().toISOString() })
+        .update({ status: 'closed', end_at: new Date().toISOString() })
         .eq('id', cycleId)
         .eq('status', 'active');
       if (error) throw error;
@@ -506,8 +507,8 @@ export default function Dashboard() {
   // ===================================================================
   // HANDLERS - GESTIÓN DE EQUIPOS (CREAR, EDITAR, ELIMINAR)
   // ===================================================================
-  
-  const handleTeamCreated = async (newTeam, inviteCode) => {
+
+  const handleTeamCreated = async () => {
     // Refrescar la lista de equipos
     try {
       const { data: leaderTeams, error } = await supabase
@@ -540,8 +541,8 @@ export default function Dashboard() {
 
   const handleTeamUpdated = async (updatedTeam) => {
     // Actualizar el equipo en el estado local
-    setTeams(prevTeams => 
-      prevTeams.map(team => 
+    setTeams(prevTeams =>
+      prevTeams.map(team =>
         team.id === updatedTeam.id ? { ...team, ...updatedTeam } : team
       )
     );
@@ -568,7 +569,7 @@ export default function Dashboard() {
 
       // Actualizar la lista de equipos
       setTeams(prevTeams => prevTeams.filter(team => team.id !== teamId));
-      
+
       // Limpiar datos relacionados
       setTeamMembers(prev => {
         const newMembers = { ...prev };
@@ -662,15 +663,15 @@ export default function Dashboard() {
     // (teams, teamMembers, activeCycles, respondedMembersByTeam,
     // wellbeingByTeam) that a full reload is simpler and safer than
     // hand-patching every piece of derived state. This mirrors the existing
-    // "Dashboard" mobile nav button at line ~936, which already reloads
-    // the page rather than re-running init() piecemeal.
+    // "Dashboard" mobile nav button, which already reloads the page rather
+    // than re-running init() piecemeal.
     window.location.reload();
   };
 
   // ===================================================================
   // HANDLERS - GESTIÓN DE PERFIL DE USUARIO
   // ===================================================================
-  
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -728,21 +729,21 @@ export default function Dashboard() {
       }
 
       // Actualizar estado local
-      const newProfile = { 
-        id: user.id, 
+      const newProfile = {
+        id: user.id,
         ...profileData,
         created_at: existingProfile?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-      
+
       setProfile(newProfile);
       setProfileMsg(existingProfile ? "Perfil actualizado correctamente." : "¡Perfil creado exitosamente! Bienvenido a TeamZen.");
-      
+
       // Cerrar modal después de un momento para mostrar el mensaje
       setTimeout(() => {
         setShowProfileForm(false);
         setProfileMsg("");
-        
+
         // Si es un usuario nuevo, recargar la página para aplicar los cambios
         if (!existingProfile) {
           window.location.reload();
@@ -866,7 +867,7 @@ export default function Dashboard() {
 
   // Pantalla de carga inicial
   if (loading) return (
-    <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center bg-[#FAF9F6]">
       <LoadingSpinner size="large" message="Cargando tu dashboard..." />
     </div>
   );
@@ -883,7 +884,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F6]">
-      {/* Header Navigation */}
       <AppNavbar
         user={user}
         profile={profile}
@@ -891,145 +891,90 @@ export default function Dashboard() {
         onLogout={handleLogout}
       />
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8"
-           id="teams-section">
+      <main className="mx-auto flex max-w-[1280px] flex-col gap-[22px] px-4 pb-24 pt-6 sm:px-6 sm:pt-8 md:pb-16" id="teams-section">
         {dataError && (
-          <Alert type="error" title="Error al cargar datos" className="mb-4">
-            {dataError}
-          </Alert>
+          <Alert title="Error al cargar datos">{dataError}</Alert>
         )}
-        {/* Welcome Section & Profile Setup */}
+
         {(!profile?.first_name || !profile?.last_name) && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 mb-6 sm:mb-8">
-            <div className="flex items-start sm:items-center">
-              <svg className="w-5 h-5 text-amber-600 mr-3 flex-shrink-0 mt-0.5 sm:mt-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              <div className="flex-1">
-                <h3 className="text-sm font-medium text-amber-800">Completa tu perfil</h3>
-                <p className="text-xs sm:text-sm text-amber-700 mt-1">
-                  Para aprovechar al máximo TeamZen, completa tu información personal haciendo clic en tu avatar.
-                </p>
-              </div>
-            </div>
-          </div>
+          <Notice tone="purple">
+            <strong className="font-semibold">Completa tu perfil.</strong> Para aprovechar al máximo TeamZen, hazlo desde tu avatar arriba a la derecha.
+          </Notice>
         )}
 
-        {/* Page Header */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#2E2E3A] tracking-tight">
-                {profile?.role === "leader" ? "Panel de Líder" : "Mis Equipos"}
-              </h1>
-              <p className="text-sm sm:text-base text-[#5B5B6B] mt-1">
-                {profile?.role === "leader" 
-                  ? "Gestiona tus equipos y monitorea el bienestar"
-                  : "Visualiza los equipos de los que formas parte"
-                }
-              </p>
-            </div>
-            
-            {/* Action Button(s) — los líderes también pueden unirse a un equipo
-                como miembro, no solo crear el suyo (ver historial de main) */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-              {profile?.role === "leader" && (
-                <button
-                  onClick={() => setShowCreateTeamPanel(true)}
-                  className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AA690] hover:to-[#8B6FB8]
-                             text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all duration-300
-                             ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow flex items-center
-                             space-x-1.5 sm:space-x-2 text-sm sm:text-base w-full sm:w-auto justify-center"
-                >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span>Crear Equipo</span>
-                </button>
-              )}
-              <button
-                onClick={() => navigate("/unirse-equipo")}
-                className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AA690] hover:to-[#8B6FB8]
-                           text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all duration-300
-                           ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow flex items-center
-                           space-x-1.5 sm:space-x-2 text-sm sm:text-base w-full sm:w-auto justify-center"
-              >
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <span>Unirse a Equipo</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Requiere tu atención — resumen accionable antes de la lista de equipos */}
-        {(showLeaderSection || showMemberSection) && (
-          <AttentionSection items={attentionItems} />
-        )}
-
-        {/* Teams Section */}
-        <div className="space-y-6">
-          {showLeaderSection && (
-            <>
-              <CreateTeamPanel
-                isOpen={showCreateTeamPanel}
-                onClose={() => setShowCreateTeamPanel(false)}
-                onTeamCreated={handleTeamCreated}
-              />
-              <LeaderTeamsSection
-                teams={myLeaderTeams}
-                teamsLoading={teamsLoading}
-                teamMembers={teamMembers}
-                membersLoading={membersLoading}
-                navigate={navigate}
-                activeCycles={activeCycles}
-                onPrepareLaunch={prepareLaunch}
-                launchingTeam={launchingTeam}
-                endingTeam={endingTeam}
-                onEndCycle={endCycle}
-                respondedMembersByTeam={respondedMembersByTeam}
-                wellbeingByTeam={wellbeingByTeam}
-                onCreateTeam={() => setShowCreateTeamPanel(true)}
-                onEditTeam={handleEditTeam}
-                onDeleteTeam={handleDeleteTeam}
-                onRegenerateCode={handleRegenerateCode}
-                onKickMember={handleKickMember}
-                onTransferLeadership={handleOpenTransfer}
-                profile={profile}
-                currentUserId={user?.id}
-                editingTeam={editingTeam}
-                showEditTeamPanel={showEditTeamPanel}
-                onCloseEditPanel={() => { setShowEditTeamPanel(false); setEditingTeam(null); }}
-                onTeamUpdated={handleTeamUpdated}
-                launchContext={launchContext}
-                showLaunchPanel={showLaunchPanel}
-                onCloseLaunchPanel={() => { setShowLaunchPanel(false); setLaunchContext(null); }}
-                onConfirmLaunch={launchMBI}
-              />
-            </>
+        <PageTitle
+          title={profile?.role === "leader" ? "Panel de Líder" : "Mis Equipos"}
+          subtitle={
+            profile?.role === "leader"
+              ? "Gestiona tus equipos y monitorea el bienestar"
+              : "Visualiza los equipos de los que formas parte"
+          }
+        >
+          {profile?.role === "leader" && (
+            <Btn variant="primary" onClick={() => setShowCreateTeamPanel(true)}>Crear equipo</Btn>
           )}
-          {showMemberSection && (
-            <UserTeamsSection
-              teams={myMemberTeams}
+          <Btn variant="secondary" onClick={() => navigate("/unirse-equipo")}>Unirse a equipo</Btn>
+        </PageTitle>
+
+        {(showLeaderSection || showMemberSection) && <AttentionSection items={attentionItems} />}
+
+        {showLeaderSection && (
+          <>
+            <CreateTeamPanel
+              isOpen={showCreateTeamPanel}
+              onClose={() => setShowCreateTeamPanel(false)}
+              onTeamCreated={handleTeamCreated}
+            />
+            <LeaderTeamsSection
+              teams={myLeaderTeams}
+              teamsLoading={teamsLoading}
               teamMembers={teamMembers}
               membersLoading={membersLoading}
               navigate={navigate}
-              userId={user?.id}
               activeCycles={activeCycles}
-              respondedCycles={respondedCycles}
+              onPrepareLaunch={prepareLaunch}
+              launchingTeam={launchingTeam}
+              endingTeam={endingTeam}
+              onEndCycle={endCycle}
               respondedMembersByTeam={respondedMembersByTeam}
+              wellbeingByTeam={wellbeingByTeam}
+              onCreateTeam={() => setShowCreateTeamPanel(true)}
+              onEditTeam={handleEditTeam}
+              onDeleteTeam={handleDeleteTeam}
+              onRegenerateCode={handleRegenerateCode}
+              onKickMember={handleKickMember}
+              onTransferLeadership={handleOpenTransfer}
+              profile={profile}
+              currentUserId={user?.id}
+              editingTeam={editingTeam}
+              showEditTeamPanel={showEditTeamPanel}
+              onCloseEditPanel={() => { setShowEditTeamPanel(false); setEditingTeam(null); }}
+              onTeamUpdated={handleTeamUpdated}
+              launchContext={launchContext}
+              showLaunchPanel={showLaunchPanel}
+              onCloseLaunchPanel={() => { setShowLaunchPanel(false); setLaunchContext(null); }}
+              onConfirmLaunch={launchMBI}
             />
-          )}
-          {!showLeaderSection && !showMemberSection && (
-            <WelcomeSection onSetupProfile={() => setShowProfileForm(true)} />
-          )}
-        </div>
+          </>
+        )}
+        {showMemberSection && (
+          <UserTeamsSection
+            teams={myMemberTeams}
+            teamMembers={teamMembers}
+            membersLoading={membersLoading}
+            navigate={navigate}
+            userId={user?.id}
+            activeCycles={activeCycles}
+            respondedCycles={respondedCycles}
+            respondedMembersByTeam={respondedMembersByTeam}
+          />
+        )}
+        {!showLeaderSection && !showMemberSection && (
+          <WelcomeSection onSetupProfile={() => setShowProfileForm(true)} />
+        )}
 
-        {/* Profile Form Modal */}
         {showProfileForm && (
-          <ProfileFormModal 
+          <ProfileFormModal
             profile={profile}
             firstName={firstName}
             setFirstName={setFirstName}
@@ -1064,7 +1009,7 @@ export default function Dashboard() {
           members={transferringTeam ? (teamMembers[transferringTeam.id] || []) : []}
           onTransferred={handleTransferred}
         />
-      </div>
+      </main>
     </div>
   );
 }
@@ -1080,12 +1025,8 @@ export default function Dashboard() {
 function AttentionSection({ items }) {
   if (!items || items.length === 0) {
     return (
-      <div className="mb-6 sm:mb-8 rounded-2xl border border-[#55C2A2]/30 bg-gradient-to-r from-[#55C2A2]/[0.07] to-[#9D83C6]/[0.05] shadow-teamzen p-4 sm:p-5 flex items-center gap-3">
-        <span className="w-9 h-9 rounded-full bg-[#55C2A2]/15 flex items-center justify-center flex-shrink-0">
-          <svg className="w-5 h-5 text-[#2C7B64]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </span>
+      <div className="flex items-center gap-3 rounded-2xl border border-[#DAD5E4] bg-[linear-gradient(135deg,rgba(85,194,162,.08),rgba(157,131,198,.06))] p-4 shadow-teamzen sm:p-5">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(85,194,162,.16)] text-base text-[#3d8a74]">✓</span>
         <p className="text-sm text-[#2E2E3A]">
           <span className="font-semibold">Todo al día.</span> No hay evaluaciones pendientes ni alertas en tus equipos.
         </p>
@@ -1094,47 +1035,36 @@ function AttentionSection({ items }) {
   }
 
   return (
-    <div className="mb-6 sm:mb-8">
-      <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E3A] mb-3">Requiere tu atención</h2>
-      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <Card className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">Requiere tu atención</h2>
+        <span className="text-[13px] text-[#5B5B6B]">{items.length} {items.length === 1 ? 'asunto' : 'asuntos'}</span>
+      </div>
+      <div className="flex flex-col gap-3">
         {items.map((item) => {
           const isPurple = item.tone === 'purple';
           return (
-            <li
+            <div
               key={item.id}
-              className={`rounded-2xl border shadow-teamzen p-4 flex items-start gap-3 ${
-                isPurple ? 'border-[#9D83C6]/30 bg-[#9D83C6]/[0.06]' : 'border-[#55C2A2]/30 bg-[#55C2A2]/[0.06]'
-              }`}
+              className={`flex flex-wrap items-center gap-4 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] p-4 border-l-4 ${isPurple ? 'border-l-[#9D83C6]' : 'border-l-[#55C2A2]'}`}
             >
-              <span className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isPurple ? 'bg-[#9D83C6]/20' : 'bg-[#55C2A2]/20'}`}>
-                {isPurple ? (
-                  <svg className="w-4 h-4 text-[#8160B6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4 text-[#2C7B64]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                )}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-[#2E2E3A] leading-snug">{item.message}</p>
-                <button
-                  onClick={item.onClick}
-                  className={`mt-2 text-xs sm:text-sm font-semibold rounded-lg px-3 py-1.5 transition-colors duration-200 ${
-                    isPurple
-                      ? 'text-[#8160B6] hover:bg-[#9D83C6]/15'
-                      : 'text-[#2C7B64] hover:bg-[#55C2A2]/15'
-                  }`}
-                >
-                  {item.ctaLabel} →
-                </button>
-              </div>
-            </li>
+              <span className="min-w-[220px] flex-1 text-[15px] leading-snug text-[#2E2E3A]">{item.message}</span>
+              <button
+                type="button"
+                onClick={item.onClick}
+                className={`whitespace-nowrap rounded-xl px-[18px] py-2.5 font-['Poppins',_Arial,_sans-serif] text-sm font-semibold transition-colors ${
+                  isPurple
+                    ? 'bg-[rgba(157,131,198,.18)] text-[#6f56a0] hover:bg-[rgba(157,131,198,.28)]'
+                    : 'bg-[rgba(85,194,162,.16)] text-[#3d8a74] hover:bg-[rgba(85,194,162,.26)]'
+                }`}
+              >
+                {item.ctaLabel}
+              </button>
+            </div>
           );
         })}
-      </ul>
-    </div>
+      </div>
+    </Card>
   );
 }
 
@@ -1146,65 +1076,58 @@ function AttentionSection({ items }) {
 function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, navigate, activeCycles, onPrepareLaunch, launchingTeam, endingTeam, onEndCycle, respondedMembersByTeam, wellbeingByTeam = {}, onCreateTeam, onEditTeam, onDeleteTeam, onRegenerateCode, onKickMember, onTransferLeadership, profile, currentUserId, editingTeam, showEditTeamPanel, onCloseEditPanel, onTeamUpdated, launchContext, showLaunchPanel, onCloseLaunchPanel, onConfirmLaunch }) {
   if (teamsLoading) {
     return (
-      <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4] p-8 text-center">
+      <Card className="text-center">
         <LoadingSpinner message="Cargando tus equipos..." />
-      </div>
+      </Card>
     );
   }
 
   if (teams.length === 0) {
     return (
-      <div className="bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl shadow-teamzen p-12 text-center">
-        <div className="w-16 h-16 bg-gradient-to-r from-[#55C2A2]/20 to-[#9D83C6]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-[#55C2A2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
+      <Card className="flex flex-col items-center gap-4 py-12 text-center" pad="p-12">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(157,131,198,.16)] text-2xl">👥</span>
+        <div>
+          <h3 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">No tienes equipos creados</h3>
+          <p className="mx-auto mt-2 max-w-md text-[#5B5B6B]">
+            Crea tu primer equipo para comenzar a gestionar el bienestar de tu grupo de trabajo.
+          </p>
         </div>
-        <h3 className="text-xl font-semibold text-[#2E2E3A] mb-2">No tienes equipos creados</h3>
-        <p className="text-[#5B5B6B] mb-6 max-w-md mx-auto">
-          Crea tu primer equipo para comenzar a gestionar el bienestar de tu grupo de trabajo.
-        </p>
-        <button
-          onClick={onCreateTeam}
-          className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow"
-        >
-          Crear mi primer equipo
-        </button>
-      </div>
+        <Btn onClick={onCreateTeam}>Crear mi primer equipo</Btn>
+      </Card>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+    <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
       {teams.map((team) => (
-        <div key={team.id} className="w-full">
-          <LeaderTeamCard
-            team={team}
-            members={teamMembers[team.id] || []}
-            membersLoading={membersLoading}
-            activeCycleId={activeCycles[team.id]}
-            onLaunch={onPrepareLaunch}
-            launching={launchingTeam === team.id}
-            ending={endingTeam === team.id}
-            onEndCycle={onEndCycle}
-            respondedMembers={respondedMembersByTeam[team.id]}
-            wellbeingMetric={wellbeingByTeam[team.id]}
-            onEdit={onEditTeam}
-            onDelete={onDeleteTeam}
-            onRegenerateCode={onRegenerateCode}
-            onKickMember={onKickMember}
-            onTransferLeadership={onTransferLeadership}
-            profile={profile}
-            currentUserId={currentUserId}
-            isEditingThisTeam={showEditTeamPanel && editingTeam?.id === team.id}
-            onCloseEditPanel={onCloseEditPanel}
-            onTeamUpdated={onTeamUpdated}
-            isLaunchingThisTeam={showLaunchPanel && launchContext?.teamId === team.id}
-            launchContext={launchContext?.teamId === team.id ? launchContext : null}
-            onCloseLaunchPanel={onCloseLaunchPanel}
-            onConfirmLaunch={onConfirmLaunch}
-          />
-        </div>
+        <LeaderTeamCard
+          key={team.id}
+          team={team}
+          members={teamMembers[team.id] || []}
+          membersLoading={membersLoading}
+          activeCycleId={activeCycles[team.id]}
+          onLaunch={onPrepareLaunch}
+          launching={launchingTeam === team.id}
+          ending={endingTeam === team.id}
+          onEndCycle={onEndCycle}
+          respondedMembers={respondedMembersByTeam[team.id]}
+          wellbeingMetric={wellbeingByTeam[team.id]}
+          onEdit={onEditTeam}
+          onDelete={onDeleteTeam}
+          onRegenerateCode={onRegenerateCode}
+          onKickMember={onKickMember}
+          onTransferLeadership={onTransferLeadership}
+          profile={profile}
+          currentUserId={currentUserId}
+          isEditingThisTeam={showEditTeamPanel && editingTeam?.id === team.id}
+          onCloseEditPanel={onCloseEditPanel}
+          onTeamUpdated={onTeamUpdated}
+          isLaunchingThisTeam={showLaunchPanel && launchContext?.teamId === team.id}
+          launchContext={launchContext?.teamId === team.id ? launchContext : null}
+          onCloseLaunchPanel={onCloseLaunchPanel}
+          onConfirmLaunch={onConfirmLaunch}
+          navigate={navigate}
+        />
       ))}
     </div>
   );
@@ -1214,38 +1137,32 @@ function LeaderTeamsSection({ teams, teamsLoading, teamMembers, membersLoading, 
 function UserTeamsSection({ teams, teamMembers, membersLoading, navigate, userId, activeCycles, respondedCycles, respondedMembersByTeam }) {
   if (teams.length === 0) {
     return (
-      <div className="bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl shadow-teamzen p-12 text-center">
-        <div className="w-16 h-16 bg-gradient-to-r from-[#55C2A2]/20 to-[#9D83C6]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-[#55C2A2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+      <Card className="flex flex-col items-center gap-4 py-12 text-center" pad="p-12">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(85,194,162,.16)] text-2xl">🔍</span>
+        <div>
+          <h3 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">No perteneces a ningún equipo</h3>
+          <p className="mx-auto mt-2 max-w-md text-[#5B5B6B]">
+            Únete a un equipo usando un código de invitación para comenzar a participar en evaluaciones de bienestar.
+          </p>
         </div>
-        <h3 className="text-xl font-semibold text-[#2E2E3A] mb-2">No perteneces a ningún equipo</h3>
-        <p className="text-[#5B5B6B] mb-6 max-w-md mx-auto">
-          Únete a un equipo usando un código de invitación para comenzar a participar en evaluaciones de bienestar.
-        </p>
-        <button
-          onClick={() => navigate("/unirse-equipo")}
-          className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow"
-        >
-          Unirse a un equipo
-        </button>
-      </div>
+        <Btn onClick={() => navigate("/unirse-equipo")}>Unirse a un equipo</Btn>
+      </Card>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
       {teams.map((team) => (
-        <UserTeamCard 
-          key={team.id} 
-          team={team} 
+        <UserTeamCard
+          key={team.id}
+          team={team}
           members={teamMembers[team.id] || []}
           membersLoading={membersLoading}
           currentUserId={userId}
           activeCycleId={activeCycles[team.id]}
           respondedCycles={respondedCycles}
           respondedMembers={respondedMembersByTeam[team.id]}
+          navigate={navigate}
         />
       ))}
     </div>
@@ -1255,131 +1172,28 @@ function UserTeamsSection({ teams, teamMembers, membersLoading, navigate, userId
 // Sección de bienvenida para usuarios sin rol
 function WelcomeSection({ onSetupProfile }) {
   return (
-    <div className="bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl shadow-teamzen p-12 text-center">
-      <div className="w-20 h-20 bg-gradient-to-br from-[#55C2A2] to-[#9D83C6] rounded-full flex items-center justify-center mx-auto mb-6 shadow-teamzen-glow animate-pulse-glow">
-        <img 
-          src="/img/pandalogo.png" 
-          alt="TeamZen Logo" 
-          className="w-12 h-12"
-        />
+    <Card className="flex flex-col items-center gap-4 py-12 text-center" pad="p-12">
+      <img src="/img/pandazen_favicon.png" alt="" className="h-16 w-16 rounded-2xl object-cover shadow-[0_16px_30px_rgba(157,131,198,.22)]" />
+      <div>
+        <h2 className="font-['Poppins',_Arial,_sans-serif] text-2xl font-bold text-[#2E2E3A]">¡Bienvenido a TeamZen!</h2>
+        <p className="mx-auto mt-2 max-w-lg text-[#5B5B6B]">
+          TeamZen te ayuda a medir y reducir el burnout en equipos de trabajo. Para comenzar, configura tu perfil y selecciona tu rol.
+        </p>
       </div>
-      <h2 className="text-2xl font-bold text-[#2E2E3A] mb-3">¡Bienvenido a TeamZen!</h2>
-      <p className="text-[#5B5B6B] mb-8 max-w-lg mx-auto">
-        TeamZen te ayuda a medir y reducir el burnout en equipos de trabajo. 
-        Para comenzar, configura tu perfil y selecciona tu rol.
-      </p>
-      <button
-        onClick={onSetupProfile}
-        className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white px-8 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow flex items-center gap-2 mx-auto"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-        Configurar mi perfil
-      </button>
-    </div>
-  );
-}
-
-// Componente para el formulario de perfil
-function ProfileForm({ profile, firstName, setFirstName, lastName, setLastName, role, setRole, saving, profileMsg, onSubmit, onCancel }) {
-  const handleSubmit = (e) => {
-    console.log("ProfileForm handleSubmit called"); // Debug
-    onSubmit(e);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-md">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-[#2E2E3A]">
-            {!profile?.first_name && !profile?.last_name ? "Completar Perfil" : "Actualizar Perfil"}
-          </h3>
-          <button onClick={onCancel} aria-label="Cerrar" className="text-[#5B5B6B] hover:text-[#2E2E3A]">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Nombre"
-            type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            required
-            placeholder="Tu nombre"
-          />
-          
-          <Input
-            label="Apellido"
-            type="text"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            required
-            placeholder="Tu apellido"
-          />
-
-          {(!profile?.first_name && !profile?.last_name) && (
-            <div className="flex flex-col gap-1">
-              <label className="font-semibold text-[#2E2E3A] text-sm">
-                ¿Vas a crear y liderar equipos? <span className="text-red-500 ml-1">*</span>
-              </label>
-              <select
-                className="w-full border border-[#DAD5E4] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#55C2A2] focus:border-transparent"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                required
-              >
-                <option value="">Selecciona una opción</option>
-                <option value="leader">Sí, quiero poder crear y liderar equipos</option>
-                <option value="user">No, por ahora solo quiero unirme a equipos existentes</option>
-              </select>
-            </div>
-          )}
-
-          <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-              Cancelar
-            </Button>
-            <button
-              type="submit"
-              disabled={saving}
-              className={`
-                bg-[#55C2A2] hover:bg-[#9D83C6] text-[#2E2E3A] px-6 py-3 text-base
-                rounded-full font-semibold transition-all duration-300 
-                flex items-center justify-center gap-2 flex-1
-                ${saving ? 'opacity-50 cursor-not-allowed' : 'hover:transform hover:scale-105'}
-              `}
-            >
-              {saving && (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-              )}
-              {saving ? "Guardando..." : "Guardar cambios"}
-            </button>
-          </div>
-
-          {profileMsg && (
-            <Alert type={profileMsg.includes("Error") ? "error" : "success"}>
-              {profileMsg}
-            </Alert>
-          )}
-        </form>
-      </Card>
-    </div>
+      <Btn onClick={onSetupProfile}>Configurar mi perfil</Btn>
+    </Card>
   );
 }
 
 // Componente para el formulario de perfil en modal
-function ProfileFormModal({ 
-  profile, 
-  firstName, 
-  setFirstName, 
-  lastName, 
-  setLastName, 
-  role, 
-  setRole, 
+function ProfileFormModal({
+  profile,
+  firstName,
+  setFirstName,
+  lastName,
+  setLastName,
+  role,
+  setRole,
   birthDate,
   setBirthDate,
   employmentType,
@@ -1390,251 +1204,126 @@ function ProfileFormModal({
   setStartDate,
   jobDescription,
   setJobDescription,
-  saving, 
-  profileMsg, 
-  onSubmit, 
-  onCancel 
+  saving,
+  profileMsg,
+  onSubmit,
+  onCancel
 }) {
   const isNewUser = !profile; // Usuario nuevo si no tiene perfil
-  const [isVisible, setIsVisible] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
 
-  // Gestionar animaciones de apertura
   useEffect(() => {
-    setIsVisible(true);
-    setTimeout(() => setIsAnimating(true), 10);
     document.body.style.overflow = 'hidden';
-
     return () => {
       document.body.style.overflow = 'unset';
     };
   }, []);
-  
+
   return (
-    <div className={`modal-backdrop-motion fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ease-out
-      ${isAnimating ? 'backdrop-blur-sm bg-white/10' : 'backdrop-blur-none bg-white/0'}`}>
-      <div className={`modal-panel-motion bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl shadow-teamzen-strong max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 transition-all duration-300 ease-out
-        ${isAnimating ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
-        <div className="flex items-center justify-between mb-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(46,46,58,.42)] p-4 backdrop-blur-[4px]">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-[#DAD5E4] bg-[#FAF9F6] p-6 shadow-teamzen-strong sm:p-7">
+        <div className="mb-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <img 
-              src="/img/pandalogo.png" 
-              alt="TeamZen Profile" 
-              className="w-10 h-10 object-contain animate-pulse-glow"
-            />
-            <h3 className="text-xl font-bold text-[#2E2E3A]">
+            <img src="/img/pandazen_favicon.png" alt="" className="h-10 w-10 rounded-xl object-cover" />
+            <h3 className="font-['Poppins',_Arial,_sans-serif] text-xl font-bold text-[#2E2E3A]">
               {isNewUser ? "¡Bienvenido a TeamZen!" : "Actualizar perfil"}
             </h3>
           </div>
           {!isNewUser && (
             <button
+              type="button"
               onClick={onCancel}
               aria-label="Cerrar"
-              className="text-[#5B5B6B] hover:text-[#2E2E3A] transition-colors duration-200 p-1 rounded-lg hover:bg-[#DAD5E4]/30"
               disabled={saving}
+              className="rounded-xl p-1.5 text-[#5B5B6B] transition-colors hover:bg-[#DAD5E4]/40 hover:text-[#2E2E3A]"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           )}
         </div>
-        
+
         {isNewUser && (
-          <div className="bg-gradient-to-r from-[#55C2A2]/10 to-[#9D83C6]/10 border border-[#55C2A2]/30 rounded-xl p-4 mb-6">
-            <p className="text-[#2E2E3A] text-sm">
-              Para comenzar a usar TeamZen, necesitamos algunos datos básicos sobre ti.
-            </p>
-          </div>
+          <Notice className="mb-6">Para comenzar a usar TeamZen, necesitamos algunos datos básicos sobre ti.</Notice>
         )}
-        
-        <form onSubmit={onSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[#2E2E3A] mb-2">
-                Nombre*
-              </label>
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="w-full px-4 py-3 border border-[#DAD5E4] rounded-xl focus:ring-2 focus:ring-[#55C2A2]/20 focus:border-[#55C2A2] transition-all duration-200 bg-[#FAF9F6] text-[#2E2E3A] placeholder-[#5B5B6B]"
-                placeholder="Tu nombre"
-                required
-                disabled={saving}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#2E2E3A] mb-2">
-                Apellido*
-              </label>
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="w-full px-4 py-3 border border-[#DAD5E4] rounded-xl focus:ring-2 focus:ring-[#55C2A2]/20 focus:border-[#55C2A2] transition-all duration-200 bg-[#FAF9F6] text-[#2E2E3A] placeholder-[#5B5B6B]"
-                placeholder="Tu apellido"
-                required
-                disabled={saving}
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-[#2E2E3A] mb-2">
-              ¿Vas a crear y liderar equipos?*
-            </label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full px-4 py-3 border border-[#DAD5E4] rounded-xl focus:ring-2 focus:ring-[#55C2A2]/20 focus:border-[#55C2A2] transition-all duration-200 bg-[#FAF9F6] text-[#2E2E3A]"
-              required
-              disabled={(!isNewUser && profile?.role === 'leader') || saving}
-            >
-              <option value="">Selecciona una opción</option>
-              <option value="leader">Sí, quiero poder crear y liderar equipos</option>
-              <option value="user">No, por ahora solo quiero unirme a equipos existentes</option>
-            </select>
-            {!isNewUser && profile?.role === 'leader' && (
-              <p className="text-xs text-[#5B5B6B] mt-2">
-                Ya activaste la creación de equipos — esto no se puede desactivar. Podés seguir uniéndote a otros equipos como miembro normal cuando quieras.
-              </p>
-            )}
-            {!isNewUser && profile?.role === 'user' && (
-              <p className="text-xs text-[#5B5B6B] mt-2">
-                Podés activar esto más adelante si cambiás de opinión. Una vez que actives la creación de equipos, no vas a poder desactivarla.
-              </p>
-            )}
+
+        <form onSubmit={onSubmit} className="flex flex-col gap-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Nombre*" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Tu nombre" required disabled={saving} />
+            <Field label="Apellido*" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Tu apellido" required disabled={saving} />
           </div>
 
-          {/* Separador visual */}
-          <div className="border-t border-[#DAD5E4] pt-6">
-            <h4 className="text-lg font-medium text-[#2E2E3A] mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-[#55C2A2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2h8z" />
-              </svg>
-              Información laboral
-            </h4>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[#2E2E3A] mb-2">
-              Fecha de nacimiento*
-            </label>
-            <input
-              type="date"
-              value={birthDate}
-              onChange={(e) => setBirthDate(e.target.value)}
-              className="w-full px-4 py-3 border border-[#DAD5E4] rounded-xl focus:ring-2 focus:ring-[#55C2A2]/20 focus:border-[#55C2A2] transition-all duration-200 bg-[#FAF9F6] text-[#2E2E3A]"
-              required
-              disabled={saving}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[#2E2E3A] mb-2">
-              Tipo de empleo*
-            </label>
-            <select
-              value={employmentType}
-              onChange={(e) => setEmploymentType(e.target.value)}
-              className="w-full px-4 py-3 border border-[#DAD5E4] rounded-xl focus:ring-2 focus:ring-[#55C2A2]/20 focus:border-[#55C2A2] transition-all duration-200 bg-[#FAF9F6] text-[#2E2E3A]"
-              required
-              disabled={saving}
-            >
-              <option value="">Selecciona el tipo de empleo</option>
-              <option value="full-time">Tiempo completo</option>
-              <option value="part-time">Medio tiempo</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[#2E2E3A] mb-2">
-              Cargo/Puesto*
-            </label>
-            <input
-              type="text"
-              value={jobTitle}
-              onChange={(e) => setJobTitle(e.target.value)}
-              placeholder="Ej: Desarrollador Frontend, Gerente de Marketing..."
-              className="w-full px-4 py-3 border border-[#DAD5E4] rounded-xl focus:ring-2 focus:ring-[#55C2A2]/20 focus:border-[#55C2A2] transition-all duration-200 bg-[#FAF9F6] text-[#2E2E3A] placeholder-[#5B5B6B]"
-              required
-              disabled={saving}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[#2E2E3A] mb-2">
-              Fecha de inicio en el cargo*
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-4 py-3 border border-[#DAD5E4] rounded-xl focus:ring-2 focus:ring-[#55C2A2]/20 focus:border-[#55C2A2] transition-all duration-200 bg-[#FAF9F6] text-[#2E2E3A]"
-              required
-              disabled={saving}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[#2E2E3A] mb-2">
-              Descripción del trabajo (opcional)
-            </label>
-            <textarea
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-              placeholder="Describe brevemente tus responsabilidades principales..."
-              className="w-full px-4 py-3 border border-[#DAD5E4] rounded-xl focus:ring-2 focus:ring-[#55C2A2]/20 focus:border-[#55C2A2] transition-all duration-200 bg-[#FAF9F6] text-[#2E2E3A] placeholder-[#5B5B6B] resize-none"
-              rows={3}
-              maxLength={500}
-              disabled={saving}
-            />
-            <p className="text-xs text-[#5B5B6B] mt-2">
-              {jobDescription.length}/500 caracteres
+          <Field
+            as="select"
+            label="¿Vas a crear y liderar equipos?*"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            required
+            disabled={(!isNewUser && profile?.role === 'leader') || saving}
+          >
+            <option value="">Selecciona una opción</option>
+            <option value="leader">Sí, quiero poder crear y liderar equipos</option>
+            <option value="user">No, por ahora solo quiero unirme a equipos existentes</option>
+          </Field>
+          {!isNewUser && profile?.role === 'leader' && (
+            <p className="-mt-3 text-xs text-[#5B5B6B]">
+              Ya activaste la creación de equipos — esto no se puede desactivar. Podés seguir uniéndote a otros equipos como miembro normal cuando quieras.
             </p>
+          )}
+          {!isNewUser && profile?.role === 'user' && (
+            <p className="-mt-3 text-xs text-[#5B5B6B]">
+              Podés activar esto más adelante si cambiás de opinión. Una vez que actives la creación de equipos, no vas a poder desactivarla.
+            </p>
+          )}
+
+          <div className="border-t border-[#DAD5E4] pt-5">
+            <h4 className="font-['Poppins',_Arial,_sans-serif] text-base font-semibold text-[#2E2E3A]">Información laboral</h4>
           </div>
+
+          <Field as="input" type="date" label="Fecha de nacimiento*" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} required disabled={saving} />
+
+          <Field as="select" label="Tipo de empleo*" value={employmentType} onChange={(e) => setEmploymentType(e.target.value)} required disabled={saving}>
+            <option value="">Selecciona el tipo de empleo</option>
+            <option value="full-time">Tiempo completo</option>
+            <option value="part-time">Medio tiempo</option>
+          </Field>
+
+          <Field
+            label="Cargo/Puesto*"
+            value={jobTitle}
+            onChange={(e) => setJobTitle(e.target.value)}
+            placeholder="Ej: Desarrollador Frontend, Gerente de Marketing..."
+            required
+            disabled={saving}
+          />
+
+          <Field as="input" type="date" label="Fecha de inicio en el cargo*" value={startDate} onChange={(e) => setStartDate(e.target.value)} required disabled={saving} />
+
+          <Field
+            as="textarea"
+            label="Descripción del trabajo (opcional)"
+            value={jobDescription}
+            onChange={(e) => setJobDescription(e.target.value)}
+            placeholder="Describe brevemente tus responsabilidades principales..."
+            rows={3}
+            maxLength={500}
+            disabled={saving}
+            hint={`${jobDescription.length}/500 caracteres`}
+          />
 
           {profileMsg && (
-            <div className={`rounded-xl p-4 border transition-all duration-300 ${
-              profileMsg.includes('Error') 
-                ? 'bg-red-50 border-red-200 text-red-700' 
-                : 'bg-gradient-to-r from-[#55C2A2]/10 to-[#9D83C6]/10 border-[#55C2A2]/30 text-[#2E2E3A]'
-            }`}>
-              <p className="text-sm">{profileMsg}</p>
-            </div>
+            <Alert tone={profileMsg.includes('Error') ? 'error' : 'success'}>{profileMsg}</Alert>
           )}
-          
-          <div className={`flex ${isNewUser ? 'justify-center' : 'flex-col sm:flex-row gap-3'} pt-6`}>
+
+          <div className={`flex ${isNewUser ? 'justify-center' : 'flex-col sm:flex-row'} gap-3 pt-2`}>
             {!isNewUser && (
-              <button
-                type="button"
-                onClick={onCancel}
-                className="flex-1 sm:flex-none bg-white border-2 border-[#DAD5E4] hover:border-[#55C2A2] text-[#2E2E3A] font-medium py-3 px-6 rounded-xl transition-all duration-300 ease-out transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:transform-none"
-                disabled={saving}
-              >
+              <Btn type="button" variant="ghost" onClick={onCancel} disabled={saving} className="flex-1 justify-center sm:flex-none">
                 Cancelar
-              </button>
+              </Btn>
             )}
-            <button
-              type="submit"
-              className={`${isNewUser ? 'w-full' : 'flex-1'} bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] disabled:from-[#55C2A2]/50 disabled:to-[#9D83C6]/50 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center justify-center gap-2`}
-              disabled={saving}
-            >
-              {saving ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  {isNewUser ? "Crear mi perfil" : "Guardar cambios"}
-                </>
-              )}
-            </button>
+            <Btn type="submit" disabled={saving} className={isNewUser ? 'w-full justify-center' : 'flex-1 justify-center'}>
+              {saving ? "Guardando..." : isNewUser ? "Crear mi perfil" : "Guardar cambios"}
+            </Btn>
           </div>
         </form>
       </div>
@@ -1647,11 +1336,10 @@ function ProfileFormModal({
 // ===================================================================
 
 // Tarjeta de equipo para líderes - Control completo y métricas
-function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete, onRegenerateCode, onKickMember, onTransferLeadership, profile, currentUserId, isEditingThisTeam, onCloseEditPanel, onTeamUpdated, isLaunchingThisTeam, launchContext, onCloseLaunchPanel, onConfirmLaunch }) {
+function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch, launching, ending, onEndCycle, respondedMembers, wellbeingMetric, onEdit, onDelete, onRegenerateCode, onKickMember, onTransferLeadership, profile, currentUserId, isEditingThisTeam, onCloseEditPanel, onTeamUpdated, isLaunchingThisTeam, launchContext, onCloseLaunchPanel, onConfirmLaunch, navigate }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
-  const navigate = useNavigate();
 
   // Cálculo de participación (incluye al líder como participante potencial)
   const totalBase = members?.length || 0;
@@ -1666,7 +1354,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
   // Para vista de líder: incluir líder si está habilitado en métricas
   const allMembersForLeader = useMemo(() => {
     const baseMembers = members || [];
-    
+
     // Si el líder debe incluirse y es el usuario actual
     if (leaderCounts && profile && team.leader_id === currentUserId) {
       const leaderAsMember = {
@@ -1677,45 +1365,49 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
         },
         isLeader: true
       };
-      
+
       // Evitar duplicados
       const memberExists = baseMembers.some(m => m.user_id === currentUserId);
       if (!memberExists) {
         return [leaderAsMember, ...baseMembers];
       }
     }
-    
+
     return baseMembers;
   }, [members, leaderCounts, profile, team.leader_id, currentUserId]);
   const respondedCount = Math.min(Math.max(respondedCountRaw, 0), totalParticipantes);
   const participationPct = activeCycleId ? Math.round((respondedCount / (totalParticipantes || 1)) * 100) : 0;
 
+  const copyCode = async () => {
+    if (team.team_invite_codes?.length > 0) {
+      try {
+        await navigator.clipboard.writeText(team.team_invite_codes[0].code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1600);
+      } catch { /* clipboard permisos denegados: no bloquear la UI */ }
+    }
+  };
+
+  const codeExpired = team.team_invite_codes?.[0]?.expires_at && new Date(team.team_invite_codes[0].expires_at) <= new Date();
+
   return (
-    <div id={`team-card-${team.id}`} className="bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl shadow-teamzen hover:shadow-teamzen-strong transition-shadow scroll-mt-20">
-      <div className="p-6">
+    <Card id={`team-card-${team.id}`} className="scroll-mt-20" pad="p-6">
+      <div className="flex flex-col gap-[18px]">
         {/* Header del equipo */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-3 flex-1 min-w-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#55C2A2] to-[#9D83C6] rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-              <span className="text-white font-bold text-sm sm:text-lg">
-                {team.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
+        <div className="flex items-start justify-between gap-3.5">
+          <div className="flex min-w-0 flex-1 items-center gap-3.5">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] font-['Poppins',_Arial,_sans-serif] text-xl font-bold text-white">
+              {team.name.charAt(0).toUpperCase()}
+            </span>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base sm:text-lg font-semibold text-[#2E2E3A] truncate">{team.name}</h3>
-              <p className="text-xs sm:text-sm text-[#5B5B6B]">
-                Creado el {new Date(team.created_at).toLocaleDateString()}
-              </p>
+              <h3 className="truncate font-['Poppins',_Arial,_sans-serif] text-[19px] font-semibold text-[#2E2E3A]">{team.name}</h3>
+              <span className="text-[13px] text-[#5B5B6B]">Creado el {new Date(team.created_at).toLocaleDateString()}</span>
             </div>
           </div>
-          <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
-            <span className="bg-gradient-to-r from-[#55C2A2]/20 to-[#9D83C6]/20 text-[#2E2E3A] text-xs font-medium px-2 py-0.5 rounded-full border border-[#55C2A2]/30">
-              Líder
-            </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge tone="purple">Líder</Badge>
             {team.include_leader_in_metrics === false && (
-              <span className="bg-[#DAD5E4] text-[#5B5B6B] text-xs font-medium px-2 py-0.5 rounded-full hidden sm:inline" title="El líder no se contabiliza en métricas">
-                Líder excluido
-              </span>
+              <Badge tone="neutral" className="hidden sm:inline-flex" title="El líder no se contabiliza en métricas">Líder excluido</Badge>
             )}
             <TeamOptionsMenu
               team={team}
@@ -1724,221 +1416,135 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
               onTransferLeadership={onTransferLeadership}
             />
             <button
+              type="button"
               onClick={() => setIsExpanded(!isExpanded)}
               aria-expanded={isExpanded}
               aria-label={isExpanded ? 'Ocultar miembros del equipo' : 'Mostrar miembros del equipo'}
-              className="p-1.5 sm:p-2 hover:bg-[#DAD5E4]/30 rounded-lg transition-colors"
+              className="rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] p-2 text-[#5B5B6B] transition-colors hover:border-[#9D83C6] hover:text-[#2E2E3A]"
             >
-              <svg
-                className={`w-4 h-4 sm:w-5 sm:h-5 text-[#5B5B6B] transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
           </div>
         </div>
 
-        {/* Panel de edición en línea — reemplaza al EditTeamModal flotante */}
+        {/* Panel de edición en línea */}
         {isEditingThisTeam && (
-          <EditTeamPanel
-            isOpen={isEditingThisTeam}
-            onClose={onCloseEditPanel}
-            team={team}
-            onTeamUpdated={onTeamUpdated}
-          />
+          <EditTeamPanel isOpen={isEditingThisTeam} onClose={onCloseEditPanel} team={team} onTeamUpdated={onTeamUpdated} />
         )}
 
-        {/* Estadísticas rápidas */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 mt-4">
-          <div className="bg-[#FAF9F6] border border-[#DAD5E4] p-3 rounded-xl">
-            <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#5B5B6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <div>
-                <p className="text-xs font-medium text-[#5B5B6B]">Miembros</p>
-                <p className="text-lg sm:text-xl font-bold tabular-nums text-[#2E2E3A]">{totalParticipantes}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-[#FAF9F6] border border-[#DAD5E4] p-3 rounded-xl">
-            <div className="flex items-center space-x-2">
-              <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${activeCycleId ? 'text-[#2C7B64]' : 'text-[#5B5B6B]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <p className="text-xs font-medium text-[#5B5B6B]">Ronda</p>
-                <p className={`text-lg sm:text-xl font-bold ${activeCycleId ? 'text-[#2C7B64]' : 'text-[#5B5B6B]'}`}>
-                  {activeCycleId ? 'Activo' : 'Sin ciclo'}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-[#FAF9F6] border border-[#DAD5E4] p-3 rounded-xl">
-            <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#2C7B64]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13a4 4 0 014-4h10a4 4 0 110 8H7a4 4 0 01-4-4z" />
-              </svg>
-              <div className="flex-1">
-                <p className="text-xs font-medium text-[#5B5B6B]">Participación</p>
-                {activeCycleId ? (
-                  <p className="text-lg sm:text-xl font-bold tabular-nums text-[#2E2E3A]">{participationPct}%</p>
-                ) : (
-                  <p className="text-lg sm:text-xl font-bold text-[#5B5B6B]">—</p>
-                )}
-              </div>
-            </div>
-            {activeCycleId && (
-              <div className="mt-2">
-                <div className="w-full h-1.5 sm:h-2 bg-[#DAD5E4]/50 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${participationPct}%`,
-                      backgroundColor: participationPct >= 80 ? '#4AA690' : participationPct >= 50 ? '#55C2A2' : '#9D83C6'
-                    }}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-[#5B5B6B] font-medium">{respondedCount} / {totalParticipantes}</p>
-              </div>
-            )}
-          </div>
-          <div className="bg-[#FAF9F6] border border-[#DAD5E4] p-3 rounded-xl">
-            <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#8160B6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .843-3 1.882v4.236C9 15.157 10.343 16 12 16s3-.843 3-1.882V9.882C15 8.843 13.657 8 12 8z" />
-              </svg>
-              <div className="flex-1">
-                <p className="text-xs font-medium text-[#5B5B6B]">Bienestar</p>
-                {activeCycleId ? (
-                  <p className="text-lg sm:text-xl font-bold tabular-nums text-[#8160B6]">
-                    {wellbeingMetric && wellbeingMetric.avg != null ? `${wellbeingMetric.avg}` : '—'}
-                    <span className="text-xs font-medium text-[#5B5B6B] ml-1">/100</span>
-                  </p>
-                ) : (
-                  <p className="text-lg sm:text-xl font-bold text-[#5B5B6B]">—</p>
-                )}
-              </div>
-            </div>
-            {activeCycleId && wellbeingMetric && wellbeingMetric.avg != null && (
-              <div className="mt-2">
-                <div className="w-full h-1.5 sm:h-2 bg-[#DAD5E4]/50 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${wellbeingMetric.avg}%`,
-                      backgroundColor: '#9D83C6'
-                    }}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-[#5B5B6B] font-medium">{wellbeingMetric.count} resp.</p>
-              </div>
-            )}
-          </div>
+        {/* Estadísticas */}
+        <div className="grid grid-cols-2 gap-3">
+          <Stat label="Miembros" value={totalParticipantes} />
+          <Stat label="Ronda" value={activeCycleId ? "Activa" : "Sin ronda"} color={activeCycleId ? "mint" : undefined} />
+          <Stat
+            label="Participación"
+            value={activeCycleId ? `${participationPct}%` : "—"}
+            meter={activeCycleId ? participationPct : undefined}
+            foot={activeCycleId ? `${respondedCount} / ${totalParticipantes} respondieron` : undefined}
+          />
+          <Stat
+            label="Bienestar"
+            value={activeCycleId ? (wellbeingMetric && wellbeingMetric.avg != null ? wellbeingMetric.avg : "—") : "—"}
+            suffix={activeCycleId && wellbeingMetric?.avg != null ? "/100" : undefined}
+            color="purple"
+            meter={activeCycleId && wellbeingMetric?.avg != null ? wellbeingMetric.avg : undefined}
+            foot={activeCycleId && wellbeingMetric?.avg != null ? `${wellbeingMetric.count} resp.` : undefined}
+          />
         </div>
 
         {/* Código de invitación */}
-        <div className="bg-gradient-to-r from-[#55C2A2]/10 to-[#9D83C6]/10 border border-[#55C2A2]/30 p-3 sm:p-4 rounded-xl mb-4">
-          <div className="flex items-start sm:items-center justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs sm:text-sm text-[#2E2E3A] font-medium flex items-center gap-2 mb-2">
-                <svg className="w-4 h-4 text-[#55C2A2] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
-                <span className="flex-1">Código de invitación</span>
-                <button
-                  onClick={() => setShowInvite(v => !v)}
-                  className="text-xs px-2 py-0.5 rounded-lg border border-[#55C2A2]/50 text-[#2C7B64] hover:bg-[#55C2A2]/20 transition-all duration-200 flex-shrink-0"
-                >{showInvite ? 'Ocultar' : 'Mostrar'}</button>
-              </p>
-              <p className="text-sm sm:text-lg font-mono font-bold text-[#2E2E3A] select-all break-all bg-[#FAF9F6] px-2 sm:px-3 py-2 rounded-lg border border-[#DAD5E4]">
-                {team.team_invite_codes?.length > 0 ? (
-                  showInvite ? team.team_invite_codes[0].code : '••••••••'
-                ) : 'Sin código'}
-              </p>
-              {team.team_invite_codes?.length > 0 && team.team_invite_codes[0].expires_at && (
-                new Date(team.team_invite_codes[0].expires_at) <= new Date() ? (
-                  <span className="text-xs text-red-600 font-medium">Expirado — genera uno nuevo</span>
+        <div className="flex flex-wrap items-start gap-3.5 rounded-2xl border border-dashed border-[#DAD5E4] bg-[#DAD5E4]/35 px-4 py-3.5">
+          <div className="flex min-w-[150px] flex-1 flex-col">
+            <span className="text-[11px] font-bold uppercase tracking-[.06em] text-[#5B5B6B]">Código de invitación</span>
+            {team.team_invite_codes?.length > 0 ? (
+              <>
+                <span className="select-all break-all font-['Poppins',_Arial,_sans-serif] text-xl font-bold tracking-[.18em] text-[#2E2E3A]">
+                  {showInvite ? team.team_invite_codes[0].code : '••••••'}
+                </span>
+                {codeExpired ? (
+                  <span className="text-xs font-medium text-red-600">Expirado — genera uno nuevo</span>
                 ) : (
-                  <span className="text-xs text-[#5B5B6B]">
-                    Expira el {new Date(team.team_invite_codes[0].expires_at).toLocaleDateString()}
-                  </span>
-                )
-              )}
-              {copied && <span className="text-xs text-green-700 font-medium block">Copiado</span>}
-            </div>
-            <div className="flex flex-col gap-1.5 flex-shrink-0 mt-6 sm:mt-0">
-              <button
-                onClick={async () => {
-                  if (team.team_invite_codes?.length > 0) {
-                    try { await navigator.clipboard.writeText(team.team_invite_codes[0].code); setCopied(true); setTimeout(()=>setCopied(false), 2000);} catch(e){}
-                  }
-                }}
-                className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white px-3 py-1.5 sm:py-1 rounded-lg text-xs sm:text-sm transition-all duration-300 ease-out transform hover:scale-105 shadow-md hover:shadow-lg"
-              >
-                Copiar
-              </button>
-              <button
-                onClick={() => onRegenerateCode && onRegenerateCode(team.id)}
-                className="border border-[#9D83C6]/50 text-[#8160B6] px-3 py-1.5 sm:py-1 rounded-lg text-xs sm:text-sm hover:bg-[#9D83C6]/10 transition-all duration-200"
-              >
-                Regenerar
-              </button>
-            </div>
+                  team.team_invite_codes[0].expires_at && (
+                    <span className="text-xs text-[#5B5B6B]">Expira el {new Date(team.team_invite_codes[0].expires_at).toLocaleDateString()}</span>
+                  )
+                )}
+                {copied && <span className="text-xs font-medium text-[#3d8a74]">Copiado</span>}
+              </>
+            ) : (
+              <span className="font-['Poppins',_Arial,_sans-serif] text-base font-semibold text-[#5B5B6B]">Sin código</span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowInvite((v) => !v)}
+              className="rounded-xl border border-[#DAD5E4] bg-white px-3.5 py-2.5 font-['Poppins',_Arial,_sans-serif] text-[13px] font-semibold text-[#2E2E3A] hover:border-[#9D83C6]"
+            >
+              {showInvite ? 'Ocultar' : 'Mostrar'}
+            </button>
+            <button
+              type="button"
+              onClick={copyCode}
+              className="rounded-xl bg-[rgba(85,194,162,.16)] px-3.5 py-2.5 font-['Poppins',_Arial,_sans-serif] text-[13px] font-semibold text-[#3d8a74] hover:bg-[rgba(85,194,162,.26)]"
+            >
+              {copied ? 'Copiado' : 'Copiar'}
+            </button>
+            <button
+              type="button"
+              onClick={() => onRegenerateCode && onRegenerateCode(team.id)}
+              className="rounded-xl border border-[#9D83C6]/50 px-3.5 py-2.5 font-['Poppins',_Arial,_sans-serif] text-[13px] font-semibold text-[#6f56a0] hover:bg-[rgba(157,131,198,.1)]"
+            >
+              Regenerar
+            </button>
           </div>
         </div>
 
-        {/* Miembros expandidos */}
-        {isExpanded && (
-          <div className="border-t border-[#DAD5E4] pt-4">
-            <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] mb-3">Miembros del equipo</h4>
-            {membersLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <LoadingSpinner size="small" />
-              </div>
+        {/* Miembros expandibles */}
+        <div className="flex flex-col gap-2.5">
+          <button
+            type="button"
+            onClick={() => setIsExpanded((o) => !o)}
+            aria-expanded={isExpanded}
+            className="flex items-center justify-between py-1 font-['Poppins',_Arial,_sans-serif] text-sm font-semibold text-[#2E2E3A]"
+          >
+            <span>Miembros del equipo</span>
+            <span className="text-[#5B5B6B]">{isExpanded ? '▲' : '▼'}</span>
+          </button>
+          {isExpanded && (
+            membersLoading ? (
+              <LoadingSpinner size="small" />
             ) : allMembersForLeader?.length > 0 ? (
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 {allMembersForLeader.map((member) => {
                   const hasResponded = !!(respondedMembers && respondedMembers.has(member.user_id));
                   const isLeaderMember = member.isLeader;
                   return (
-                    <div key={member.user_id} className="flex items-center space-x-3 p-2 bg-[#FAF9F6] border border-[#DAD5E4] rounded-xl">
-                      <div className={`w-8 h-8 ${isLeaderMember ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6]' : 'bg-[#DAD5E4]'} rounded-full flex items-center justify-center`}>
-                        <span className={`text-sm font-medium ${isLeaderMember ? 'text-white' : 'text-[#2E2E3A]'}`}>
-                          {member.profiles?.first_name?.charAt(0) || 'U'}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-[#2E2E3A]">
-                          {member.profiles?.first_name && member.profiles?.last_name
-                            ? `${member.profiles.first_name} ${member.profiles.last_name}`
-                            : 'Usuario sin nombre'
-                          }
-                        </p>
-                        <p className="text-xs text-[#5B5B6B]">
-                          {isLeaderMember ? 'Líder del equipo' : 'Miembro del equipo'}
-                        </p>
-                      </div>
+                    <div key={member.user_id} className="flex items-center gap-3 rounded-[14px] border border-[#DAD5E4] bg-[#FAF9F6] px-3.5 py-[11px]">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-['Poppins',_Arial,_sans-serif] text-[13px] font-bold ${isLeaderMember ? 'bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] text-white' : 'bg-[rgba(157,131,198,.2)] text-[#6f56a0]'}`}>
+                        {member.profiles?.first_name?.charAt(0) || 'U'}
+                      </span>
+                      <span className="flex-1 truncate text-sm text-[#2E2E3A]">
+                        {member.profiles?.first_name && member.profiles?.last_name
+                          ? `${member.profiles.first_name} ${member.profiles.last_name}`
+                          : 'Usuario sin nombre'}
+                      </span>
+                      <span className="hidden text-xs text-[#5B5B6B] sm:inline">{isLeaderMember ? 'Líder' : 'Miembro'}</span>
                       {activeCycleId ? (
-                        hasResponded ? (
-                          <span className="bg-[#55C2A2]/15 text-[#2C7B64] text-xs font-medium px-2 py-1 rounded-full">Respondió</span>
-                        ) : (
-                          <span className="bg-[#9D83C6]/15 text-[#8160B6] text-xs font-medium px-2 py-1 rounded-full">Pendiente</span>
-                        )
+                        <Badge tone={hasResponded ? 'mint' : 'purple'}>{hasResponded ? 'Respondió' : 'Pendiente'}</Badge>
                       ) : (
-                        <span className="bg-[#DAD5E4]/50 text-[#5B5B6B] text-xs font-medium px-2 py-1 rounded-full">Sin ronda</span>
+                        <Badge tone="neutral">Sin ronda</Badge>
                       )}
                       {!isLeaderMember && (
                         <button
+                          type="button"
                           onClick={() => onKickMember && onKickMember(team.id, member.user_id)}
-                          className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors"
                           aria-label="Expulsar miembro"
                           title="Expulsar del equipo"
+                          className="rounded-lg p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
@@ -1948,84 +1554,49 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                 })}
               </div>
             ) : (
-              <p className="text-sm text-[#5B5B6B] italic">Sin miembros aún</p>
-            )}
-          </div>
-        )}
-
-        {/* Acciones */}
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t border-[#DAD5E4]">
-          {activeCycleId ? (
-            <button
-              className="w-full sm:flex-1 bg-red-600 text-white py-2.5 sm:py-2 px-4 rounded-xl font-medium hover:bg-red-700 transition-colors disabled:opacity-50 text-sm"
-              onClick={() => onEndCycle && onEndCycle(team.id)}
-              disabled={ending}
-            >
-              {ending ? 'Terminando...' : 'Terminar ronda'}
-            </button>
-          ) : (
-            <button
-              className="w-full sm:flex-1 bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] disabled:from-[#55C2A2]/50 disabled:to-[#9D83C6]/50 text-white py-2.5 sm:py-2 px-4 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none text-sm"
-              onClick={() => onLaunch && onLaunch(team)}
-              disabled={launching}
-              aria-expanded={isLaunchingThisTeam}
-            >
-              {launching ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Iniciando...
-                </span>
-              ) : (
-                'Iniciar ronda'
-              )}
-            </button>
+              <p className="text-sm italic text-[#5B5B6B]">Sin miembros aún</p>
+            )
           )}
-          {activeCycleId && (
-            <div className="hidden sm:block sm:flex-1">
-              {participationPct === 100 ? (
-                <div className="w-full flex items-center justify-center px-4 py-2 rounded-xl bg-[#55C2A2]/10 text-[#2C7B64] text-xs font-medium border border-[#55C2A2]/30">
-                  Todos respondieron
-                </div>
-              ) : (
-                <div className="w-full flex items-center justify-center px-4 py-2 rounded-xl bg-[#55C2A2]/10 text-[#2C7B64] text-xs font-medium border border-[#55C2A2]/30">
-                  Ronda activa
-                </div>
-              )}
-            </div>
-          )}
-          <button
-            className="w-full sm:flex-1 border border-[#DAD5E4] text-[#2E2E3A] py-2.5 sm:py-2 px-4 rounded-xl font-medium hover:bg-[#DAD5E4]/20 transition-colors text-sm"
-            onClick={() => navigate(`/reportes?team=${team.id}`)}
-          >
-            Generar Reporte
-          </button>
         </div>
 
-        {/* Panel de lanzamiento de ciclo MBI en línea — reemplaza al LaunchMBIModal flotante */}
+        {/* Acciones */}
+        <div className="flex flex-wrap items-center gap-3 border-t border-[#DAD5E4] pt-4">
+          {activeCycleId ? (
+            <Btn variant="danger" onClick={() => onEndCycle && onEndCycle(team.id)} disabled={ending} className="min-w-[150px] flex-1 justify-center">
+              {ending ? 'Terminando...' : 'Terminar ronda'}
+            </Btn>
+          ) : (
+            <Btn onClick={() => onLaunch && onLaunch(team)} disabled={launching} aria-expanded={isLaunchingThisTeam} className="min-w-[150px] flex-1 justify-center">
+              {launching ? 'Iniciando...' : 'Iniciar ronda'}
+            </Btn>
+          )}
+          {activeCycleId && (
+            <span className="hidden rounded-xl border border-[rgba(85,194,162,.3)] bg-[rgba(85,194,162,.1)] px-4 py-2.5 text-xs font-medium text-[#3d8a74] sm:inline-flex sm:min-w-[150px] sm:flex-1 sm:items-center sm:justify-center">
+              {participationPct === 100 ? 'Todos respondieron' : 'Ronda activa'}
+            </span>
+          )}
+          <Btn variant="secondary" onClick={() => navigate(`/reportes?team=${team.id}`)} className="min-w-[150px] flex-1 justify-center">
+            Generar reporte
+          </Btn>
+        </div>
+
         {isLaunchingThisTeam && (
-          <LaunchMBIPanel
-            isOpen={isLaunchingThisTeam}
-            context={launchContext}
-            launching={launching}
-            onClose={onCloseLaunchPanel}
-            onConfirm={onConfirmLaunch}
-          />
+          <LaunchMBIPanel isOpen={isLaunchingThisTeam} context={launchContext} launching={launching} onClose={onCloseLaunchPanel} onConfirm={onConfirmLaunch} />
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 
 // Tarjeta de equipo para usuarios miembros - Vista de participación
-function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycleId, respondedCycles, respondedMembers }) {
+function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycleId, respondedCycles, respondedMembers, navigate }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const currentMember = members?.find(m => m.user_id === currentUserId);
-  
+
   // Cerrar menú al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -2039,45 +1610,30 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showOptionsMenu]);
-  
+
   // Aplicar configuraciones de privacidad
   const canSeeOthers = team.members_can_see_others ?? true;
   const canSeeResponses = team.members_can_see_responses ?? true;
-  
+
   // Filtrar miembros basado en configuración de privacidad
-  const visibleMembers = canSeeOthers 
-    ? members 
+  const visibleMembers = canSeeOthers
+    ? members
     : members?.filter(m => m.user_id === currentUserId) || [];
-  
+
   // Calcular total de participantes (siempre mostrar el total real)
   const totalParticipantes = members?.length || 0;
 
-  // Funciones para manejar las opciones del menú
   const handleUpdatePrivacy = async (privacySettings) => {
     try {
       setLoading(true);
-      
-      console.log('Actualizando preferencias individuales:', {
-        team_id: team.id,
-        user_id: currentUserId,
-        share_results: privacySettings.share_results_with_leader
-      });
-      
-      // Actualizar solo la preferencia individual del usuario
-      const { error, data } = await supabase
+      const { error } = await supabase
         .from('team_members')
-        .update({
-          share_results_with_leader: privacySettings.share_results_with_leader
-        })
+        .update({ share_results_with_leader: privacySettings.share_results_with_leader })
         .eq('team_id', team.id)
         .eq('user_id', currentUserId);
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-      
-      console.log('Update successful:', data);
+      if (error) throw error;
+
       setShowPrivacyModal(false);
       // Recargar la página para reflejar los cambios
       window.location.reload();
@@ -2099,7 +1655,7 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
         .eq('user_id', currentUserId);
 
       if (error) throw error;
-      
+
       setShowLeaveModal(false);
       // Recargar la página para reflejar los cambios
       window.location.reload();
@@ -2112,420 +1668,222 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
   };
 
   return (
-    <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4] hover:shadow-teamzen-strong hover:border-[#55C2A2] transition-all duration-300">
-      <div className="p-6">
+    <Card pad="p-6">
+      <div className="flex flex-col gap-[18px]">
         {/* Header del equipo */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#55C2A2] to-[#9D83C6] rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-lg">
-                {team.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div>
-              <h3 className="text-base sm:text-lg font-semibold text-[#2E2E3A]">{team.name}</h3>
-              <p className="text-xs sm:text-sm text-[#5B5B6B]">
-                Miembro desde que te uniste al equipo
-              </p>
+        <div className="flex items-start justify-between gap-3.5">
+          <div className="flex min-w-0 flex-1 items-center gap-3.5">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] font-['Poppins',_Arial,_sans-serif] text-xl font-bold text-white">
+              {team.name.charAt(0).toUpperCase()}
+            </span>
+            <div className="min-w-0 flex-1">
+              <h3 className="truncate font-['Poppins',_Arial,_sans-serif] text-[19px] font-semibold text-[#2E2E3A]">{team.name}</h3>
+              <span className="text-[13px] text-[#5B5B6B]">Miembro desde que te uniste al equipo</span>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="bg-[#55C2A2]/15 text-[#2C7B64] text-xs font-medium px-2.5 py-0.5 rounded-full">
-              Miembro
-            </span>
-
-            {/* Menú de opciones */}
-            <div className="relative options-menu">
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge tone="mint">Miembro</Badge>
+            <div className="options-menu relative">
               <button
+                type="button"
                 onClick={() => setShowOptionsMenu(!showOptionsMenu)}
                 aria-label="Opciones del equipo"
                 aria-expanded={showOptionsMenu}
-                className="p-2 hover:bg-[#DAD5E4]/30 rounded-lg transition-colors"
+                className="rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] p-2 text-[#5B5B6B] transition-colors hover:border-[#9D83C6] hover:text-[#2E2E3A]"
               >
-                <svg className="w-5 h-5 text-[#5B5B6B]" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                 </svg>
               </button>
 
               {showOptionsMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-[#FAF9F6] rounded-xl shadow-teamzen-strong border border-[#DAD5E4] z-10">
-                  <div className="py-1">
-                    <button
-                      onClick={() => {
-                        setShowPrivacyModal(true);
-                        setShowOptionsMenu(false);
-                      }}
-                      className="flex items-center w-full px-4 py-2 text-sm text-[#2E2E3A] hover:bg-[#DAD5E4]/30"
-                    >
-                      <svg className="w-4 h-4 mr-3 text-[#5B5B6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                      Configurar privacidad
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowLeaveModal(true);
-                        setShowOptionsMenu(false);
-                      }}
-                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                    >
-                      <svg className="w-4 h-4 mr-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
-                      Salir del equipo
-                    </button>
-                  </div>
+                <div className="absolute right-0 top-[calc(100%+8px)] z-10 flex w-56 flex-col gap-1 rounded-2xl border border-[#DAD5E4] bg-white p-2 shadow-teamzen-strong">
+                  <button
+                    type="button"
+                    onClick={() => { setShowPrivacyModal(true); setShowOptionsMenu(false); }}
+                    className="rounded-xl px-3 py-2 text-left font-['Poppins',_Arial,_sans-serif] text-sm font-medium text-[#2E2E3A] hover:bg-[#DAD5E4]/40"
+                  >
+                    Configurar privacidad
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowLeaveModal(true); setShowOptionsMenu(false); }}
+                    className="rounded-xl px-3 py-2 text-left font-['Poppins',_Arial,_sans-serif] text-sm font-medium text-[#c0392b] hover:bg-[rgba(192,57,43,.08)]"
+                  >
+                    Salir del equipo
+                  </button>
                 </div>
               )}
             </div>
-
             <button
+              type="button"
               onClick={() => setIsExpanded(!isExpanded)}
               aria-expanded={isExpanded}
               aria-label={isExpanded ? 'Ocultar miembros del equipo' : 'Mostrar miembros del equipo'}
-              className="p-2 hover:bg-[#DAD5E4]/30 rounded-lg transition-colors"
+              className="rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] p-2 text-[#5B5B6B] transition-colors hover:border-[#9D83C6] hover:text-[#2E2E3A]"
             >
-              <svg
-                className={`w-5 h-5 text-[#5B5B6B] transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
           </div>
         </div>
 
-        {/* Información del equipo */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
-          <div className="bg-[#FAF9F6] border border-[#DAD5E4] p-3 rounded-xl">
-            <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#5B5B6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <div>
-                <p className="text-xs font-medium text-[#5B5B6B]">Miembros</p>
-                <p className="text-lg sm:text-xl font-bold tabular-nums text-[#2E2E3A]">{totalParticipantes}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-[#FAF9F6] border border-[#DAD5E4] p-3 rounded-xl">
-            <div className="flex items-center space-x-2">
-              <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${activeCycleId ? 'text-[#2C7B64]' : 'text-[#5B5B6B]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <p className="text-xs font-medium text-[#5B5B6B]">Ronda</p>
-                <p className={`text-lg sm:text-xl font-bold ${activeCycleId ? 'text-[#2C7B64]' : 'text-[#5B5B6B]'}`}>
-                  {activeCycleId ? 'Activo' : 'Sin ciclo'}
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Stat label="Miembros" value={totalParticipantes} />
+          <Stat label="Ronda" value={activeCycleId ? "Activa" : "Sin ronda"} color={activeCycleId ? "mint" : undefined} />
         </div>
 
-        {/* Estado de tu evaluación en el ciclo activo (derivado de datos reales, no un valor fijo) */}
         {activeCycleId && (
-          <div className={`p-3 rounded-xl mb-4 ${respondedCycles[activeCycleId] ? 'bg-[#55C2A2]/10 border border-[#55C2A2]/30' : 'bg-[#9D83C6]/10 border border-[#9D83C6]/30'}`}>
-            <div className="flex items-center space-x-2">
-              <svg className={`w-5 h-5 flex-shrink-0 ${respondedCycles[activeCycleId] ? 'text-[#2C7B64]' : 'text-[#8160B6]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <p className={`text-sm font-medium ${respondedCycles[activeCycleId] ? 'text-[#2C7B64]' : 'text-[#8160B6]'}`}>
-                  {respondedCycles[activeCycleId] ? 'Ya respondiste este ciclo' : 'Evaluación pendiente'}
-                </p>
-                {!respondedCycles[activeCycleId] && (
-                  <p className="text-xs text-[#5B5B6B]">Responde el MBI antes de que cierre el ciclo</p>
-                )}
-              </div>
+          <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3.5 ${respondedCycles[activeCycleId] ? 'border-[rgba(85,194,162,.3)] bg-[rgba(85,194,162,.1)]' : 'border-[rgba(157,131,198,.32)] bg-[rgba(157,131,198,.12)]'}`}>
+            <Dot tone={respondedCycles[activeCycleId] ? 'mint' : 'purple'} />
+            <div>
+              <p className="text-sm font-medium text-[#2E2E3A]">
+                {respondedCycles[activeCycleId] ? 'Ya respondiste este ciclo' : 'Evaluación pendiente — tus respuestas son privadas.'}
+              </p>
             </div>
           </div>
         )}
 
-        {/* Miembros expandidos */}
-        {isExpanded && (
-          <div className="border-t border-[#DAD5E4] pt-4">
-            <h4 className="text-sm sm:text-base font-semibold text-[#2E2E3A] mb-3">Miembros del equipo</h4>
-            {membersLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <LoadingSpinner size="small" />
-              </div>
+        {/* Miembros expandibles */}
+        <div className="flex flex-col gap-2.5">
+          <button
+            type="button"
+            onClick={() => setIsExpanded((o) => !o)}
+            aria-expanded={isExpanded}
+            className="flex items-center justify-between py-1 font-['Poppins',_Arial,_sans-serif] text-sm font-semibold text-[#2E2E3A]"
+          >
+            <span>Miembros del equipo</span>
+            <span className="text-[#5B5B6B]">{isExpanded ? '▲' : '▼'}</span>
+          </button>
+          {isExpanded && (
+            membersLoading ? (
+              <LoadingSpinner size="small" />
             ) : visibleMembers?.length > 0 ? (
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 {visibleMembers.map((member) => {
                   const hasResponded = !!(respondedMembers && respondedMembers.has(member.user_id));
                   const isCurrentUser = member.user_id === currentUserId;
                   const isLeader = member.is_leader || member.user_id === team.leader_id;
-                  
+
                   return (
-                    <div key={member.user_id} className="flex items-center space-x-3 p-2 bg-[#FAF9F6] border border-[#DAD5E4] rounded-xl">
-                      <div className={`w-8 h-8 ${
-                        isCurrentUser || isLeader ? 'bg-gradient-to-br from-[#55C2A2] to-[#9D83C6]' :
-                        'bg-[#DAD5E4]'
-                      } rounded-full flex items-center justify-center`}>
-                        <span className={`text-sm font-medium ${
-                          isCurrentUser || isLeader ? 'text-white' : 'text-[#2E2E3A]'
-                        }`}>
-                          {member.profiles?.first_name?.charAt(0) || 'U'}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-[#2E2E3A]">
-                          {member.profiles?.first_name && member.profiles?.last_name
-                            ? `${member.profiles.first_name} ${member.profiles.last_name}`
-                            : 'Usuario sin nombre'
-                          }
-                          {isCurrentUser && (
-                            <span className="ml-2 text-xs text-[#2C7B64] font-semibold">(Tú)</span>
-                          )}
-                          {isLeader && (
-                            <span className="ml-2 text-xs text-[#2C7B64] font-semibold">(Líder)</span>
-                          )}
-                        </p>
-                        <p className="text-xs text-[#5B5B6B]">
-                          {isCurrentUser ? 'Tu participación' :
-                           isLeader ? 'Líder del equipo' :
-                           'Miembro del equipo'}
-                        </p>
-                      </div>
+                    <div key={member.user_id} className="flex items-center gap-3 rounded-[14px] border border-[#DAD5E4] bg-[#FAF9F6] px-3.5 py-[11px]">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-['Poppins',_Arial,_sans-serif] text-[13px] font-bold ${isCurrentUser || isLeader ? 'bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] text-white' : 'bg-[rgba(157,131,198,.2)] text-[#6f56a0]'}`}>
+                        {member.profiles?.first_name?.charAt(0) || 'U'}
+                      </span>
+                      <span className="flex-1 truncate text-sm text-[#2E2E3A]">
+                        {member.profiles?.first_name && member.profiles?.last_name
+                          ? `${member.profiles.first_name} ${member.profiles.last_name}`
+                          : 'Usuario sin nombre'}
+                        {isCurrentUser && <span className="ml-2 text-xs font-semibold text-[#3d8a74]">(Tú)</span>}
+                        {isLeader && <span className="ml-2 text-xs font-semibold text-[#3d8a74]">(Líder)</span>}
+                      </span>
                       {activeCycleId && canSeeResponses ? (
-                        // Mostrar estado de respuesta solo si está permitido
-                        hasResponded ? (
-                          <span className="bg-[#55C2A2]/15 text-[#2C7B64] text-xs font-medium px-2 py-1 rounded-full">Respondió</span>
-                        ) : (
-                          <span className="bg-[#9D83C6]/15 text-[#8160B6] text-xs font-medium px-2 py-1 rounded-full">Pendiente</span>
-                        )
+                        <Badge tone={hasResponded ? 'mint' : 'purple'}>{hasResponded ? 'Respondió' : 'Pendiente'}</Badge>
                       ) : activeCycleId && !canSeeResponses && isCurrentUser ? (
-                        // Para el usuario actual, siempre mostrar su estado
-                        hasResponded ? (
-                          <span className="bg-[#55C2A2]/15 text-[#2C7B64] text-xs font-medium px-2 py-1 rounded-full">Respondiste</span>
-                        ) : (
-                          <span className="bg-[#9D83C6]/15 text-[#8160B6] text-xs font-medium px-2 py-1 rounded-full">Pendiente</span>
-                        )
+                        <Badge tone={hasResponded ? 'mint' : 'purple'}>{hasResponded ? 'Respondiste' : 'Pendiente'}</Badge>
                       ) : activeCycleId ? (
-                        <span className="bg-[#DAD5E4]/50 text-[#5B5B6B] text-xs font-medium px-2 py-1 rounded-full">Privado</span>
+                        <Badge tone="neutral">Privado</Badge>
                       ) : (
-                        <span className="bg-[#DAD5E4]/50 text-[#5B5B6B] text-xs font-medium px-2 py-1 rounded-full">Sin ronda</span>
+                        <Badge tone="neutral">Sin ronda</Badge>
                       )}
                     </div>
                   );
                 })}
                 {!canSeeOthers && visibleMembers.length === 1 && (
-                  <div className="p-3 bg-gradient-to-r from-[#55C2A2]/10 to-[#9D83C6]/10 border border-[#55C2A2]/30 rounded-xl">
-                    <p className="text-sm text-[#2E2E3A] flex items-center gap-2">
-                      <svg className="w-4 h-4 text-[#55C2A2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                      Configuración de privacidad: Solo puedes verte a ti mismo
-                    </p>
-                  </div>
+                  <Notice tone="purple">Configuración de privacidad: Solo puedes verte a ti mismo.</Notice>
                 )}
                 {canSeeOthers && visibleMembers.filter(m => m.user_id !== currentUserId).length === 0 && (
-                  <p className="text-sm text-[#5B5B6B] italic">Eres el único miembro del equipo</p>
+                  <p className="text-sm italic text-[#5B5B6B]">Eres el único miembro del equipo</p>
                 )}
               </div>
             ) : (
-              <p className="text-sm text-[#5B5B6B] italic">Sin otros miembros</p>
-            )}
-          </div>
-        )}
+              <p className="text-sm italic text-[#5B5B6B]">Sin otros miembros</p>
+            )
+          )}
+        </div>
 
         {/* Acciones */}
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-4 border-t border-[#DAD5E4]">
+        <div className="flex flex-wrap items-center gap-3 border-t border-[#DAD5E4] pt-4">
           {!activeCycleId ? (
-            <div className="w-full sm:flex-1 flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-xl bg-[#DAD5E4]/30 text-[#5B5B6B] text-sm font-medium border border-[#DAD5E4]">Sin ronda activa</div>
+            <span className="flex min-w-[150px] flex-1 items-center justify-center rounded-xl border border-[#DAD5E4] bg-[#DAD5E4]/30 px-4 py-2.5 text-sm font-medium text-[#5B5B6B]">Sin ronda activa</span>
           ) : respondedCycles[activeCycleId] ? (
-            <div className="w-full sm:flex-1 flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-xl bg-[#55C2A2]/10 text-[#2C7B64] text-sm font-medium border border-[#55C2A2]/30">Respondido</div>
+            <span className="flex min-w-[150px] flex-1 items-center justify-center rounded-xl border border-[rgba(85,194,162,.3)] bg-[rgba(85,194,162,.1)] px-4 py-2.5 text-sm font-medium text-[#3d8a74]">Respondido</span>
           ) : (
-            <button
-              className="w-full sm:flex-1 bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] text-white py-2.5 sm:py-2 px-4 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow text-sm"
-              onClick={() => navigate(`/mbi?team=${team.id}`)}
-            >
-              Completar MBI
-            </button>
+            <Btn onClick={() => navigate(`/mbi?team=${team.id}`)} className="min-w-[150px] flex-1 justify-center">Completar MBI</Btn>
           )}
-          <button className="w-full sm:flex-1 border border-[#DAD5E4] text-[#2E2E3A] py-2.5 sm:py-2 px-4 rounded-xl font-medium hover:bg-[#DAD5E4]/20 transition-colors text-sm">
-            Ver Historial
-          </button>
+          <Btn variant="ghost" className="min-w-[150px] flex-1 justify-center">Ver Historial</Btn>
         </div>
       </div>
 
       {/* Modal de configuración de privacidad */}
-      {showPrivacyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 mx-auto bg-[#9D83C6]/10 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-[#9D83C6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <h2 className="text-xl font-bold text-[#2E2E3A] mb-2">Configuración de Privacidad</h2>
-                <p className="text-sm text-[#5B5B6B]">
-                  Configura qué información quieres compartir en el equipo "{team.name}"
-                </p>
-              </div>
-
-              <PrivacySettingsForm
-                currentSettings={currentMember}
-                teamSettings={team}
-                onSave={handleUpdatePrivacy}
-                onCancel={() => setShowPrivacyModal(false)}
-                loading={loading}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} title="Configurar privacidad">
+        <PrivacySettingsForm
+          currentSettings={currentMember}
+          teamSettings={team}
+          teamName={team.name}
+          onSave={handleUpdatePrivacy}
+          onCancel={() => setShowPrivacyModal(false)}
+          loading={loading}
+        />
+      </Modal>
 
       {/* Modal de salir del equipo */}
-      {showLeaveModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                </div>
-                <h2 className="text-xl font-bold text-[#2E2E3A] mb-2">Salir del Equipo</h2>
-                <p className="text-sm text-[#5B5B6B] mb-4">
-                  ¿Estás seguro de que quieres salir del equipo "{team.name}"?
-                </p>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                  <p className="text-xs text-red-800">
-                    <strong>Advertencia:</strong> Al salir del equipo perderás acceso a todos los datos y evaluaciones. Esta acción no se puede deshacer.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowLeaveModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  disabled={loading}
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleLeaveTeam}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                  disabled={loading}
-                >
-                  {loading ? "Saliendo..." : "Salir del equipo"}
-                </button>
-              </div>
-            </div>
+      <Modal isOpen={showLeaveModal} onClose={() => setShowLeaveModal(false)} title="Salir del equipo">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-[#5B5B6B]">¿Estás seguro de que quieres salir del equipo "{team.name}"?</p>
+          <Alert title="Esta acción no se puede deshacer">
+            Al salir del equipo perderás acceso a todos los datos y evaluaciones.
+          </Alert>
+          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
+            <Btn type="button" variant="ghost" onClick={() => setShowLeaveModal(false)} disabled={loading} className="flex-1 justify-center">
+              Cancelar
+            </Btn>
+            <Btn type="button" variant="danger" onClick={handleLeaveTeam} disabled={loading} className="flex-1 justify-center">
+              {loading ? "Saliendo..." : "Salir del equipo"}
+            </Btn>
           </div>
         </div>
-      )}
-    </div>
+      </Modal>
+    </Card>
   );
 }
 
-// Componente para configurar las preferencias de privacidad
-function PrivacySettingsForm({ currentSettings, onSave, onCancel, loading, teamSettings }) {
-  const [settings, setSettings] = useState({
-    share_results_with_leader: currentSettings?.share_results_with_leader ?? false
-  });
-
-  const handleSave = () => {
-    onSave(settings);
-  };
+// Componente para configurar las preferencias de privacidad (personal, por miembro)
+function PrivacySettingsForm({ currentSettings, onSave, onCancel, loading, teamSettings, teamName }) {
+  const [shareResults, setShareResults] = useState(currentSettings?.share_results_with_leader ?? false);
 
   return (
-    <div className="space-y-4">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-        <div className="flex gap-2">
-          <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div>
-            <p className="text-xs text-blue-800 font-medium">Configuración personal</p>
-            <p className="text-xs text-blue-700 mt-1">
-              Solo tú puedes decidir si compartir tus resultados individuales con el líder del equipo.
-            </p>
-          </div>
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-[#5B5B6B]">Configura qué información quieres compartir en el equipo "{teamName}".</p>
+
+      <div className="flex items-start gap-3.5 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] p-4">
+        <Check checked={shareResults} onChange={() => setShareResults((v) => !v)} />
+        <div>
+          <h4 className="font-['Poppins',_Arial,_sans-serif] text-[15px] font-semibold text-[#2E2E3A]">Compartir mis resultados de evaluación con el líder</h4>
+          <p className="mt-0.5 text-sm text-[#5B5B6B]">Si lo desactivas, tu líder solo verá que respondiste, nunca tu puntaje.</p>
         </div>
       </div>
 
-      <div className="space-y-4 mb-6">
-        <div className="border border-[#DAD5E4] rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              id="shareResults"
-              checked={settings.share_results_with_leader}
-              onChange={(e) => setSettings(prev => ({
-                ...prev,
-                share_results_with_leader: e.target.checked
-              }))}
-              className="mt-1 w-4 h-4 text-[#9D83C6] border-gray-300 rounded focus:ring-[#9D83C6]"
-            />
-            <div className="flex-1">
-              <label htmlFor="shareResults" className="text-sm font-medium text-[#2E2E3A] cursor-pointer">
-                Compartir mis resultados de evaluación con el líder
-              </label>
-              <p className="text-xs text-[#5B5B6B] mt-1">
-                Permite que el líder del equipo pueda ver tus resultados individuales de las evaluaciones MBI para brindar mejor apoyo personalizado
-              </p>
-            </div>
-          </div>
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-center gap-3 text-sm text-[#5B5B6B]">
+          <Dot tone={teamSettings?.members_can_see_others ? 'mint' : 'neutral'} size={8} />
+          Los miembros pueden ver a otros integrantes — <strong className="font-bold text-[#2E2E3A]">{teamSettings?.members_can_see_others ? 'activado' : 'desactivado'} por el líder</strong>
+        </div>
+        <div className="flex items-center gap-3 text-sm text-[#5B5B6B]">
+          <Dot tone={teamSettings?.members_can_see_responses ? 'mint' : 'neutral'} size={8} />
+          Los miembros pueden ver si otros respondieron — <strong className="font-bold text-[#2E2E3A]">{teamSettings?.members_can_see_responses ? 'activado' : 'desactivado'} por el líder</strong>
         </div>
       </div>
+      <p className="text-[13px] text-[#5B5B6B]">Estas dos configuraciones las controla el líder del equipo; se muestran solo para tu información.</p>
 
-      {/* Información sobre configuraciones del equipo (solo lectura) */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-        <h4 className="text-sm font-medium text-gray-800 mb-3">Configuraciones del equipo (controladas por el líder):</h4>
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${teamSettings?.members_can_see_others ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-xs text-gray-600">
-              {teamSettings?.members_can_see_others ? 'Los miembros pueden ver a otros miembros' : 'Los miembros no pueden ver a otros miembros'}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${teamSettings?.members_can_see_responses ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-xs text-gray-600">
-              {teamSettings?.members_can_see_responses ? 'El líder puede ver si los miembros han respondido' : 'El líder no puede ver si los miembros han respondido'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
-        <div className="flex gap-2">
-          <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div>
-            <p className="text-xs text-green-800 font-medium">¿Por qué es importante?</p>
-            <p className="text-xs text-green-700 mt-1">
-              Compartir tus resultados permite al líder identificar mejor las necesidades del equipo y brindarte apoyo personalizado, pero siempre es tu decisión.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-3">
-        <button
-          onClick={onCancel}
-          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          disabled={loading}
-        >
+      <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
+        <Btn type="button" variant="ghost" onClick={onCancel} disabled={loading} className="flex-1 justify-center">
           Cancelar
-        </button>
-        <button
-          onClick={handleSave}
-          className="flex-1 px-4 py-2 bg-[#9D83C6] text-white rounded-lg hover:bg-[#8B6FB8] transition-colors disabled:opacity-50"
-          disabled={loading}
-        >
+        </Btn>
+        <Btn type="button" onClick={() => onSave({ share_results_with_leader: shareResults })} disabled={loading} className="flex-1 justify-center">
           {loading ? "Guardando..." : "Guardar preferencia"}
-        </button>
+        </Btn>
       </div>
     </div>
   );

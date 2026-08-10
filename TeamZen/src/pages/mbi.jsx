@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import AppNavbar from '../components/AppNavbar';
+import { Alert, Notice } from '../components/app-ui';
 
 // Minimal MBI-HSS (22 items). Subscales: AE (Agotamiento Emocional), D (Despersonalización), RP (Realización Personal)
 // Note: The exact copyrighted item texts are not included. Use placeholders; replace with licensed content if you have rights.
@@ -30,29 +31,18 @@ const ITEMS = [
   { id: 22, sub: 'D', text: 'Me parece que los beneficiarios de mi trabajo me culpan de algunos problemas' },
 ];
 
+const SUBSCALE_LABEL = { AE: 'Agotamiento emocional', D: 'Despersonalización', RP: 'Realización personal' };
+
 // Escala oficial 0–6
 const SCALE = [
   { value: 0, label: 'Nunca' },
-  { value: 1, label: 'Pocas veces/año' },
-  { value: 2, label: '1 vez/mes o menos' },
-  { value: 3, label: 'Pocas veces/mes' },
-  { value: 4, label: '1 vez/semana' },
-  { value: 5, label: 'Pocas veces/semana' },
+  { value: 1, label: 'Pocas veces al año' },
+  { value: 2, label: 'Una vez al mes o menos' },
+  { value: 3, label: 'Pocas veces al mes' },
+  { value: 4, label: 'Una vez a la semana' },
+  { value: 5, label: 'Pocas veces a la semana' },
   { value: 6, label: 'Todos los días' },
 ];
-
-
-/* Escala adaptada para reportes semanales
-const AGREEMENT_SCALE_SHORT = [
-  { value: 0, label: 'Totalmente en desacuerdo' },
-  { value: 1, label: 'En desacuerdo' },
-  { value: 2, label: 'Algo en desacuerdo' },
-  { value: 3, label: 'Neutral' },
-  { value: 4, label: 'Algo de acuerdo' },
-  { value: 5, label: 'De acuerdo' },
-  { value: 6, label: 'Totalmente de acuerdo' },
-];
-*/
 
 export default function MBIPage() {
   const navigate = useNavigate();
@@ -65,6 +55,7 @@ export default function MBIPage() {
   const [draftKey, setDraftKey] = useState(null);
   const [activeCycle, setActiveCycle] = useState(null);
   const [alreadyAnswered, setAlreadyAnswered] = useState(false);
+  const [teamName, setTeamName] = useState('');
 
   const teamId = searchParams.get('team');
 
@@ -85,6 +76,9 @@ export default function MBIPage() {
 
       // If answering for a team, require an active cycle
       if (teamId) {
+        const { data: teamRow } = await supabase.from('teams').select('name').eq('id', teamId).maybeSingle();
+        if (teamRow) setTeamName(teamRow.name);
+
         try {
           // Simplified: any cycle with status='active' counts. We ignore start/end windows to avoid blocking selection.
           const { data: cycle, error: cycleErr } = await supabase
@@ -137,7 +131,7 @@ export default function MBIPage() {
             if (existing && existing.length > 0) {
               setAlreadyAnswered(true);
             }
-        } catch (e) {
+        } catch {
           setError('Error verificando ronda activa.');
         }
       } else {
@@ -162,24 +156,15 @@ export default function MBIPage() {
   }, [answers, draftKey]);
 
   const scores = useMemo(() => {
-  const ae = ITEMS.filter(i => i.sub === 'AE').reduce((acc, i) => acc + (answers[i.id] != null ? answers[i.id] : 0), 0);
-  const d = ITEMS.filter(i => i.sub === 'D').reduce((acc, i) => acc + (answers[i.id] != null ? answers[i.id] : 0), 0);
-  const rp = ITEMS.filter(i => i.sub === 'RP').reduce((acc, i) => acc + (answers[i.id] != null ? answers[i.id] : 0), 0);
+    const ae = ITEMS.filter(i => i.sub === 'AE').reduce((acc, i) => acc + (answers[i.id] != null ? answers[i.id] : 0), 0);
+    const d = ITEMS.filter(i => i.sub === 'D').reduce((acc, i) => acc + (answers[i.id] != null ? answers[i.id] : 0), 0);
+    const rp = ITEMS.filter(i => i.sub === 'RP').reduce((acc, i) => acc + (answers[i.id] != null ? answers[i.id] : 0), 0);
     return { ae, d, rp };
   }, [answers]);
 
-  const completion = useMemo(() => {
-    const answered = Object.keys(answers).length;
-    return Math.round((answered / ITEMS.length) * 100);
-  }, [answers]);
-
-  const allAnswered = Object.keys(answers).length === ITEMS.length;
-
-  const levelLabel = (sub, score) => {
-    // Placeholder thresholds — customize based on your validated instrument version.
-    // AE and D: higher is worse; RP: higher is better. We'll just show raw scores for now.
-    return `${sub}: ${score}`;
-  };
+  const answeredCount = Object.keys(answers).length;
+  const allAnswered = answeredCount === ITEMS.length;
+  const disabled = alreadyAnswered || (teamId ? !activeCycle : false) || submitting;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -252,108 +237,106 @@ export default function MBIPage() {
     <div className="min-h-screen bg-[#FAF9F6]">
       <AppNavbar user={user} />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 md:pb-8">
-        <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4] p-6">
-          <div className="flex items-center justify-between mb-4 gap-3">
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#2E2E3A] tracking-tight">Cuestionario MBI (22 ítems)</h1>
-            <div className="text-sm font-semibold text-[#2C7B64] whitespace-nowrap">
-              <span className="tabular-nums">{completion}%</span> completado
-            </div>
-          </div>
-
-          <p className="text-sm sm:text-base text-[#5B5B6B] leading-relaxed mb-6">
-            Responde según tu experiencia reciente. Esta versión usa textos de ejemplo. Sustituye por el instrumento autorizado cuando corresponda.
+      <main className="mx-auto flex max-w-[860px] flex-col gap-[22px] px-4 pb-[140px] pt-6 sm:px-6 sm:pt-8">
+        <div className="flex flex-col gap-2.5">
+          {teamId && teamName && (
+            <span className="self-start rounded-full bg-[#DAD5E4]/55 px-3.5 py-1.5 font-['Poppins',_Arial,_sans-serif] text-xs font-semibold uppercase tracking-[.08em] text-[#8B6FB8]">
+              {teamName}
+            </span>
+          )}
+          <h1 className="font-['Poppins',_Arial,_sans-serif] text-[26px] font-bold tracking-[-.02em] text-[#2E2E3A] sm:text-[30px]">Cuestionario MBI (22 ítems)</h1>
+          <p className="text-base text-[#5B5B6B]">
+            Responde según tu experiencia de las últimas semanas. No hay respuestas correctas; tus respuestas individuales no se comparten con tu líder.
           </p>
+        </div>
 
-          {teamId && !activeCycle && !error && (
-            <div className="mb-6 p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-700 text-sm">
-              No hay una ronda activa en este momento para este equipo.
-            </div>
-          )}
-          {alreadyAnswered && (
-            <div className="mb-6 p-4 rounded-xl border border-[#55C2A2]/30 bg-[#55C2A2]/10 text-[#2C7B64] text-sm">
-              Ya has respondido esta evaluación. Gracias por tu participación.
-            </div>
-          )}
+        <div className="sticky top-[76px] z-30 flex items-center gap-4 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6]/95 px-5 py-4 shadow-teamzen backdrop-blur-md">
+          <div className="h-2.5 flex-1 overflow-hidden rounded-md bg-[#DAD5E4]">
+            <div
+              className="h-full rounded-md bg-[linear-gradient(90deg,#55C2A2,#9D83C6)] transition-[width] duration-250"
+              style={{ width: `${(answeredCount / ITEMS.length) * 100}%` }}
+            />
+          </div>
+          <span className="whitespace-nowrap font-['Poppins',_Arial,_sans-serif] text-sm font-semibold tabular-nums text-[#2E2E3A]">
+            {answeredCount} / {ITEMS.length}
+          </span>
+          <span className="hidden text-[13px] text-[#5B5B6B] sm:inline">Borrador guardado</span>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {ITEMS.map((it) => (
-              <div key={it.id} className="border border-[#DAD5E4] rounded-xl p-4 bg-[#FAF9F6]">
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <p className="text-sm sm:text-base font-medium text-[#2E2E3A]">{it.id}. {it.text}</p>
-                    <p className="text-xs text-[#5B5B6B]">Subescala: {it.sub}</p>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
-                    {SCALE.map((s) => {
-                      const disabled = alreadyAnswered || (teamId ? !activeCycle : false);
-                      return (
-                        <label key={s.value} className={`cursor-pointer px-2 py-2 rounded-xl border transition-all duration-300 text-center ${answers[it.id] === s.value ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white border-[#55C2A2] shadow-lg' : disabled ? 'bg-[#DAD5E4]/30 text-[#5B5B6B] border-[#DAD5E4]' : 'bg-[#FAF9F6] text-[#2E2E3A] border-[#DAD5E4] hover:bg-white hover:border-[#55C2A2]/50'}`}>
-                          <input
-                            type="radio"
-                            name={`item-${it.id}`}
-                            value={s.value}
-                            className="hidden"
-                            disabled={disabled}
-                            checked={answers[it.id] === s.value}
-                            onChange={() => !disabled && setAnswers((a) => ({ ...a, [it.id]: s.value }))}
-                          />
-                          <span className="text-xs sm:text-sm leading-tight">{s.label}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
+        {teamId && !activeCycle && !error && (
+          <Notice tone="purple">No hay una ronda activa en este momento para este equipo.</Notice>
+        )}
+        {alreadyAnswered && <Notice>Ya has respondido esta evaluación. Gracias por tu participación.</Notice>}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+          {ITEMS.map((it, qi) => (
+            <div key={it.id} className="flex flex-col gap-3.5 rounded-[20px] border border-[#DAD5E4] bg-white p-[22px] shadow-teamzen">
+              <div className="flex items-start gap-3.5">
+                <span className="min-w-[26px] font-['Poppins',_Arial,_sans-serif] text-[13px] font-bold text-[#9D83C6]">
+                  {String(qi + 1).padStart(2, '0')}
+                </span>
+                <div className="flex flex-1 flex-col gap-1">
+                  <h3 className="font-['Poppins',_Arial,_sans-serif] text-[17px] font-semibold leading-snug text-[#2E2E3A]">{it.text}</h3>
+                  <span className="text-xs font-bold uppercase tracking-[.06em] text-[#5B5B6B]">{SUBSCALE_LABEL[it.sub]}</span>
                 </div>
               </div>
-            ))}
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+                {SCALE.map((s) => {
+                  const on = answers[it.id] === s.value;
+                  return (
+                    <button
+                      key={s.value}
+                      type="button"
+                      aria-pressed={on}
+                      disabled={disabled}
+                      onClick={() => setAnswers((a) => ({ ...a, [it.id]: s.value }))}
+                      className={`flex min-h-[74px] flex-col items-center justify-center gap-[5px] rounded-[14px] px-1.5 py-[11px] transition disabled:cursor-not-allowed ${
+                        on
+                          ? 'bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] text-white shadow-[0_10px_20px_rgba(85,194,162,.26)]'
+                          : disabled
+                            ? 'border-[1.5px] border-[#DAD5E4] bg-[#DAD5E4]/30 text-[#5B5B6B]'
+                            : 'border-[1.5px] border-[#DAD5E4] bg-[#FAF9F6] text-[#5B5B6B] hover:bg-white hover:border-[#9D83C6]/50'
+                      }`}
+                    >
+                      <span className="font-['Poppins',_Arial,_sans-serif] text-base font-bold">{s.value}</span>
+                      <span className="text-center text-[10.5px] leading-tight">{s.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
 
-            {/* Removed real-time puntajes estimados to simplify UI per request */}
+          {error && <Alert>{error}</Alert>}
+          {success && <Alert tone="success">{success}</Alert>}
 
-            {error && (
-              <div className="rounded-xl p-3 bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>
-            )}
-            {success && (
-              <div className="rounded-xl p-3 bg-[#55C2A2]/10 border border-[#55C2A2]/30 text-[#2C7B64] text-sm">{success}</div>
-            )}
-
-            <div className="flex items-center justify-between pt-2">
+          <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center bg-[linear-gradient(180deg,rgba(250,249,246,0),rgba(250,249,246,.96)_40%)] px-4 py-4 sm:px-6">
+            <div className="flex w-full max-w-[860px] flex-wrap items-center gap-3.5 rounded-[20px] border border-[#DAD5E4] bg-white px-5 py-4 shadow-teamzen-strong">
+              <span className="min-w-[200px] flex-1 text-sm text-[#5B5B6B]">
+                {alreadyAnswered
+                  ? 'Ya enviaste tus respuestas para esta ronda.'
+                  : allAnswered
+                    ? 'Todo listo — puedes enviar tus respuestas.'
+                    : `Responde las ${ITEMS.length} preguntas para poder enviar.`}
+              </span>
               <button
                 type="button"
-                className="text-sm font-medium text-[#5B5B6B] hover:text-[#2E2E3A] transition-colors duration-200"
                 onClick={() => navigate('/dashboard')}
                 disabled={submitting}
+                className="rounded-xl bg-[#DAD5E4] px-[22px] py-[13px] font-['Poppins',_Arial,_sans-serif] text-[15px] font-semibold text-[#2E2E3A] transition hover:bg-[#cdc6db] disabled:opacity-60"
               >
-                Guardar borrador y salir
+                Guardar y salir
               </button>
               <button
                 type="submit"
-                className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AB393] hover:to-[#8B6FB8] disabled:from-[#55C2A2]/50 disabled:to-[#9D83C6]/50 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center justify-center gap-2"
                 disabled={submitting || !allAnswered || (teamId && !activeCycle) || alreadyAnswered}
+                className="rounded-xl bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] px-[22px] py-[13px] font-['Poppins',_Arial,_sans-serif] text-[15px] font-semibold text-white shadow-[0_12px_26px_rgba(85,194,162,.28)] transition hover:scale-[1.02] hover:bg-[linear-gradient(135deg,#4AA690,#8B6FB8)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:scale-100"
               >
-                {alreadyAnswered ? (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Ya enviado
-                  </>
-                ) : submitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Enviando…
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                    Enviar respuestas
-                  </>
-                )}
+                {alreadyAnswered ? 'Ya enviado' : submitting ? 'Enviando...' : 'Enviar respuestas'}
               </button>
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
       </main>
     </div>
   );

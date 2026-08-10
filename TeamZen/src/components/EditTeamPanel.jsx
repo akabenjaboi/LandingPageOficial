@@ -6,13 +6,12 @@
 // destructiva — se expande dentro de la propia tarjeta del equipo en
 // vez de flotar por encima de la página.
 // ===================================================================
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import InlinePanel from './InlinePanel';
-import { Input, Alert } from './UIComponents';
+import { Field, Check, Alert, Btn } from './app-ui';
 
 export default function EditTeamPanel({ isOpen, onClose, team, onTeamUpdated }) {
-  const descriptionId = React.useId();
   const [teamName, setTeamName] = useState("");
   const [description, setDescription] = useState("");
   const [includeLeader, setIncludeLeader] = useState(true);
@@ -87,10 +86,9 @@ export default function EditTeamPanel({ isOpen, onClose, team, onTeamUpdated }) 
       description="Actualiza la información y privacidad de tu equipo"
       tone="purple"
     >
-      <form onSubmit={handleUpdateTeam} className="space-y-5">
-        <Input
+      <form onSubmit={handleUpdateTeam} className="flex flex-col gap-5">
+        <Field
           label="Nombre del equipo"
-          type="text"
           required
           placeholder="Ej: Equipo de Desarrollo, Marketing Team..."
           value={teamName}
@@ -98,99 +96,55 @@ export default function EditTeamPanel({ isOpen, onClose, team, onTeamUpdated }) 
           disabled={loading}
         />
 
-        <div className="space-y-2">
-          <label htmlFor={descriptionId} className="font-semibold text-[#2E2E3A] text-sm">
-            Descripción del equipo
+        <Field
+          as="textarea"
+          label="Descripción del equipo"
+          placeholder="Describe brevemente el área, departamento o función del equipo..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          disabled={loading}
+          rows={3}
+          maxLength={200}
+          hint={`${description.length}/200 caracteres — esta información ayuda a la IA a generar análisis más precisos`}
+        />
+
+        <label className="flex items-start gap-3">
+          <Check checked={includeLeader} onChange={() => setIncludeLeader((v) => !v)} />
+          <span>
+            <span className="font-['Poppins',_Arial,_sans-serif] text-sm font-semibold text-[#2E2E3A]">Incluir al líder en métricas (participación y bienestar)</span>
+            <p className="mt-0.5 text-xs text-[#5B5B6B]">Cambiar esta configuración afecta los cálculos de métricas futuras y reportes.</p>
+          </span>
+        </label>
+
+        <div className="flex flex-col gap-3 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] p-4">
+          <h4 className="font-['Poppins',_Arial,_sans-serif] text-sm font-semibold text-[#2E2E3A]">Configuración de privacidad</h4>
+
+          <label className="flex items-start gap-3">
+            <Check checked={membersCanSeeOthers} onChange={() => setMembersCanSeeOthers((v) => !v)} />
+            <span>
+              <span className="font-['Poppins',_Arial,_sans-serif] text-sm font-medium text-[#2E2E3A]">Los miembros pueden ver a otros integrantes</span>
+              <p className="mt-0.5 text-xs text-[#5B5B6B]">Si lo desmarcas, cada miembro solo podrá verse a sí mismo en el equipo.</p>
+            </span>
           </label>
-          <textarea
-            id={descriptionId}
-            placeholder="Describe brevemente el área, departamento o función del equipo..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            disabled={loading}
-            className="w-full px-4 py-3 bg-[#FAF9F6] border border-[#DAD5E4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#55C2A2] focus:border-transparent focus:bg-white focus:shadow-lg resize-none disabled:opacity-50 text-[#2E2E3A] placeholder-[#5B5B6B]"
-            rows={3}
-            maxLength={200}
-          />
-          <p className="text-xs text-[#5B5B6B]">
-            {description.length}/200 caracteres — esta información ayuda a la IA a generar análisis más precisos
-          </p>
-        </div>
 
-        <div className="space-y-2">
-          <label className="font-semibold text-[#2E2E3A] text-sm flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={includeLeader}
-              onChange={(e) => setIncludeLeader(e.target.checked)}
-              disabled={loading}
-              className="w-4 h-4 text-[#55C2A2] focus:ring-[#55C2A2] rounded"
-            />
-            Incluir al líder en métricas (participación y bienestar)
+          <label className="flex items-start gap-3">
+            <Check checked={membersCanSeeResponses} onChange={() => setMembersCanSeeResponses((v) => !v)} />
+            <span>
+              <span className="font-['Poppins',_Arial,_sans-serif] text-sm font-medium text-[#2E2E3A]">Los miembros pueden ver si otros ya respondieron</span>
+              <p className="mt-0.5 text-xs text-[#5B5B6B]">Si lo desmarcas, cada miembro solo verá su propio estado de respuesta.</p>
+            </span>
           </label>
-          <p className="text-xs text-[#5B5B6B] ml-6">
-            Cambiar esta configuración afecta los cálculos de métricas futuras y reportes.
-          </p>
         </div>
 
-        <div className="border border-[#DAD5E4] rounded-xl p-4 bg-[#FAF9F6] space-y-3">
-          <h4 className="font-semibold text-[#2E2E3A] text-sm">Configuración de privacidad</h4>
+        {error && <Alert title="Error al actualizar equipo">{error}</Alert>}
 
-          <div className="space-y-2">
-            <label className="font-medium text-[#2E2E3A] text-sm flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={membersCanSeeOthers}
-                onChange={(e) => setMembersCanSeeOthers(e.target.checked)}
-                disabled={loading}
-                className="w-4 h-4 text-[#55C2A2] focus:ring-[#55C2A2] rounded"
-              />
-              Los miembros pueden ver a otros integrantes
-            </label>
-            <p className="text-xs text-[#5B5B6B] ml-6">
-              Si lo desmarcas, cada miembro solo podrá verse a sí mismo en el equipo.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <label className="font-medium text-[#2E2E3A] text-sm flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={membersCanSeeResponses}
-                onChange={(e) => setMembersCanSeeResponses(e.target.checked)}
-                disabled={loading}
-                className="w-4 h-4 text-[#55C2A2] focus:ring-[#55C2A2] rounded"
-              />
-              Los miembros pueden ver si otros ya respondieron
-            </label>
-            <p className="text-xs text-[#5B5B6B] ml-6">
-              Si lo desmarcas, cada miembro solo verá su propio estado de respuesta.
-            </p>
-          </div>
-        </div>
-
-        {error && (
-          <Alert type="error" title="Error al actualizar equipo">
-            {error}
-          </Alert>
-        )}
-
-        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={loading}
-            className="flex-1 px-4 py-2 text-sm font-medium text-[#5B5B6B] hover:text-[#2E2E3A] hover:bg-[#DAD5E4]/30 disabled:opacity-50 rounded-xl transition-all duration-200"
-          >
+        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
+          <Btn type="button" variant="ghost" onClick={handleClose} disabled={loading} className="flex-1 justify-center">
             Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={loading || !teamName.trim()}
-            className="flex-1 bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white px-6 py-2 rounded-xl font-medium hover:from-[#4AA690] hover:to-[#8B6FB8] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-          >
+          </Btn>
+          <Btn type="submit" disabled={loading || !teamName.trim()} className="flex-1 justify-center">
             {loading ? "Actualizando..." : "Guardar cambios"}
-          </button>
+          </Btn>
         </div>
       </form>
     </InlinePanel>

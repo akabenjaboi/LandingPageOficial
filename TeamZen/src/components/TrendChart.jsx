@@ -6,14 +6,16 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
     data: Array<{ label:string, values: { aeAvg?:number, dAvg?:number, rpAvg?:number, wellbeing?:number } }>
 */
 const METRICS = [
-  { key: 'aeAvg', label: 'AE (↓ mejor)', color: '#dc2626', invert: false },
-  { key: 'dAvg', label: 'D (↓ mejor)', color: '#fb923c', invert: false },
-  { key: 'rpAvg', label: 'RP (↑ mejor)', color: '#6366f1', invert: true },
-  { key: 'wellbeing', label: 'Bienestar (↑)', color: '#16a34a', invert: true }
+  { key: 'wellbeing', label: 'Bienestar ↑', color: '#55C2A2' },
+  { key: 'aeAvg', label: 'AE ↓', color: '#9D83C6' },
+  { key: 'dAvg', label: 'D ↓', color: '#8B6FB8' },
+  { key: 'rpAvg', label: 'RP ↑', color: '#4AA690' },
 ];
 
 export default function TrendChart({ data = [] }) {
-  const [visible, setVisible] = useState(() => METRICS.map(m => m.key));
+  // Bienestar y AE visibles por defecto, D y RP ocultas — coincide con el
+  // estado por defecto del panel de reportes del handoff de diseño.
+  const [visible, setVisible] = useState(['wellbeing', 'aeAvg']);
   const [containerWidth, setContainerWidth] = useState(640);
   const containerRef = useRef(null);
 
@@ -71,75 +73,83 @@ export default function TrendChart({ data = [] }) {
 
   return (
     <div ref={containerRef} className="w-full">
-      {/* Legend */}
-      <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 justify-center sm:justify-start">
-        {METRICS.map(m => (
-          <button
-            key={m.key}
-            onClick={() => setVisible(v => v.includes(m.key) ? v.filter(k => k !== m.key) : [...v, m.key])}
-            className={`text-[10px] sm:text-xs px-2 py-1 rounded border flex items-center gap-1 transition-all ${visible.includes(m.key) ? 'bg-white border-gray-300' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
-            style={{ borderColor: visible.includes(m.key) ? m.color : undefined }}
-          >
-            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.color }} />
-            <span className="hidden sm:inline">{m.label}</span>
-            <span className="sm:hidden">{m.key.toUpperCase()}</span>
-          </button>
-        ))}
+      {/* Leyenda / chips toggle */}
+      <div className="mb-4 flex flex-wrap justify-end gap-2">
+        {METRICS.map(m => {
+          const on = visible.includes(m.key);
+          return (
+            <button
+              key={m.key}
+              type="button"
+              aria-pressed={on}
+              onClick={() => setVisible(v => v.includes(m.key) ? v.filter(k => k !== m.key) : [...v, m.key])}
+              className="rounded-full border-[1.5px] px-3.5 py-2 font-['Poppins',_Arial,_sans-serif] text-[12.5px] font-semibold transition"
+              style={on ? { background: m.color, borderColor: 'transparent', color: '#fff' } : { background: '#FAF9F6', borderColor: '#DAD5E4', color: '#5B5B6B' }}
+            >
+              {m.label}
+            </button>
+          );
+        })}
       </div>
-      
+
       {/* Chart Container */}
-      <div className="w-full overflow-x-auto">
+      <div className="w-full overflow-x-auto rounded-[20px] border border-[#DAD5E4] bg-[#FAF9F6] p-5">
         <svg width={width} height={height} className="w-full" style={{ minWidth: isMobile ? '280px' : '400px' }}>
-          {/* Axes */}
-          <line x1={padding.left} y1={padding.top} x2={padding.left} y2={height - padding.bottom} stroke="#e5e7eb" />
-          <line x1={padding.left} y1={height - padding.bottom} x2={width - padding.right} y2={height - padding.bottom} stroke="#e5e7eb" />
-          
-          {/* Y ticks */}
+          {/* Y grid lines */}
           {Array.from({ length: 5 }).map((_, i) => {
             const yVal = minY + (i / 4) * (maxY - minY);
             const y = yScale(yVal);
             return (
               <g key={i}>
-                <line x1={padding.left} x2={width - padding.right} y1={y} y2={y} stroke="#f3f4f6" />
-                <text x={padding.left - 6} y={y + 4} textAnchor="end" fontSize={isMobile ? 9 : 10} fill="#6b7280">
+                <line x1={padding.left} x2={width - padding.right} y1={y} y2={y} stroke="#DAD5E4" strokeWidth="1" />
+                <text x={padding.left - 6} y={y + 4} textAnchor="end" fontSize={isMobile ? 9 : 11} fill="#5B5B6B">
                   {Math.round(yVal)}
                 </text>
               </g>
             );
           })}
-          
+
           {/* X labels */}
           {data.map((d, idx) => {
             const x = xScale(idx);
             const labelLength = d.label.length;
             const shouldRotate = isMobile && data.length > 3;
-            
+
             return (
-              <g key={idx}>
-                <line x1={x} x2={x} y1={height - padding.bottom} y2={height - padding.bottom + 4} stroke="#9ca3af" />
-                <text 
-                  x={x} 
-                  y={height - padding.bottom + (shouldRotate ? 20 : 14)} 
-                  fontSize={isMobile ? 8 : 10} 
-                  textAnchor={shouldRotate ? "start" : "middle"} 
-                  fill="#6b7280"
-                  transform={shouldRotate ? `rotate(-45 ${x} ${height - padding.bottom + 20})` : undefined}
-                >
-                  {isMobile && labelLength > 8 ? d.label.substring(0, 8) + '...' : d.label}
-                </text>
-              </g>
+              <text
+                key={idx}
+                x={x}
+                y={height - padding.bottom + (shouldRotate ? 20 : 18)}
+                fontSize={isMobile ? 8 : 12}
+                textAnchor={shouldRotate ? "start" : "middle"}
+                fill="#5B5B6B"
+                transform={shouldRotate ? `rotate(-45 ${x} ${height - padding.bottom + 20})` : undefined}
+              >
+                {isMobile && labelLength > 8 ? d.label.substring(0, 8) + '...' : d.label}
+              </text>
             );
           })}
-          
+
           {/* Lines */}
           {series.map(s => {
-            const path = s.points.filter(p => p.y != null).map((p,i,arr) => `${i===0?'M':'L'}${xScale(p.x)},${yScale(p.y)}`).join(' ');
-            return <path key={s.key} d={path} fill="none" stroke={s.color} strokeWidth={isMobile ? 2.5 : 2} strokeLinejoin="round" strokeLinecap="round" />;
+            const path = s.points.filter(p => p.y != null).map((p,i) => `${i===0?'M':'L'}${xScale(p.x)},${yScale(p.y)}`).join(' ');
+            return (
+              <path
+                key={s.key}
+                d={path}
+                fill="none"
+                stroke={s.color}
+                strokeWidth={s.key === 'wellbeing' ? 3 : 2.5}
+                strokeDasharray={s.key === 'aeAvg' ? '7 6' : s.key === 'dAvg' ? '3 5' : s.key === 'rpAvg' ? '10 5' : undefined}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            );
           })}
-          
-          {/* Points */}
-          {series.map(s => s.points.filter(p => p.y != null).map((p,i) => (
-            <circle key={s.key+'_'+i} cx={xScale(p.x)} cy={yScale(p.y)} r={isMobile ? 4 : 3} fill="#fff" stroke={s.color} strokeWidth={2} />
+
+          {/* Points (solo en la serie de Bienestar, como en el diseño) */}
+          {series.filter(s => s.key === 'wellbeing').map(s => s.points.filter(p => p.y != null).map((p,i) => (
+            <circle key={s.key+'_'+i} cx={xScale(p.x)} cy={yScale(p.y)} r={isMobile ? 5 : 4.5} fill={s.color} />
           )))}
         </svg>
       </div>

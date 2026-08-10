@@ -4,30 +4,9 @@ import { supabase } from '../../supabaseClient';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AppNavbar from '../components/AppNavbar';
 import TrendChart from '../components/TrendChart';
+import { Card, Btn, Badge, Dot, Highlight, PageTitle, Alert } from '../components/app-ui';
 import { generateAdvice, getAIAdviceWithCache } from '../utils/adviceEngine';
-import { classifyMBI, computeBurnoutStatus, WELLBEING_NORMALIZATION, computeWellbeingFromScores } from '../utils/mbiClassification';
-
-// Helper para obtener color del estado de burnout
-const getBurnoutStatusColor = (status) => {
-  switch (status) {
-    case 'Burnout': return 'bg-red-100 text-red-700 border-red-200';
-    case 'Riesgo Alto': return 'bg-orange-100 text-orange-700 border-orange-200';
-    case 'Riesgo': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-    case 'Sin indicios': return 'bg-green-100 text-green-700 border-green-200';
-    default: return 'bg-gray-100 text-gray-500 border-gray-200';
-  }
-};
-
-// Helper para obtener emoji del estado
-const getBurnoutStatusEmoji = (status) => {
-  switch (status) {
-    case 'Burnout': return '🔴';
-    case 'Riesgo Alto': return '🟠';
-    case 'Riesgo': return '🟡';
-    case 'Sin indicios': return '🟢';
-    default: return '⚪';
-  }
-};
+import { classifyMBI, computeBurnoutStatus, computeWellbeingFromScores } from '../utils/mbiClassification';
 
 export default function ReportesPage() {
   const navigate = useNavigate();
@@ -177,7 +156,7 @@ export default function ReportesPage() {
             )
           `)
           .eq('team_id', activeTeamId);
-        
+
         if (error) throw error;
         setTeamMembers(members || []);
       } catch (e) {
@@ -256,314 +235,30 @@ export default function ReportesPage() {
   }, [teamCycles, cycleAggregates]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="large" message="Cargando reportes..."/></div>;
+    return <div className="flex min-h-screen items-center justify-center bg-[#FAF9F6]"><LoadingSpinner size="large" message="Cargando reportes..."/></div>;
   }
 
   return (
     <div className="min-h-screen bg-[#FAF9F6]">
       <AppNavbar user={user} profile={profile} />
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8 space-y-4 sm:space-y-8">
-        {error && !fetching && teams.length === 0 && (
-          <div className="mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
-            {error}
-          </div>
-        )}
+      <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-4 pb-24 pt-6 sm:px-6 sm:pt-8 md:pb-16">
+        {error && !fetching && teams.length === 0 && <Alert>{error}</Alert>}
         {profile?.role === 'leader' ? (
-          // Vista para líderes - Reportes de equipos
-          <section className="bg-[#FAF9F6] border border-[#DAD5E4] rounded-2xl p-4 sm:p-6 shadow-teamzen">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-              <div>
-                <h1 className="text-2xl font-bold text-[#2E2E3A]">Reportes estratégicos</h1>
-                <p className="text-[#5B5B6B] text-sm mt-1">Visualiza tendencias por ronda y distribución de riesgo de burnout.</p>
-              </div>
-              {!!teams.length && (
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-[#2E2E3A] font-medium">Equipo</label>
-                  <select
-                    className="border border-[#DAD5E4] rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#55C2A2] 
-                               focus:border-[#55C2A2] bg-white text-[#2E2E3A] transition-all duration-200"
-                    value={activeTeamId || ''}
-                    onChange={e => setActiveTeamId(e.target.value)}
-                  >
-                    {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                </div>
-              )}
-            </div>
-            {teams.length === 0 && !error && (
-              <p className="text-sm text-[#5B5B6B]">No tienes equipos aún. Crea uno para generar reportes.</p>
-            )}
-            {teams.length > 0 && (
-            <div className="space-y-8">
-              {/* Cycles summary */}
-              <div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2 sm:gap-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                    <h2 className="text-base sm:text-lg font-semibold text-[#2E2E3A]">Análisis de evaluaciones</h2>
-                  </div>
-                  <div className="flex items-center gap-2 justify-end">
-                    <button 
-                      onClick={handleRefresh} 
-                      className="text-xs px-3 py-1 rounded-lg border border-[#DAD5E4] hover:bg-[#FAF9F6] 
-                                 text-[#2E2E3A] transition-colors duration-200"
-                    >
-                      Refrescar
-                    </button>
-                  </div>
-                </div>
-                <CycleHelp />
-                {error && !fetching && (
-                  <div className="mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
-                    {error}
-                  </div>
-                )}
-                {fetching ? (
-                  <div className="py-8 flex justify-center">
-                    <LoadingSpinner size="small" message="Cargando rondas..."/>
-                  </div>
-                ) : teamCycles.length === 0 ? (
-                  <div className="text-sm text-[#5B5B6B] flex items-center gap-2">
-                    <span>Sin rondas creadas todavía.</span>
-                    <button
-                      onClick={handleRefresh}
-                      className="text-[#55C2A2] hover:text-[#2E2E3A] underline hover:no-underline
-                                 transition-colors duration-200"
-                    >
-                      Actualizar
-                    </button>
-                  </div>
-                ) : !aggregated.some(r => r.count > 0) ? (
-                  <div className="text-sm text-[#5B5B6B] flex flex-col gap-2">
-                    <span>Hay {teamCycles.length} ronda(s) pero aún sin respuestas con puntajes.</span>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={handleRefresh}
-                        className="text-[#55C2A2] hover:text-[#2E2E3A] underline hover:no-underline
-                                   transition-colors duration-200"
-                      >
-                        Reintentar
-                      </button>
-                      <span className="text-xs text-[#8160B6]">
-                        (Si ya respondieron hace segundos, espera y refresca)
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto bg-white rounded-lg border border-[#DAD5E4]">
-                    <table className="min-w-full text-xs sm:text-sm">
-                      <thead>
-                        <tr className="bg-gray-100 text-gray-700">
-                          <th className="text-left px-2 sm:px-3 py-2 font-medium text-[10px] sm:text-sm">
-                            Inicio / Fin / Duración
-                          </th>
-                          <th className="text-left px-2 sm:px-3 py-2 font-medium text-[10px] sm:text-sm">Resp.</th>
-                          <th className="text-left px-2 sm:px-3 py-2 font-medium text-[10px] sm:text-sm">AE (0–54)</th>
-                          <th className="text-left px-2 sm:px-3 py-2 font-medium text-[10px] sm:text-sm">D (0–30)</th>
-                          <th className="text-left px-2 sm:px-3 py-2 font-medium text-[10px] sm:text-sm">RP (0–48)</th>
-                          <th className="text-left px-2 sm:px-3 py-2 font-medium text-[10px] sm:text-sm">Bienestar (0–100)</th>
-                          <th className="text-left px-2 sm:px-3 py-2 font-medium text-[10px] sm:text-sm hidden sm:table-cell">Estado dominante</th>
-                          <th className="text-left px-2 sm:px-3 py-2 font-medium text-[10px] sm:text-sm hidden md:table-cell">Distribución de estados</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {aggregated.map((row) => {
-                          const started = row.cycle.start_at || row.cycle.created_at;
-                          const ended = row.cycle.end_at;
-                          const startDate = started ? new Date(started) : null;
-                          const endDate = ended ? new Date(ended) : null;
-                          const fmt = (d) => d?.toLocaleString(undefined,{ dateStyle:'short', timeStyle:'short'}) || '—';
-                          // Legacy rows: cycle closed but no end_at was ever recorded (the bug the
-                          // evaluaciones.jsx fix prevents going forward). Treat them like a normal
-                          // completed round — dash placeholders instead of a live "En curso" state —
-                          // rather than introducing a third, differently-styled state.
-                          const hasReliableEnd = !!(startDate && endDate);
-                          const duration = row.isActiveCycle
-                            ? 'En curso'
-                            : (hasReliableEnd ? formatDuration(endDate - startDate) : '—');
-                          const ranFullTerm = hasReliableEnd
-                            ? (endDate.getTime() - startDate.getTime()) >= 7 * 24 * 60 * 60 * 1000
-                            : true;
-                          const statusText = row.isActiveCycle
-                            ? 'En curso'
-                            : (ranFullTerm ? 'Completado' : 'Cerrado anticipadamente');
-                          const statusColor = row.isActiveCycle
-                            ? 'text-blue-600'
-                            : (ranFullTerm ? 'text-green-600' : 'text-orange-600');
-                          return (
-                            <tr key={row.cycle.id} className="hover:bg-gray-50">
-                              <td className="px-2 sm:px-3 py-2">
-                                <div className="text-[10px] sm:text-xs"><span className="font-semibold text-gray-700">Inicio:</span> {fmt(startDate)}</div>
-                                <div className="text-[10px] sm:text-xs"><span className="font-semibold text-gray-700">Fin:</span> {row.isActiveCycle ? 'En curso' : (endDate ? fmt(endDate) : '—')}</div>
-                                <div className="text-[9px] sm:text-[10px] text-gray-500 mt-1">
-                                  Duración: {duration}
-                                  <span className={`ml-2 ${statusColor}`}>• {statusText}</span>
-                                </div>
-                              </td>
-                              <td className="px-2 sm:px-3 py-2 text-center">{row.count}</td>
-                              <td className="px-2 sm:px-3 py-2">{row.aeAvg != null ? `${row.aeAvg}` : '—'}</td>
-                              <td className="px-2 sm:px-3 py-2">{row.dAvg != null ? `${row.dAvg}` : '—'}</td>
-                              <td className="px-2 sm:px-3 py-2">{row.rpAvg != null ? `${row.rpAvg}` : '—'}</td>
-                              <td className="px-2 sm:px-3 py-2">
-                                {row.wellbeing != null ? (
-                                  <div className="flex items-center gap-1 sm:gap-2">
-                                    <div className="w-12 sm:w-20 h-1.5 sm:h-2 bg-gray-200 rounded-full overflow-hidden">
-                                      <div className="h-full rounded-full" style={{ width: `${row.wellbeing}%`, background: row.wellbeing>=70?'#16a34a':row.wellbeing>=40?'#f59e0b':'#dc2626' }} />
-                                    </div>
-                                    <span className="text-[10px] sm:text-xs">{row.wellbeing}</span>
-                                  </div>
-                                ) : '—'}
-                              </td>
-                              <td className="px-2 sm:px-3 py-2 hidden sm:table-cell text-[10px] sm:text-xs">{row.dominant || '—'}</td>
-                              <td className="px-2 sm:px-3 py-2 text-[9px] sm:text-[10px] leading-tight hidden md:table-cell">
-                                <div>Burnout: {row.dist?.Burnout ?? 0}</div>
-                                <div>Riesgo Alto: {row.dist?.['Riesgo Alto'] ?? 0}</div>
-                                <div>Riesgo: {row.dist?.Riesgo ?? 0}</div>
-                                <div>Sin indicios: {row.dist?.['Sin indicios'] ?? 0}</div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-
-              {/* Strategic insights */}
-              <StrategicInsightsDropdown data={aggregated} />
-
-              <div className="bg-white rounded-xl border border-[#DAD5E4] p-4 sm:p-6">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">Tendencia comparativa</h2>
-                {aggregated.length < 2 ? (
-                  <p className="text-xs sm:text-sm text-gray-500">Se necesitan al menos 2 rondas con respuestas para graficar la tendencia.</p>
-                ) : (
-                  <div className="w-full">
-                    <TrendChart data={aggregated.slice().reverse().map(c => ({
-                      label: new Date(c.cycle.start_at || c.cycle.created_at).toLocaleDateString(),
-                      values: { aeAvg: c.aeAvg, dAvg: c.dAvg, rpAvg: c.rpAvg, wellbeing: c.wellbeing }
-                    }))} />
-                  </div>
-                )}
-              </div>
-
-              {aggregated.length > 0 && (
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-800 mb-3">
-                    Sugerencias personalizadas
-                  </h2>
-                  <AdvicePanel
-                    key={activeTeamId}
-                    data={aggregated}
-                    teamId={activeTeamId}
-                  />
-                </div>
-              )}
-
-              {/* Sección de miembros del equipo */}
-              {(() => {
-                // Obtener configuraciones de privacidad del equipo activo
-                const activeTeam = teams.find(t => t.id === activeTeamId);
-                const canSeeOthers = activeTeam?.members_can_see_others ?? true;
-                const canSeeResponses = activeTeam?.members_can_see_responses ?? true;
-                
-                return (
-                  <div className="bg-white rounded-xl border border-[#DAD5E4] p-4 sm:p-6">
-                    <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">
-                      Miembros del equipo
-                      {teamMembers.length > 0 && (
-                        <span className="ml-2 text-sm font-normal text-gray-500">
-                          ({canSeeOthers ? teamMembers.length : 'Privado'} miembro{teamMembers.length !== 1 ? 's' : ''})
-                        </span>
-                      )}
-                    </h2>
-
-                    {membersLoading ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin w-5 h-5 border-2 border-[#9D83C6] border-t-transparent rounded-full"></div>
-                        <span className="ml-2 text-sm text-gray-600">Cargando miembros...</span>
-                      </div>
-                    ) : !canSeeOthers ? (
-                      <div className="text-center py-8">
-                        <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.03 8.03m1.848 1.848L14.12 14.12M12 2.252c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21m-6.332-6.332l-1.896-1.896M12 2.252V2" />
-                          </svg>
-                        </div>
-                        <p className="text-sm text-gray-500">La visibilidad de miembros está deshabilitada.</p>
-                        <p className="text-xs text-gray-400 mt-1">El líder del equipo ha configurado los perfiles como privados.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {teamMembers
-                          .filter(member => {
-                            // Mostrar miembro basado en configuraciones del equipo
-                            return canSeeOthers; // Solo filtrar por configuración del líder
-                          })
-                          .map((member) => {
-                            const hasResponded = respondedMembers.has(member.user_id);
-                            const fullName = `${member.profiles?.first_name || ''} ${member.profiles?.last_name || ''}`.trim() || 'Usuario sin nombre';
-                            const sharesResults = member.share_results_with_leader === true;
-                          
-                          return (
-                            <div key={member.user_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-[#9D83C6] rounded-full flex items-center justify-center text-white text-sm font-medium">
-                                  {fullName.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-sm font-medium text-gray-900">{fullName}</p>
-                                    {sharesResults && hasResponded && memberBurnoutStates.has(member.user_id) && (
-                                      <span className={`text-xs px-2 py-1 rounded-full border ${getBurnoutStatusColor(memberBurnoutStates.get(member.user_id))}`}>
-                                        {getBurnoutStatusEmoji(memberBurnoutStates.get(member.user_id))} {memberBurnoutStates.get(member.user_id)}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="text-xs text-gray-500 space-y-1">
-                                    <p>{hasResponded ? 'Ha respondido la última ronda' : 'No ha respondido la última ronda'}</p>
-                                    {sharesResults && hasResponded && (
-                                      <p className="text-blue-600">✓ Resultados compartidos con líder</p>
-                                    )}
-                                    {!sharesResults && hasResponded && (
-                                      <p className="text-gray-400">⚫ Resultados privados</p>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${
-                                  hasResponded ? 'bg-green-500' : 'bg-yellow-500'
-                                }`} />
-                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                  hasResponded 
-                                    ? 'bg-green-100 text-green-700' 
-                                    : 'bg-yellow-100 text-yellow-700'
-                                }`}>
-                                  {hasResponded ? 'Activo' : 'Pendiente'}
-                                </span>
-                                {sharesResults && (
-                                  <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
-                                    Datos visibles
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-          </section>
-        ) : (
-          // Vista para usuarios - Análisis personal
-          <UserPersonalReports 
-            user={user}
-            profile={profile}
+          <LeaderReports
+            teams={teams}
+            activeTeamId={activeTeamId}
+            setActiveTeamId={setActiveTeamId}
+            aggregated={aggregated}
+            fetching={fetching}
+            error={error}
+            onRefresh={handleRefresh}
+            teamMembers={teamMembers}
+            membersLoading={membersLoading}
+            respondedMembers={respondedMembers}
+            memberBurnoutStates={memberBurnoutStates}
           />
+        ) : (
+          <UserPersonalReports user={user} profile={profile} />
         )}
       </main>
     </div>
@@ -580,338 +275,338 @@ function formatDuration(ms) {
   return `${mins}m`;
 }
 
-function CycleHelp() {
-  const [isExpanded, setIsExpanded] = React.useState(false);
+// ===================================================================
+// VISTA LÍDER
+// ===================================================================
+function LeaderReports({ teams, activeTeamId, setActiveTeamId, aggregated, fetching, error, onRefresh, teamMembers, membersLoading, respondedMembers, memberBurnoutStates }) {
+  const activeTeam = teams.find(t => t.id === activeTeamId);
+  const canSeeOthers = activeTeam?.members_can_see_others ?? true;
+
+  const totalParticipants = activeTeam
+    ? teamMembers.length + (activeTeam.include_leader_in_metrics !== false ? 1 : 0)
+    : 0;
+
+  const latest = aggregated[0];
+  const previous = aggregated[1];
+  const kpis = useMemo(() => {
+    const bienestarFoot = latest?.wellbeing != null && previous?.wellbeing != null
+      ? `${latest.wellbeing - previous.wellbeing >= 0 ? '+' : ''}${latest.wellbeing - previous.wellbeing} vs. ronda anterior`
+      : undefined;
+    const earliest = aggregated[aggregated.length - 1];
+    const earliestDate = earliest ? new Date(earliest.cycle.start_at || earliest.cycle.created_at) : null;
+    const validCycles = aggregated.filter(r => r.count > 0);
+    const avgParticipation = validCycles.length && totalParticipants > 0
+      ? Math.round((validCycles.reduce((acc, r) => acc + r.count, 0) / validCycles.length / totalParticipants) * 100)
+      : null;
+    const dist = latest?.dist;
+    const enRiesgo = dist ? (dist['Riesgo'] ?? 0) + (dist['Riesgo Alto'] ?? 0) : 0;
+    const enBurnout = dist?.Burnout ?? 0;
+    return {
+      bienestar: latest?.wellbeing ?? '—',
+      bienestarFoot,
+      rondas: aggregated.length,
+      rondasFoot: earliestDate ? `desde ${earliestDate.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })}` : undefined,
+      participacion: avgParticipation != null ? `${avgParticipation}%` : '—',
+      participacionFoot: latest?.count != null && totalParticipants > 0 ? `${latest.count} de ${totalParticipants} en la última ronda` : undefined,
+      dominante: latest?.dominant ?? '—',
+      dominanteFoot: latest ? `${enRiesgo} en riesgo · ${enBurnout} en burnout` : undefined,
+    };
+  }, [aggregated, latest, previous, totalParticipants]);
 
   return (
-    <div className="mb-4">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-3 bg-gradient-to-r from-[#55C2A2]/10 to-[#9D83C6]/10 
-                   border border-[#55C2A2]/30 rounded-lg hover:from-[#55C2A2]/15 hover:to-[#9D83C6]/15 
-                   transition-all duration-200 group"
-      >
-        <div className="flex items-center space-x-2">
-          <svg 
-            className="w-5 h-5 text-[#55C2A2]" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
+    <>
+      <PageTitle title="Reportes estratégicos" subtitle="Tendencias por ronda del equipo seleccionado">
+        {!!teams.length && (
+          <select
+            className="cursor-pointer rounded-xl border border-[#DAD5E4] bg-white px-4 py-3 font-['Poppins',_Arial,_sans-serif] text-sm font-semibold text-[#2E2E3A] outline-none focus:border-[#55C2A2] focus:shadow-[0_0_0_3px_rgba(85,194,162,.22)]"
+            value={activeTeamId || ''}
+            onChange={e => setActiveTeamId(e.target.value)}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span className="text-sm font-medium text-[#2E2E3A]">
-            ¿Qué son las rondas y las dimensiones del MBI?
-          </span>
-        </div>
-        <svg 
-          className={`w-5 h-5 text-[#9D83C6] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-        >
+            {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+        )}
+        <Btn variant="secondary" onClick={onRefresh}>Refrescar</Btn>
+      </PageTitle>
+
+      {teams.length === 0 && !error ? (
+        <Card className="py-12 text-center">
+          <p className="text-[#5B5B6B]">No tienes equipos aún. Crea uno para generar reportes.</p>
+        </Card>
+      ) : (
+        <>
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+            <Kpi label="Bienestar actual" value={kpis.bienestar} color="text-[#8B6FB8]" foot={kpis.bienestarFoot} />
+            <Kpi label="Rondas" value={kpis.rondas} foot={kpis.rondasFoot} />
+            <Kpi label="Participación media" value={kpis.participacion} foot={kpis.participacionFoot} />
+            <Kpi label="Estado dominante" value={kpis.dominante} color="text-[#3d8a74]" foot={kpis.dominanteFoot} />
+          </div>
+
+          <CycleHelp />
+
+          {error && !fetching && <Alert>{error}</Alert>}
+
+          {fetching ? (
+            <Card className="text-center"><LoadingSpinner size="small" message="Cargando rondas..." /></Card>
+          ) : aggregated.length === 0 ? (
+            <Card>
+              <p className="flex items-center gap-2 text-sm text-[#5B5B6B]">
+                Sin rondas creadas todavía.
+                <button onClick={onRefresh} className="font-semibold text-[#3d8a74] underline hover:no-underline">Actualizar</button>
+              </p>
+            </Card>
+          ) : !aggregated.some(r => r.count > 0) ? (
+            <Card>
+              <p className="text-sm text-[#5B5B6B]">Hay {aggregated.length} ronda(s) pero aún sin respuestas con puntajes.</p>
+              <button onClick={onRefresh} className="mt-2 text-sm font-semibold text-[#3d8a74] underline hover:no-underline">Reintentar</button>
+            </Card>
+          ) : (
+            <>
+              <Card className="flex flex-col gap-[18px]">
+                <h2 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">Tendencia por ronda</h2>
+                <TrendChart data={aggregated.slice().reverse().map(c => ({
+                  label: new Date(c.cycle.start_at || c.cycle.created_at).toLocaleDateString(),
+                  values: { aeAvg: c.aeAvg, dAvg: c.dAvg, rpAvg: c.rpAvg, wellbeing: c.wellbeing }
+                }))} />
+                {aggregated.length < 2 && (
+                  <p className="text-sm text-[#5B5B6B]">Se necesitan al menos 2 rondas con respuestas para graficar la tendencia.</p>
+                )}
+              </Card>
+
+              <Card className="flex flex-col gap-4">
+                <h2 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">Historial de rondas</h2>
+                <div className="flex flex-col gap-2">
+                  <div className="hidden gap-3 px-4 lg:grid lg:grid-cols-[1.5fr_.7fr_.7fr_.7fr_.7fr_1.3fr_1fr]">
+                    {['Ronda', 'Resp.', 'AE', 'D', 'RP', 'Bienestar', 'Estado'].map((h) => (
+                      <span key={h} className="text-[11px] font-bold uppercase tracking-[.06em] text-[#5B5B6B]">{h}</span>
+                    ))}
+                  </div>
+                  {aggregated.map((row, idx) => {
+                    const roundNumber = aggregated.length - idx;
+                    const started = row.cycle.start_at || row.cycle.created_at;
+                    const ended = row.cycle.end_at;
+                    const startDate = started ? new Date(started) : null;
+                    const endDate = ended ? new Date(ended) : null;
+                    const hasReliableEnd = !!(startDate && endDate);
+                    const duration = row.isActiveCycle ? 'en curso' : (hasReliableEnd ? formatDuration(endDate - startDate) : '—');
+                    const ranFullTerm = hasReliableEnd ? (endDate.getTime() - startDate.getTime()) >= 7 * 24 * 60 * 60 * 1000 : true;
+                    const statusText = row.isActiveCycle ? 'en curso' : (ranFullTerm ? 'completado' : 'cerrado anticipadamente');
+                    const dist = row.dist;
+                    return (
+                      <div key={row.cycle.id} className="grid grid-cols-2 items-center gap-x-3 gap-y-2 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-3.5 lg:grid-cols-[1.5fr_.7fr_.7fr_.7fr_.7fr_1.3fr_1fr]">
+                        <div className="col-span-2 flex flex-col lg:col-span-1">
+                          <span className="font-['Poppins',_Arial,_sans-serif] text-sm font-semibold text-[#2E2E3A]">Ronda {roundNumber}</span>
+                          <span className="text-xs text-[#5B5B6B]">
+                            {startDate ? startDate.toLocaleDateString() : '—'}
+                            {row.isActiveCycle ? ' · en curso' : endDate ? ` – ${endDate.toLocaleDateString()} · ${statusText}` : ''}
+                            {!row.isActiveCycle && hasReliableEnd && ` (${duration})`}
+                          </span>
+                        </div>
+                        <MobileLabeled label="Resp."><span className="tabular-nums">{row.count}</span></MobileLabeled>
+                        <MobileLabeled label="AE"><span className="tabular-nums">{row.aeAvg ?? '—'}</span></MobileLabeled>
+                        <MobileLabeled label="D"><span className="tabular-nums">{row.dAvg ?? '—'}</span></MobileLabeled>
+                        <MobileLabeled label="RP"><span className="tabular-nums">{row.rpAvg ?? '—'}</span></MobileLabeled>
+                        <div className="col-span-2 flex items-center gap-2.5 lg:col-span-1">
+                          {row.wellbeing != null ? (
+                            <>
+                              <div className="h-2 flex-1 overflow-hidden rounded-[5px] bg-[#DAD5E4]">
+                                <div className="h-full bg-[#9D83C6]" style={{ width: `${row.wellbeing}%` }} />
+                              </div>
+                              <span className="font-['Poppins',_Arial,_sans-serif] text-sm font-bold tabular-nums text-[#8B6FB8]">{row.wellbeing}</span>
+                            </>
+                          ) : <span className="text-sm text-[#5B5B6B]">—</span>}
+                        </div>
+                        <div className="hidden lg:flex lg:flex-col lg:items-start lg:gap-1">
+                          {row.dominant ? <Badge tone={row.dominant === 'Sin indicios' ? 'mint' : 'purple'}>{row.dominant}</Badge> : <span className="text-sm text-[#5B5B6B]">—</span>}
+                          {dist && (
+                            <span className="text-[10px] text-[#5B5B6B]">
+                              B:{dist.Burnout} · RA:{dist['Riesgo Alto']} · R:{dist.Riesgo} · SI:{dist['Sin indicios']}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-[13px] text-[#5B5B6B]">
+                  Los promedios provienen de una función agregada del servidor — nunca se calculan a partir de respuestas individuales.
+                </p>
+              </Card>
+
+              <AdvicePanel key={activeTeamId} data={aggregated} teamId={activeTeamId} />
+            </>
+          )}
+
+          <Card>
+            <h2 className="mb-4 font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">
+              Miembros del equipo
+              {teamMembers.length > 0 && (
+                <span className="ml-2 text-sm font-normal text-[#5B5B6B]">
+                  ({canSeeOthers ? teamMembers.length : 'Privado'} miembro{teamMembers.length !== 1 ? 's' : ''})
+                </span>
+              )}
+            </h2>
+
+            {membersLoading ? (
+              <LoadingSpinner size="small" message="Cargando miembros..." />
+            ) : !canSeeOthers ? (
+              <div className="py-6 text-center">
+                <p className="text-sm text-[#5B5B6B]">La visibilidad de miembros está deshabilitada.</p>
+                <p className="mt-1 text-xs text-[#5B5B6B]">El líder del equipo ha configurado los perfiles como privados.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {teamMembers.map((member) => {
+                  const hasResponded = respondedMembers.has(member.user_id);
+                  const fullName = `${member.profiles?.first_name || ''} ${member.profiles?.last_name || ''}`.trim() || 'Usuario sin nombre';
+                  const sharesResults = member.share_results_with_leader === true;
+                  const burnoutState = memberBurnoutStates.get(member.user_id);
+
+                  return (
+                    <div key={member.user_id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(157,131,198,.2)] font-['Poppins',_Arial,_sans-serif] text-sm font-bold text-[#6f56a0]">
+                          {fullName.charAt(0).toUpperCase()}
+                        </span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-[#2E2E3A]">{fullName}</p>
+                            {sharesResults && hasResponded && burnoutState && (
+                              <Badge tone={burnoutState === 'Sin indicios' ? 'mint' : 'purple'}>{burnoutState}</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-[#5B5B6B]">
+                            {hasResponded ? 'Ha respondido la última ronda' : 'No ha respondido la última ronda'}
+                            {sharesResults && hasResponded && ' · Resultados compartidos'}
+                            {!sharesResults && hasResponded && ' · Resultados privados'}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge tone={hasResponded ? 'mint' : 'purple'}>{hasResponded ? 'Respondió' : 'Pendiente'}</Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </>
+      )}
+    </>
+  );
+}
+
+function Kpi({ label, value, foot, color }) {
+  return (
+    <div className="flex flex-col gap-1 rounded-[20px] border border-[#DAD5E4] bg-white p-[18px] shadow-teamzen">
+      <span className="text-[11px] font-bold uppercase tracking-[.06em] text-[#5B5B6B]">{label}</span>
+      <span className={`font-['Poppins',_Arial,_sans-serif] text-[28px] font-bold tabular-nums ${color || 'text-[#2E2E3A]'}`}>{value}</span>
+      {foot && <span className="text-xs text-[#5B5B6B]">{foot}</span>}
+    </div>
+  );
+}
+
+function MobileLabeled({ label, children }) {
+  return (
+    <div className="flex flex-col gap-0.5 lg:contents">
+      <span className="text-[10px] font-bold uppercase tracking-[.06em] text-[#5B5B6B] lg:hidden">{label}</span>
+      <span className="text-sm text-[#2E2E3A]">{children}</span>
+    </div>
+  );
+}
+
+function CycleHelp() {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <Card pad="p-0" className="overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        aria-expanded={isExpanded}
+        className="flex w-full items-center justify-between p-4 transition-colors hover:bg-[#DAD5E4]/20"
+      >
+        <span className="font-['Poppins',_Arial,_sans-serif] text-sm font-semibold text-[#2E2E3A]">¿Qué son las rondas y las dimensiones del MBI?</span>
+        <svg className={`h-5 w-5 text-[#9D83C6] transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      
+
       {isExpanded && (
-        <div className="mt-3 p-4 bg-[#FAF9F6] border border-[#DAD5E4] rounded-lg text-xs space-y-3 
-                        animate-modal-enter leading-relaxed">
-          
-          {/* Qué es una ronda */}
-          <div className="space-y-2">
-            <h4 className="font-semibold text-[#2E2E3A] flex items-center space-x-2">
-              <span className="w-2 h-2 bg-[#55C2A2] rounded-full"></span>
-              <span>Qué es una ronda</span>
+        <div className="flex flex-col gap-4 border-t border-[#DAD5E4] p-5 text-sm leading-relaxed">
+          <div>
+            <h4 className="mb-1 flex items-center gap-2 font-['Poppins',_Arial,_sans-serif] font-semibold text-[#2E2E3A]">
+              <Dot size={8} /> Qué es una ronda
             </h4>
-            <p className="text-[#5B5B6B] ml-4">
-              Periodo activo en el que el equipo responde el cuestionario. Al cerrarlo se congelan sus resultados.
+            <p className="ml-4 text-[#5B5B6B]">Periodo activo en el que el equipo responde el cuestionario. Al cerrarlo se congelan sus resultados.</p>
+          </div>
+
+          <div>
+            <h4 className="mb-1 flex items-center gap-2 font-['Poppins',_Arial,_sans-serif] font-semibold text-[#2E2E3A]">
+              <Dot tone="purple" size={8} /> Dimensiones del MBI
+            </h4>
+            <div className="ml-4 flex flex-col gap-1.5 text-[#5B5B6B]">
+              <p><strong className="font-semibold text-[#2E2E3A]">Agotamiento emocional (AE):</strong> desgaste y cansancio mental. Menor puntaje es mejor.</p>
+              <p><strong className="font-semibold text-[#2E2E3A]">Despersonalización (D):</strong> distancia o frialdad hacia el trabajo. Menor puntaje es mejor.</p>
+              <p><strong className="font-semibold text-[#2E2E3A]">Realización personal (RP):</strong> percepción de logro y eficacia. Mayor puntaje es mejor.</p>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="mb-1 flex items-center gap-2 font-['Poppins',_Arial,_sans-serif] font-semibold text-[#2E2E3A]">
+              <Dot size={8} /> Escala de medición
+            </h4>
+            <p className="ml-4 text-[#5B5B6B]">
+              Cada ítem se responde 0–6 (Nunca → Todos los días). Se suman por dimensión:
+              <strong className="text-[#2E2E3A]"> AE (9 ítems, 0–54)</strong>,
+              <strong className="text-[#2E2E3A]"> D (5 ítems, 0–30)</strong>,
+              <strong className="text-[#2E2E3A]"> RP (8 ítems, 0–48)</strong>.
             </p>
           </div>
 
-          {/* Dimensiones del MBI */}
-          <div className="space-y-2">
-            <h4 className="font-semibold text-[#2E2E3A] flex items-center space-x-2">
-              <span className="w-2 h-2 bg-[#9D83C6] rounded-full"></span>
-              <span>Dimensiones del MBI</span>
+          <div>
+            <h4 className="mb-1 flex items-center gap-2 font-['Poppins',_Arial,_sans-serif] font-semibold text-[#2E2E3A]">
+              <Dot tone="purple" size={8} /> Rangos de burnout
             </h4>
-            <div className="ml-4 space-y-2">
-              <div className="flex items-start space-x-2">
-                <span className="text-[#55C2A2] font-bold">•</span>
-                <div>
-                  <span className="font-semibold text-[#2E2E3A]">Agotamiento Emocional (AE):</span>
-                  <span className="text-[#5B5B6B]"> desgaste y cansancio mental. Menor puntaje es mejor.</span>
-                </div>
+            <div className="ml-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <div className="rounded-xl border border-[#DAD5E4] bg-[rgba(85,194,162,.08)] p-2.5 text-xs">
+                <div className="font-semibold text-[#3d8a74]">Bajo</div>
+                <div className="text-[#5B5B6B]">AE: 0-18 · D: 0-6 · RP: 40-48</div>
               </div>
-              <div className="flex items-start space-x-2">
-                <span className="text-[#55C2A2] font-bold">•</span>
-                <div>
-                  <span className="font-semibold text-[#2E2E3A]">Despersonalización (D):</span>
-                  <span className="text-[#5B5B6B]"> distancia o frialdad hacia el trabajo. Menor puntaje es mejor.</span>
-                </div>
+              <div className="rounded-xl border border-[#DAD5E4] bg-[#DAD5E4]/40 p-2.5 text-xs">
+                <div className="font-semibold text-[#2E2E3A]">Medio</div>
+                <div className="text-[#5B5B6B]">AE: 19-26 · D: 7-9 · RP: 34-39</div>
               </div>
-              <div className="flex items-start space-x-2">
-                <span className="text-[#55C2A2] font-bold">•</span>
-                <div>
-                  <span className="font-semibold text-[#2E2E3A]">Realización Personal (RP):</span>
-                  <span className="text-[#5B5B6B]"> percepción de logro y eficacia. Mayor puntaje es mejor.</span>
-                </div>
+              <div className="rounded-xl border border-[#DAD5E4] bg-[rgba(157,131,198,.1)] p-2.5 text-xs">
+                <div className="font-semibold text-[#6f56a0]">Alto</div>
+                <div className="text-[#5B5B6B]">AE: 27-54 · D: 10-30 · RP: 0-33</div>
               </div>
             </div>
           </div>
 
-          {/* Escala */}
-          <div className="space-y-2">
-            <h4 className="font-semibold text-[#2E2E3A] flex items-center space-x-2">
-              <span className="w-2 h-2 bg-[#55C2A2] rounded-full"></span>
-              <span>Escala de medición</span>
-            </h4>
-            <p className="text-[#5B5B6B] ml-4">
-              Cada ítem se responde 0–6 (Nunca → Todos los días). Se suman por dimensión: 
-              <span className="font-medium text-[#2E2E3A]"> AE (9 ítems, 0–54)</span>, 
-              <span className="font-medium text-[#2E2E3A]"> D (5 ítems, 0–30)</span>, 
-              <span className="font-medium text-[#2E2E3A]"> RP (8 ítems, 0–48)</span>.
+          <div>
+            <h4 className="mb-1 font-['Poppins',_Arial,_sans-serif] font-semibold text-[#2E2E3A]">Diagnóstico de síndrome</h4>
+            <p className="ml-4 text-[#5B5B6B]">
+              Se presenta cuando hay <strong className="text-[#2E2E3A]">"Alto burnout"</strong> en al menos 2 dimensiones, siendo el Agotamiento Emocional una de ellas.
             </p>
           </div>
 
-          {/* Rangos de burnout */}
-          <div className="space-y-2">
-            <h4 className="font-semibold text-[#2E2E3A] flex items-center space-x-2">
-              <span className="w-2 h-2 bg-[#9D83C6] rounded-full"></span>
-              <span>Rangos de burnout</span>
-            </h4>
-            <div className="ml-4 space-y-1">
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                <div className="bg-green-50 border border-green-200 rounded p-2">
-                  <div className="font-semibold text-green-700">Bajo</div>
-                  <div className="text-green-600">AE: 0-18</div>
-                  <div className="text-green-600">D: 0-6</div>
-                  <div className="text-green-600">RP: 40-48</div>
-                </div>
-                <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
-                  <div className="font-semibold text-yellow-700">Medio</div>
-                  <div className="text-yellow-600">AE: 19-26</div>
-                  <div className="text-yellow-600">D: 7-9</div>
-                  <div className="text-yellow-600">RP: 34-39</div>
-                </div>
-                <div className="bg-red-50 border border-red-200 rounded p-2">
-                  <div className="font-semibold text-red-700">Alto</div>
-                  <div className="text-red-600">AE: 27-54</div>
-                  <div className="text-red-600">D: 10-30</div>
-                  <div className="text-red-600">RP: 0-33</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Diagnóstico de síndrome */}
-          <div className="space-y-2">
-            <h4 className="font-semibold text-[#2E2E3A] flex items-center space-x-2">
-              <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-              <span>Diagnóstico de síndrome</span>
-            </h4>
-            <p className="text-[#5B5B6B] ml-4">
-              Se presenta cuando hay <span className="font-semibold text-red-600">"Alto burnout"</span> en al menos 2 dimensiones, 
-              siendo el <span className="font-semibold text-[#2E2E3A]">Agotamiento Emocional</span> una de ellas.
-            </p>
-          </div>
-
-          {/* Bienestar Global */}
-          <div className="space-y-2">
-            <h4 className="font-semibold text-[#2E2E3A] flex items-center space-x-2">
-              <span className="w-2 h-2 bg-[#55C2A2] rounded-full"></span>
-              <span>Bienestar Global (0–100)</span>
-            </h4>
-            <p className="text-[#5B5B6B] ml-4">
-              Índice sintético que normaliza e invierte AE y D, y normaliza RP. 
-              <span className="font-medium text-[#8160B6]"> Solo para tendencia general</span>,
-              siempre interpretar las 3 dimensiones por separado.
+          <div>
+            <h4 className="mb-1 font-['Poppins',_Arial,_sans-serif] font-semibold text-[#2E2E3A]">Bienestar global (0–100)</h4>
+            <p className="ml-4 text-[#5B5B6B]">
+              Índice sintético que normaliza e invierte AE y D, y normaliza RP. <strong className="text-[#8B6FB8]">Solo para tendencia general</strong>, siempre interpretar las 3 dimensiones por separado.
             </p>
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
-function StrategicInsightsDropdown({ data }) {
-  const [isExpanded, setIsExpanded] = React.useState(false);
-
-  return (
-    <div className="mb-6">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-[#9D83C6]/10 to-[#55C2A2]/10 
-                   border border-[#9D83C6]/30 rounded-xl hover:from-[#9D83C6]/15 hover:to-[#55C2A2]/15 
-                   transition-all duration-200 group"
-      >
-        <div className="flex items-center space-x-3">
-          <svg 
-            className="w-6 h-6 text-[#9D83C6]" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          <div className="text-left">
-            <h2 className="text-lg font-semibold text-[#2E2E3A]">Insights estratégicos</h2>
-            <p className="text-sm text-[#5B5B6B]">Tendencias y prioridades de mejora</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          {data.length > 0 && (
-            <span className="bg-[#55C2A2] text-white text-xs font-medium px-2 py-1 rounded-full">
-              {data.length} ronda{data.length !== 1 ? 's' : ''}
-            </span>
-          )}
-          <svg 
-            className={`w-5 h-5 text-[#9D83C6] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </button>
-      
-      {isExpanded && (
-        <div className="mt-4 p-6 bg-[#FAF9F6] border border-[#DAD5E4] rounded-xl animate-modal-enter">
-          {data.length === 0 ? (
-            <div className="text-center py-8">
-              <svg className="w-12 h-12 text-[#DAD5E4] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <p className="text-[#5B5B6B] font-medium">No hay datos disponibles</p>
-              <p className="text-sm text-[#9D83C6] mt-1">Genera al menos una ronda para ver insights</p>
-            </div>
-          ) : (
-            <InsightsPanel data={data} />
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function InsightsPanel({ data }) {
-  // Derive trends (simple linear direction vs previous cycle)
-  if (!data.length) return null;
-  const sorted = [...data].reverse(); // oldest -> newest
-  const trend = (key) => {
-    if (sorted.length < 2) return null;
-    const prev = sorted[sorted.length-2][key];
-    const current = sorted[sorted.length-1][key];
-    if (prev == null || current == null) return null;
-    if (current > prev) return 'up';
-    if (current < prev) return 'down';
-    return 'flat';
-  };
-  const aeT = trend('aeAvg');
-  const dT = trend('dAvg');
-  const rpT = trend('rpAvg');
-  const wbT = trend('wellbeing');
-
-  const makeTrendLabel = (t, positiveHigher=true) => {
-    if (!t) return '—';
-    if (t==='up') return positiveHigher? '↑' : '↓';
-    if (t==='down') return positiveHigher? '↓' : '↑';
-    return '→';
-  };
-
-  const latest = data[0]; // data mapped newest first earlier (aggregated uses created_at desc)
-  const improvementAreas = [];
-  if (latest.aeAvg >= 27) improvementAreas.push('Reducir Agotamiento Emocional (AE)');
-  if (latest.dAvg >= 10) improvementAreas.push('Mitigar Despersonalización (D)');
-  if (latest.rpAvg < 34) improvementAreas.push('Elevar Realización Personal (RP)');
-  if (latest.wellbeing < 50) improvementAreas.push('Plan de intervención general');
-
-  return (
-    <div className="grid md:grid-cols-2 gap-6">
-      <div className="border border-[#DAD5E4] rounded-xl p-5 bg-gradient-to-br from-[#55C2A2]/5 to-[#55C2A2]/10 
-                      hover:shadow-teamzen transition-all duration-200">
-        <div className="flex items-center space-x-2 mb-4">
-          <svg className="w-5 h-5 text-[#55C2A2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-          </svg>
-          <h3 className="font-semibold text-[#2E2E3A]">Tendencias recientes</h3>
-        </div>
-        <ul className="space-y-3">
-          <li className="flex items-center justify-between">
-            <span className="text-sm text-[#2E2E3A] font-medium">Agotamiento Emocional</span>
-            <div className="flex items-center space-x-2">
-              <span className="text-lg font-bold text-[#2E2E3A]">{makeTrendLabel(aeT, false)}</span>
-              <span className="text-xs text-[#5B5B6B]">(menor es mejor)</span>
-            </div>
-          </li>
-          <li className="flex items-center justify-between">
-            <span className="text-sm text-[#2E2E3A] font-medium">Despersonalización</span>
-            <div className="flex items-center space-x-2">
-              <span className="text-lg font-bold text-[#2E2E3A]">{makeTrendLabel(dT, false)}</span>
-              <span className="text-xs text-[#5B5B6B]">(menor es mejor)</span>
-            </div>
-          </li>
-          <li className="flex items-center justify-between">
-            <span className="text-sm text-[#2E2E3A] font-medium">Realización Personal</span>
-            <div className="flex items-center space-x-2">
-              <span className="text-lg font-bold text-[#2E2E3A]">{makeTrendLabel(rpT, true)}</span>
-              <span className="text-xs text-[#5B5B6B]">(mayor es mejor)</span>
-            </div>
-          </li>
-          <li className="flex items-center justify-between border-t border-[#DAD5E4] pt-3">
-            <span className="text-sm text-[#2E2E3A] font-semibold">Bienestar Global</span>
-            <div className="flex items-center space-x-2">
-              <span className="text-lg font-bold text-[#55C2A2]">{makeTrendLabel(wbT, true)}</span>
-              <span className="text-xs px-2 py-1 bg-[#55C2A2]/20 text-[#2E2E3A] rounded-full">
-                {latest.wellbeing}%
-              </span>
-            </div>
-          </li>
-        </ul>
-      </div>
-      
-      <div className="border border-[#DAD5E4] rounded-xl p-5 bg-gradient-to-br from-[#9D83C6]/5 to-[#9D83C6]/10 
-                      hover:shadow-teamzen transition-all duration-200">
-        <div className="flex items-center space-x-2 mb-4">
-          <svg className="w-5 h-5 text-[#9D83C6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                  d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-          </svg>
-          <h3 className="font-semibold text-[#2E2E3A]">Prioridades sugeridas</h3>
-        </div>
-        {improvementAreas.length === 0 ? (
-          <div className="text-center py-4">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <p className="text-sm font-medium text-green-700">Sin alertas críticas</p>
-            <p className="text-xs text-green-600 mt-1">Mantener estrategias actuales</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {improvementAreas.map((area, index) => (
-              <div key={area} className="flex items-start space-x-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-orange-700">{index + 1}</span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-orange-800">{area}</p>
-                  <p className="text-xs text-orange-600 mt-1">Requiere atención prioritaria</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+// ===================================================================
+// PANEL DE SUGERENCIAS DE IA (con seguimiento de acciones)
+// ===================================================================
+const STATUS_CYCLE = { pendiente: 'en_curso', en_curso: 'hecha', hecha: 'pendiente' };
+const STATE_TONE = { pendiente: 'neutral', en_curso: 'purple', hecha: 'mint' };
+const STATE_LABEL = { pendiente: 'Pendiente', en_curso: 'En curso', hecha: 'Hecha' };
 
 function AdvicePanel({ data, teamId }) {
   const [mode, setMode] = React.useState('ai'); // 'local' | 'ai' - IA por defecto
@@ -933,13 +628,13 @@ function AdvicePanel({ data, teamId }) {
   // Función para obtener sugerencias de IA - definida antes para usar en useEffect
   const handleAIFetch = React.useCallback(async (forceRegenerate = false) => {
     if (loading) return;
-    
+
     const valid = data.filter(r => r.count > 0 && r.aeAvg != null && r.dAvg != null && r.rpAvg != null && r.wellbeing != null);
     if (!valid.length) return; // No hay datos válidos
-    
+
     const current = valid[0];
     const prev = valid.length > 1 ? valid[1] : null;
-    
+
     const historyData = valid.slice(0, 5).map(item => ({
       ae: item.aeAvg,
       d: item.dAvg,
@@ -972,12 +667,12 @@ function AdvicePanel({ data, teamId }) {
       );
 
       const analysisId = current.cycle.id;
-      
+
       const result = await Promise.race([
         getAIAdviceWithCache(mbiPayload, teamId, analysisId, forceRegenerate),
         timeoutPromise
       ]);
-      
+
       setAiAdvice({ ...result, _forCycleId: analysisId, _forTeamId: teamId });
       setMode('ai');
     } catch (err) {
@@ -1069,45 +764,24 @@ function AdvicePanel({ data, teamId }) {
   }, [data, teamId, aiAdvice, loading, mode, handleAIFetch]);
 
   if (!data.length) return null;
-  
+
   // Considerar solo ciclos con respuestas (count > 0) para evitar nulls en clasificación
   const valid = data.filter(r => r.count > 0 && r.aeAvg != null && r.dAvg != null && r.rpAvg != null && r.wellbeing != null);
   if (!valid.length) return null; // No hay datos aún
-  
-  const current = valid[0];
-  const prev = valid.length > 1 ? valid[1] : null;
-  
-  // Preparar datos históricos para análisis de tendencias (máximo 5 elementos más recientes)
-  const historyData = valid.slice(0, 5).map(item => ({
-    ae: item.aeAvg,
-    d: item.dAvg,
-    rp: item.rpAvg,
-    wellbeing: item.wellbeing,
-    date: item.cycle.start_at || item.cycle.created_at
-  }));
-
-  const mbiPayload = {
-    ae: current.aeAvg,
-    d: current.dAvg,
-    rp: current.rpAvg,
-    wellbeing: current.wellbeing,
-    previous: prev ? { ae: prev.aeAvg, d: prev.dAvg, rp: prev.rpAvg, wellbeing: prev.wellbeing } : null,
-    history: historyData,
-    meta: {
-      latestId: current.cycle.id,
-      totalPeriods: valid.length,
-      analysisScope: 'Análisis por rondas de evaluación'
-    }
-  };
 
   // Generar sugerencias locales (siempre disponibles)
-  const localAdvice = generateAdvice(mbiPayload);
+  const current = valid[0];
+  const prev = valid.length > 1 ? valid[1] : null;
+  const historyData = valid.slice(0, 5);
+  const localAdvice = generateAdvice({
+    ae: current.aeAvg, d: current.dAvg, rp: current.rpAvg, wellbeing: current.wellbeing,
+    previous: prev ? { ae: prev.aeAvg, d: prev.dAvg, rp: prev.rpAvg, wellbeing: prev.wellbeing } : null,
+    history: historyData.map(item => ({ ae: item.aeAvg, d: item.dAvg, rp: item.rpAvg, wellbeing: item.wellbeing, date: item.cycle.start_at || item.cycle.created_at })),
+    meta: { latestId: current.cycle.id, totalPeriods: valid.length, analysisScope: 'Análisis por rondas de evaluación' },
+  });
 
   // Determinar qué sugerencias mostrar
   const displayAdvice = mode === 'ai' && aiAdvice ? aiAdvice : localAdvice;
-
-  const STATUS_CYCLE = { pendiente: 'en_curso', en_curso: 'hecha', hecha: 'pendiente' };
-  const STATUS_LABEL = { pendiente: '⚪ Pendiente', en_curso: '🔵 En curso', hecha: '✅ Hecha' };
 
   const handleToggleActionStatus = async (cycleId, actionText, currentStatus, isCurrentCycle) => {
     const nextStatus = STATUS_CYCLE[currentStatus] || 'en_curso';
@@ -1126,173 +800,133 @@ function AdvicePanel({ data, teamId }) {
     }
   };
 
+  const sourceLabel = mode === 'ai'
+    ? (aiAdvice ? (aiAdvice._cacheInfo?.fromCache ? `IA + tendencias · desde caché (${new Date(aiAdvice._cacheInfo.createdAt).toLocaleDateString()})` : `IA + tendencias · recién generado`) : (loading ? 'Analizando...' : 'IA + tendencias'))
+    : 'Heurística local · instantánea, sin red';
+
   return (
-    <div className="border rounded-lg p-4 bg-white shadow-sm space-y-4">
-      {/* Header con controles */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h3 className="font-medium text-gray-800">Sugerencias personalizadas</h3>
-        <div className="flex items-center gap-2 text-xs">
-          <button 
-            onClick={() => {setMode('local'); setError('');}}
-            className={`px-3 py-1 rounded-xl border transition-colors ${
-              mode === 'local' 
-                ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white border-[#55C2A2] shadow-lg'
-                : 'border-[#DAD5E4] text-[#5B5B6B] hover:bg-[#DAD5E4]/20'
-            }`}
-          >
-            🧠 Local
-          </button>
-          <button 
-            onClick={() => handleAIFetch(false)}
-            disabled={loading}
-            className={`px-3 py-1 rounded border transition-colors disabled:opacity-50 ${
-              mode === 'ai' 
-                ? 'bg-purple-600 text-white border-purple-600' 
-                : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            {loading ? '⏳ Analizando...' : '🤖 IA + Tendencias'}
-          </button>
-          {mode === 'ai' && aiAdvice && !loading && (
-            <button 
-              onClick={() => handleAIFetch(true)}
-              disabled={loading}
-              className="px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
-              title="Regenerar análisis forzadamente"
+    <Card className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <img src="/img/pandapintando.png" alt="" className="h-[52px] w-[52px] rounded-2xl object-cover" />
+          <div className="flex flex-col">
+            <h2 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">Sugerencias para esta ronda</h2>
+            <span className="text-[13px] text-[#5B5B6B]">{sourceLabel}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1 rounded-full border border-[#DAD5E4] bg-[#FAF9F6] p-1">
+            <button
+              type="button"
+              onClick={() => { setMode('local'); setError(''); }}
+              className={`rounded-full px-4 py-2 font-['Poppins',_Arial,_sans-serif] text-[12.5px] font-semibold transition ${mode === 'local' ? 'bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] text-white' : 'text-[#5B5B6B]'}`}
             >
-              🔄
+              Local
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAIFetch(false)}
+              disabled={loading}
+              className={`rounded-full px-4 py-2 font-['Poppins',_Arial,_sans-serif] text-[12.5px] font-semibold transition disabled:opacity-60 ${mode === 'ai' ? 'bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] text-white' : 'text-[#5B5B6B]'}`}
+            >
+              {loading ? 'Analizando...' : 'IA + Tendencias'}
+            </button>
+          </div>
+          {mode === 'ai' && aiAdvice && !loading && (
+            <button
+              type="button"
+              onClick={() => handleAIFetch(true)}
+              aria-label="Regenerar consejo"
+              title="Regenerar análisis forzadamente"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] text-[15px] text-[#5B5B6B] hover:border-[#9D83C6] hover:text-[#2E2E3A]"
+            >
+              ↻
             </button>
           )}
         </div>
       </div>
 
-      {/* Status indicator */}
-      <div className="text-xs text-gray-500 -mt-2">
-        {loading && `🔄 Analizando evolución por rondas del equipo...`}
-        {error && <span className="text-red-600">❌ {error} (mostrando sugerencias locales)</span>}
-        {mode === 'ai' && aiAdvice && !loading && (
-          <div className="flex items-center gap-2">
-            {aiAdvice._cacheInfo?.fromCache ? (
-              <span className="text-blue-600">
-                🔵 Desde caché • Actualizado: {new Date(aiAdvice._cacheInfo.createdAt).toLocaleString()}
-              </span>
-            ) : (
-              <span className="text-green-600">
-                🟢 Recién generado • {new Date(aiAdvice._cacheInfo?.createdAt).toLocaleString()}
-              </span>
-            )}
-            <span className="text-gray-400">
-              • {historyData.length} ronda(s) de historia
-            </span>
-          </div>
-        )}
-        {mode === 'local' && !loading && !error && (
-          <span>🧠 Sugerencias por rondas basadas en reglas heurísticas</span>
-        )}
-      </div>
+      {error && <p className="text-sm text-[#c0392b]">{error} (mostrando sugerencias locales)</p>}
 
-      {/* Content */}
-      <div className="space-y-3">
-        <div>
-          <p className="text-sm text-gray-700 leading-relaxed">
-            <span className="font-medium">Resumen:</span> {displayAdvice.summary}
-          </p>
+      <Highlight>{displayAdvice.summary}</Highlight>
+
+      {mode === 'ai' && aiAdvice?.trendAnalysis && (
+        <div className="rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] p-4">
+          <p className="mb-1 text-xs font-bold uppercase tracking-[.06em] text-[#5B5B6B]">Análisis de evolución</p>
+          <p className="text-sm text-[#2E2E3A]">{aiAdvice.trendAnalysis}</p>
+        </div>
+      )}
+
+      <div className="grid items-start gap-5 lg:grid-cols-[1fr_1.2fr]">
+        <div className="flex flex-col gap-3">
+          <h3 className="font-['Poppins',_Arial,_sans-serif] text-base font-semibold text-[#2E2E3A]">Riesgos identificados</h3>
+          {!displayAdvice.keyRisks?.length ? (
+            <p className="text-sm text-[#5B5B6B]">Sin riesgos identificados.</p>
+          ) : displayAdvice.keyRisks.map((risk, i) => (
+            <div key={i} className="flex items-start gap-3 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-3.5">
+              <Dot tone="purple" size={8} className="mt-[7px]" />
+              <span className="text-sm text-[#2E2E3A]">{risk}</span>
+            </div>
+          ))}
         </div>
 
-        {/* Análisis de tendencias (solo IA) */}
-        {mode === 'ai' && aiAdvice?.trendAnalysis && (
-          <div className="bg-blue-50 border border-blue-200 rounded p-3">
-            <p className="text-xs font-semibold text-blue-800 mb-1">📈 Análisis de evolución</p>
-            <p className="text-xs text-blue-700 leading-relaxed">{aiAdvice.trendAnalysis}</p>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="font-['Poppins',_Arial,_sans-serif] text-base font-semibold text-[#2E2E3A]">Acciones recomendadas</h3>
+            {mode === 'ai' && aiAdvice && <span className="text-xs text-[#5B5B6B]">Toca el estado para avanzarlo</span>}
           </div>
-        )}
-        
-        {displayAdvice.keyRisks?.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-gray-800 mb-1">⚠️ Riesgos identificados</p>
-            <ul className="list-disc pl-4 text-xs text-gray-600 space-y-0.5">
-              {displayAdvice.keyRisks.map((risk, i) => (
-                <li key={i}>{risk}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        
-        {prevActionStatuses.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-gray-800 mb-1">📋 Acciones de la ronda anterior</p>
-            <ul className="list-disc pl-4 text-xs text-gray-600 space-y-0.5">
-              {prevActionStatuses.map((row) => (
-                <li key={row.action_text} className="flex items-start justify-between gap-2">
-                  <span>{row.action_text}</span>
+          {!displayAdvice.actions?.length ? (
+            <p className="text-sm text-[#5B5B6B]">Sin acciones prioritarias detectadas.</p>
+          ) : displayAdvice.actions.map((action, i) => {
+            const isTrackable = mode === 'ai' && !!aiAdvice;
+            const status = currentActionStatuses[action] || 'pendiente';
+            return (
+              <div key={i} className="flex items-center gap-3 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-3.5">
+                <span className="flex-1 text-sm text-[#2E2E3A]">{action}</span>
+                {isTrackable ? (
                   <button
                     type="button"
-                    onClick={() => handleToggleActionStatus(prevForTracking.cycle.id, row.action_text, row.status, false)}
-                    className="shrink-0 text-[10px] px-1.5 py-0.5 rounded border border-gray-300 hover:bg-gray-50"
-                    title="Click para cambiar el estado"
+                    onClick={() => handleToggleActionStatus(currentForTracking.cycle.id, action, status, true)}
+                    aria-label={`Cambiar estado: ahora ${STATE_LABEL[status]}`}
                   >
-                    {STATUS_LABEL[row.status] || STATUS_LABEL.pendiente}
+                    <Badge as="span" tone={STATE_TONE[status]} className="cursor-pointer">{STATE_LABEL[status]}</Badge>
                   </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div>
-          <p className="text-xs font-semibold text-gray-800 mb-1">💡 Acciones recomendadas</p>
-          {!displayAdvice.actions?.length ? (
-            <p className="text-xs text-gray-500">Sin acciones prioritarias detectadas.</p>
-          ) : (
-            <ul className="list-disc pl-4 text-xs text-gray-600 space-y-0.5">
-              {displayAdvice.actions.map((action, i) => {
-                const isTrackable = mode === 'ai' && !!aiAdvice;
-                const status = currentActionStatuses[action] || 'pendiente';
-                if (!isTrackable) {
-                  return <li key={i}>{action}</li>;
-                }
-                return (
-                  <li key={i} className="flex items-start justify-between gap-2">
-                    <span>{action}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleToggleActionStatus(currentForTracking.cycle.id, action, status, true)}
-                      className="shrink-0 text-[10px] px-1.5 py-0.5 rounded border border-gray-300 hover:bg-gray-50"
-                      title="Click para cambiar el estado"
-                    >
-                      {STATUS_LABEL[status]}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                ) : (
+                  <span className="text-xs text-[#5B5B6B]">sin seguimiento</span>
+                )}
+              </div>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Pronóstico (solo IA) */}
-        {mode === 'ai' && aiAdvice?.prognosis && (
-          <div className="bg-amber-50 border border-amber-200 rounded p-3">
-            <p className="text-xs font-semibold text-amber-800 mb-1">🔮 Pronóstico</p>
-            <p className="text-xs text-amber-700 leading-relaxed">{aiAdvice.prognosis}</p>
-          </div>
-        )}
-      </div>
-      
-      {/* Footer */}
-      <div className="pt-2 border-t border-gray-100">
-        <p className="text-[10px] text-gray-400">
-          {mode === 'ai' && aiAdvice 
-            ? `🤖 Análisis evolutivo por Groq AI basado en ${historyData.length} ronda(s) - Fallback automático a local si falla`
-            : '🧠 Sugerencias heurísticas locales - Pulsa "IA + Tendencias" para análisis histórico avanzado'
-          }
-        </p>
-      </div>
-    </div>
+      {mode === 'ai' && aiAdvice?.prognosis && (
+        <div className="rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] p-4">
+          <p className="mb-1 text-xs font-bold uppercase tracking-[.06em] text-[#5B5B6B]">Pronóstico</p>
+          <p className="text-sm text-[#2E2E3A]">{aiAdvice.prognosis}</p>
+        </div>
+      )}
+
+      {prevActionStatuses.length > 0 && (
+        <div className="flex flex-col gap-3 pt-1">
+          <h3 className="font-['Poppins',_Arial,_sans-serif] text-base font-semibold text-[#2E2E3A]">Acciones de la ronda anterior</h3>
+          {prevActionStatuses.map((row) => (
+            <div key={row.action_text} className="flex items-center gap-3 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-3.5">
+              <Dot tone={STATE_TONE[row.status] === 'mint' ? 'mint' : STATE_TONE[row.status] === 'purple' ? 'purple' : 'neutral'} size={12} />
+              <span className="flex-1 text-sm text-[#2E2E3A]">{row.action_text}</span>
+              <button type="button" onClick={() => handleToggleActionStatus(prevForTracking.cycle.id, row.action_text, row.status, false)}>
+                <Badge tone={STATE_TONE[row.status]} className="cursor-pointer">{STATE_LABEL[row.status] || STATE_LABEL.pendiente}</Badge>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 
 // ===================================================================
-// COMPONENTE DE ANÁLISIS PERSONAL - REPORTES PARA USUARIOS
+// VISTA MIEMBRO — ANÁLISIS PERSONAL
 // ===================================================================
 
 // Análisis heurístico local, usado cuando la IA externa no responde a tiempo
@@ -1347,12 +981,12 @@ function UserPersonalReports({ user, profile }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mbiHistory, setMbiHistory] = useState([]);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   // Cargar historial MBI del usuario
   useEffect(() => {
     if (!user?.id) return;
-    
+
     const loadMBIHistory = async () => {
       try {
         const { data, error } = await supabase
@@ -1367,7 +1001,7 @@ function UserPersonalReports({ user, profile }) {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(10); // Últimas 10 evaluaciones
-        
+
         if (error) throw error;
         setMbiHistory(data || []);
       } catch (err) {
@@ -1381,26 +1015,15 @@ function UserPersonalReports({ user, profile }) {
   // Generar análisis personal
   const generateAnalysis = async (forceRegenerate = false) => {
     if (!user?.id || !profile || mbiHistory.length === 0) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const { generatePersonalAnalysisWithCache } = await import('../utils/groqClient');
-      
-      const userData = {
-        userId: user.id,
-        profile,
-        mbiHistory
-      };
-      
-      console.log('🔍 DEBUG: Datos que se envían para análisis:', {
-        userId: userData.userId,
-        profileExists: !!userData.profile,
-        mbiHistoryCount: userData.mbiHistory?.length || 0,
-        forceRegenerate
-      });
-      
+
+      const userData = { userId: user.id, profile, mbiHistory };
+
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Timeout: IA externa tardó más de 15 segundos')), 15000)
       );
@@ -1430,321 +1053,171 @@ function UserPersonalReports({ user, profile }) {
     }
   }, [mbiHistory, analysis, loading, error]);
 
+  const originLabel = analysis?.fromCache
+    ? `Desde caché${analysis.cachedAt ? ` · ${new Date(analysis.cachedAt).toLocaleDateString()}` : ''}`
+    : analysis?.isLocalFallback
+      ? 'Análisis local (heurístico)'
+      : analysis?.generatedAt
+        ? `Recién generado · ${new Date(analysis.generatedAt).toLocaleDateString()}`
+        : '';
+
   return (
-    <div className="space-y-8">
-      {/* Título de la sección */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900">Mi Análisis Personal de Bienestar</h1>
-        <p className="text-gray-600 mt-2">
-          Descubre insights personalizados sobre tu bienestar laboral y recibe recomendaciones específicas para tu situación
-        </p>
+    <div className="mx-auto flex w-full max-w-[900px] flex-col gap-[22px]">
+      <div className="flex flex-col gap-1.5">
+        <h1 className="font-['Poppins',_Arial,_sans-serif] text-[26px] font-bold tracking-[-.02em] text-[#2E2E3A] sm:text-[32px]">Mi análisis personal de bienestar</h1>
+        <p className="text-base text-[#5B5B6B]">Solo tú ves esta pantalla. Tu líder nunca accede a este detalle.</p>
       </div>
 
-      {/* Estadísticas rápidas */}
       {mbiHistory.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-            <div className="flex items-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <div className="ml-3 sm:ml-4 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Evaluaciones</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">{mbiHistory.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-            <div className="flex items-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="ml-3 sm:ml-4 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Última Evaluación</p>
-                <p className="text-sm sm:text-lg font-bold text-gray-900">
-                  {new Date(mbiHistory[0]?.created_at).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              </div>
-              <div className="ml-3 sm:ml-4 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Cargo Actual</p>
-                <p className="text-sm sm:text-lg font-bold text-gray-900 truncate">
-                  {profile?.job_title || 'No especificado'}
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="grid gap-3.5 sm:grid-cols-3">
+          <Kpi label="Evaluaciones" value={mbiHistory.length} />
+          <Kpi label="Última" value={new Date(mbiHistory[0]?.created_at).toLocaleDateString()} />
+          <Kpi label="Cargo actual" value={profile?.job_title || 'No especificado'} />
         </div>
       )}
 
-      {/* Mensaje si no hay evaluaciones */}
-      {mbiHistory.length === 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8 lg:p-12 text-center">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Sin evaluaciones aún</h3>
-          <p className="text-sm sm:text-base text-gray-600 mb-6 max-w-sm sm:max-w-md mx-auto leading-relaxed">
-            Para ver tu análisis personal, necesitas completar al menos una evaluación MBI. 
-            Esto nos permitirá generar insights específicos sobre tu bienestar laboral.
+      {mbiHistory.length === 0 ? (
+        <Card className="flex flex-col items-center gap-4 py-12 text-center" pad="p-12">
+          <h3 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">Sin evaluaciones aún</h3>
+          <p className="mx-auto max-w-md text-[#5B5B6B]">
+            Para ver tu análisis personal, necesitas completar al menos una evaluación MBI.
           </p>
-          <button
-            onClick={() => window.location.href = '/mbi'}
-            className="bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] hover:from-[#4AA690] hover:to-[#8B6FB8] text-white px-4 py-2 sm:px-6 sm:py-3 rounded-xl font-medium text-sm sm:text-base transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-teamzen-glow"
-          >
-            Completar primera evaluación
-          </button>
-        </div>
-      )}
-
-      {/* Análisis Personal */}
-      {mbiHistory.length > 0 && (
-        <div className="bg-[#FAF9F6] rounded-2xl shadow-teamzen border border-[#DAD5E4]">
-          <div className="p-4 sm:p-6 border-b border-[#DAD5E4]">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#9D83C6] to-[#8160B6] rounded-xl flex items-center justify-center flex-shrink-0">
-                  <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">Análisis Inteligente</h3>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                    <p className="text-xs sm:text-sm text-gray-600">
-                      Basado en {mbiHistory.length} evaluación{mbiHistory.length !== 1 ? 'es' : ''} MBI
-                    </p>
-                    {analysis?.fromCache ? (
-                      <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs mt-1 sm:mt-0 w-fit">
-                        📋 Desde caché
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs mt-1 sm:mt-0 w-fit">
-                        ✨ Recién generado
-                      </span>
-                    )}
-                  </div>
-                </div>
+          <Btn onClick={() => window.location.href = '/mbi'}>Completar primera evaluación</Btn>
+        </Card>
+      ) : (
+        <Card className="flex flex-col gap-[18px]">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <img src="/img/pandadescansando.png" alt="" className="h-[52px] w-[52px] rounded-2xl object-cover" />
+              <div className="flex flex-col">
+                <h2 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">Análisis inteligente</h2>
+                <span className="text-[13px] text-[#5B5B6B]">{loading ? 'Generando análisis...' : originLabel}</span>
               </div>
-              <div className="flex space-x-2 justify-end sm:justify-start">
-                <button
-                  onClick={() => setExpanded(!expanded)}
-                  className="px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  {expanded ? 'Contraer' : 'Ver Detalles'}
-                </button>
-                <button
-                  onClick={() => generateAnalysis(true)}
-                  disabled={loading}
-                  className="px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
-                >
-                  {loading ? 'Analizando...' : 'Actualizar'}
-                </button>
-              </div>
+            </div>
+            <div className="flex items-center gap-2.5">
+              {analysis?.burnout_level && (
+                <Badge tone={analysis.burnout_level === 'Alto' ? 'purple' : analysis.burnout_level === 'Medio' ? 'purple' : 'mint'} className="px-3.5 py-[7px] text-xs">
+                  Nivel de burnout: {analysis.burnout_level.toLowerCase()}
+                </Badge>
+              )}
+              <Btn variant="secondary" onClick={() => generateAnalysis(true)} disabled={loading} className="px-[18px] py-2.5 text-sm">
+                {loading ? 'Analizando...' : 'Actualizar'}
+              </Btn>
             </div>
           </div>
 
-          <div className="p-4 sm:p-6">
-            {loading && (
-              <div className="flex items-center justify-center py-6 sm:py-8">
-                <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-sm sm:text-base text-gray-600 text-center sm:text-left">Generando análisis personalizado con IA...</span>
-                </div>
-              </div>
-            )}
+          {loading && (
+            <div className="flex items-center justify-center py-6">
+              <LoadingSpinner size="small" message="Generando análisis personalizado con IA..." />
+            </div>
+          )}
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center">
-                  <svg className="w-5 h-5 text-red-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                  <div>
-                    <h4 className="text-sm font-medium text-red-800">Error generando análisis</h4>
-                    <p className="text-sm text-red-700">{error}</p>
-                  </div>
-                </div>
-              </div>
-            )}
+          {error && <Alert>{error}</Alert>}
 
-            {analysis && !loading && (
-              <div className="space-y-6">
-                {/* Indicador de origen del análisis */}
-                <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-                  <div className="flex items-center space-x-2">
-                    {analysis.fromCache ? (
-                      <>
-                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <span className="text-sm text-gray-600">
-                          <span className="font-medium text-blue-600">Desde caché</span>
-                          {analysis.cachedAt && (
-                            <span className="text-gray-500"> • Actualizado: {new Date(analysis.cachedAt).toLocaleString()}</span>
-                          )}
-                        </span>
-                      </>
-                    ) : analysis.isLocalFallback ? (
-                      <>
-                        <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-                        <span className="text-sm text-gray-600">
-                          <span className="font-medium text-amber-600">Análisis local (heurístico)</span>
-                          <span className="text-gray-500"> • La IA externa no respondió a tiempo</span>
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-gray-600">
-                          <span className="font-medium text-green-600">Recién generado</span>
-                          {analysis.generatedAt && (
-                            <span className="text-gray-500"> • {new Date(analysis.generatedAt).toLocaleString()}</span>
-                          )}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    ⚡ Análisis por IA
-                  </div>
-                </div>
+          {analysis && !loading && (
+            <>
+              <Highlight>{analysis.personal_summary}</Highlight>
 
-                {/* Resumen Personal */}
-                <div>
-                  <h4 className="text-md font-semibold text-gray-900 mb-2">Resumen de tu Estado Actual</h4>
-                  <p className="text-gray-700 leading-relaxed">{analysis.personal_summary}</p>
-                  {analysis.burnout_level && (
-                    <div className="mt-3">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        analysis.burnout_level === 'Alto' ? 'bg-red-100 text-red-800' :
-                        analysis.burnout_level === 'Medio' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        Nivel de Burnout: {analysis.burnout_level}
-                      </span>
+              <button
+                type="button"
+                onClick={() => setExpanded((o) => !o)}
+                aria-expanded={expanded}
+                className="self-start py-1.5 font-['Poppins',_Arial,_sans-serif] text-sm font-semibold text-[#8B6FB8]"
+              >
+                {expanded ? 'Contraer detalles' : 'Ver detalles'}
+              </button>
+
+              {expanded && (
+                <div className="flex flex-col gap-[18px]">
+                  {analysis.trend_analysis && (
+                    <div className="rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] p-4">
+                      <p className="mb-1 text-xs font-bold uppercase tracking-[.06em] text-[#5B5B6B]">Evolución de tu bienestar</p>
+                      <p className="text-sm text-[#2E2E3A]">{analysis.trend_analysis}</p>
                     </div>
                   )}
-                </div>
 
-                {/* Análisis de Tendencias */}
-                {analysis.trend_analysis && expanded && (
-                  <div>
-                    <h4 className="text-md font-semibold text-gray-900 mb-2">Evolución de tu Bienestar</h4>
-                    <p className="text-gray-700 leading-relaxed">{analysis.trend_analysis}</p>
-                  </div>
-                )}
-
-                {/* Fortalezas y Áreas de Riesgo */}
-                {expanded && (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                    {analysis.strengths && analysis.strengths.length > 0 && (
-                      <div>
-                        <h4 className="text-sm sm:text-md font-semibold text-green-800 mb-3">Tus Fortalezas</h4>
-                        <ul className="space-y-2">
-                          {analysis.strengths.map((strength, index) => (
-                            <li key={index} className="flex items-start">
-                              <svg className="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                              <span className="text-xs sm:text-sm text-gray-700 leading-relaxed">{strength}</span>
-                            </li>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {analysis.strengths?.length > 0 && (
+                      <div className="flex flex-col gap-2.5">
+                        <h3 className="font-['Poppins',_Arial,_sans-serif] text-base font-semibold text-[#2E2E3A]">Fortalezas</h3>
+                        <div className="flex flex-col gap-2">
+                          {analysis.strengths.map((s, i) => (
+                            <div key={i} className="flex items-start gap-3 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-[15px] py-[13px]">
+                              <Dot size={8} className="mt-[7px]" />
+                              <span className="text-sm text-[#2E2E3A]">{s}</span>
+                            </div>
                           ))}
-                        </ul>
+                        </div>
                       </div>
                     )}
-
-                    {analysis.risk_areas && analysis.risk_areas.length > 0 && (
-                      <div>
-                        <h4 className="text-sm sm:text-md font-semibold text-orange-800 mb-3">Áreas de Atención</h4>
-                        <ul className="space-y-2">
-                          {analysis.risk_areas.map((risk, index) => (
-                            <li key={index} className="flex items-start">
-                              <svg className="w-4 h-4 text-orange-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                              </svg>
-                              <span className="text-xs sm:text-sm text-gray-700 leading-relaxed">{risk}</span>
-                            </li>
+                    {analysis.risk_areas?.length > 0 && (
+                      <div className="flex flex-col gap-2.5">
+                        <h3 className="font-['Poppins',_Arial,_sans-serif] text-base font-semibold text-[#2E2E3A]">Áreas de atención</h3>
+                        <div className="flex flex-col gap-2">
+                          {analysis.risk_areas.map((r, i) => (
+                            <div key={i} className="flex items-start gap-3 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-[15px] py-[13px]">
+                              <Dot tone="purple" size={8} className="mt-[7px]" />
+                              <span className="text-sm text-[#2E2E3A]">{r}</span>
+                            </div>
                           ))}
-                        </ul>
+                        </div>
                       </div>
                     )}
                   </div>
-                )}
 
-                {/* Recomendaciones Personalizadas */}
-                {analysis.personalized_recommendations && analysis.personalized_recommendations.length > 0 && (
-                  <div>
-                    <h4 className="text-sm sm:text-md font-semibold text-gray-900 mb-3 sm:mb-4">Recomendaciones Personalizadas</h4>
-                    <div className="space-y-3 sm:space-y-4">
-                      {analysis.personalized_recommendations.map((rec, index) => (
-                        <div key={index} className="border border-gray-200 rounded-lg p-3 sm:p-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center mb-2 gap-2">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium w-fit ${
-                              rec.category === 'Inmediato' ? 'bg-red-100 text-red-800' :
-                              rec.category === 'Corto plazo' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-blue-100 text-blue-800'
-                            }`}>
-                              {rec.category}
-                            </span>
-                          </div>
-                          <h5 className="font-medium text-gray-900 mb-1 text-sm sm:text-base">{rec.action}</h5>
-                          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{rec.why}</p>
+                  {analysis.personalized_recommendations?.length > 0 && (
+                    <div className="flex flex-col gap-3">
+                      <h3 className="font-['Poppins',_Arial,_sans-serif] text-base font-semibold text-[#2E2E3A]">Recomendaciones para ti</h3>
+                      {analysis.personalized_recommendations.map((rec, i) => (
+                        <div key={i} className="flex flex-col gap-1.5 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] p-4">
+                          <Badge tone={rec.category === 'Inmediato' ? 'mint' : rec.category === 'Corto plazo' ? 'purple' : 'neutral'} className="self-start text-[11px] uppercase tracking-[.06em]">
+                            {rec.category}
+                          </Badge>
+                          <span className="font-['Poppins',_Arial,_sans-serif] text-[15px] font-semibold text-[#2E2E3A]">{rec.action}</span>
+                          <span className="text-sm text-[#5B5B6B]">Por qué: {rec.why}</span>
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Próxima Evaluación */}
-                {analysis.next_evaluation_suggestion && expanded && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="text-md font-semibold text-blue-900 mb-2">Próxima Evaluación</h4>
-                    <p className="text-sm text-blue-800">{analysis.next_evaluation_suggestion}</p>
-                  </div>
-                )}
+                  {analysis.next_evaluation_suggestion && (
+                    <div className="flex items-center gap-3 rounded-2xl border border-[rgba(85,194,162,.3)] bg-[rgba(85,194,162,.1)] px-4 py-3.5">
+                      <Dot />
+                      <span className="text-sm text-[#2E2E3A]">{analysis.next_evaluation_suggestion}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </Card>
+      )}
 
-                {/* Metadatos del análisis */}
-                {expanded && (analysis.fromCache || analysis.generatedAt) && (
-                  <div className="text-xs text-gray-500 pt-4 border-t border-gray-200 flex justify-between items-center">
-                    <div>
-                      {analysis.fromCache ? (
-                        <span>📋 Análisis desde caché: {new Date(analysis.cachedAt || analysis.generatedAt).toLocaleString()}</span>
-                      ) : (
-                        <span>✨ Análisis generado: {new Date(analysis.generatedAt).toLocaleString()}</span>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      {analysis.fromCache ? (
-                        <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs">
-                          Usando caché inteligente
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 bg-green-50 text-green-600 rounded text-xs">
-                          Procesado por IA
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
+      {mbiHistory.length > 0 && (
+        <Card className="flex flex-col gap-3.5">
+          <h2 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">Mi historial</h2>
+          {mbiHistory.map((h) => {
+            const scores = h.mbi_scores;
+            const status = scores?.ae_score != null && scores?.d_score != null && scores?.rp_score != null
+              ? computeBurnoutStatus(classifyMBI(scores.ae_score, scores.d_score, scores.rp_score))
+              : null;
+            return (
+              <div key={h.id} className="flex flex-wrap items-center gap-3.5 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-[15px]">
+                <div className="flex min-w-[150px] flex-1 flex-col">
+                  <span className="font-['Poppins',_Arial,_sans-serif] text-sm font-semibold text-[#2E2E3A]">{new Date(h.created_at).toLocaleDateString()}</span>
+                  <span className="text-xs text-[#5B5B6B]">{h.teams?.name || 'Individual'}</span>
+                </div>
+                <span className="text-[13px] tabular-nums text-[#5B5B6B]">AE {scores?.ae_score ?? '—'}</span>
+                <span className="text-[13px] tabular-nums text-[#5B5B6B]">D {scores?.d_score ?? '—'}</span>
+                <span className="text-[13px] tabular-nums text-[#5B5B6B]">RP {scores?.rp_score ?? '—'}</span>
+                {status && <Badge tone={status === 'Sin indicios' ? 'mint' : 'purple'}>{status}</Badge>}
               </div>
-            )}
-          </div>
-        </div>
+            );
+          })}
+          <p className="text-[13px] text-[#5B5B6B]">
+            Las categorías se calculan con los rangos oficiales de cada subescala; el estado general resume cuántas están en nivel alto.
+          </p>
+        </Card>
       )}
     </div>
   );

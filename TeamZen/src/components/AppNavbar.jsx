@@ -7,7 +7,7 @@ import { supabase } from '../../supabaseClient';
 // su propio modal de perfil o flujo de logout (evaluaciones, reportes, mbi)
 // obtienen un fallback razonable (ir a /dashboard, cerrar sesión y volver a
 // /login) en vez de tener que reimplementarlo cada una.
-const MOBILE_NAV_ITEMS = [
+const NAV_ITEMS = [
   {
     to: '/dashboard',
     label: 'Dashboard',
@@ -32,6 +32,9 @@ export default function AppNavbar({ user, profile, onProfileEdit, onLogout }) {
   const location = useLocation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
+  const name = profile?.first_name && profile?.last_name ? `${profile.first_name} ${profile.last_name}` : user?.email;
+  const initial = (profile?.first_name?.[0] || user?.email?.[0] || '?').toUpperCase();
+
   const handleProfileEditClick = () => {
     if (onProfileEdit) {
       onProfileEdit();
@@ -51,200 +54,149 @@ export default function AppNavbar({ user, profile, onProfileEdit, onLogout }) {
     setShowProfileMenu(false);
   };
 
-  // Cerrar menú de perfil al hacer clic fuera
+  // Cerrar menú de perfil al hacer clic afuera o con Esc
   useEffect(() => {
+    if (!showProfileMenu) return;
     const handleClickOutside = (event) => {
-      if (showProfileMenu && !event.target.closest('.profile-menu-container')) {
-        setShowProfileMenu(false);
-      }
+      if (!event.target.closest('.profile-menu-container')) setShowProfileMenu(false);
     };
-
+    const handleKey = (event) => {
+      if (event.key === 'Escape') setShowProfileMenu(false);
+    };
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKey);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKey);
     };
   }, [showProfileMenu]);
 
   return (
     <>
-    <nav className="bg-[#FAF9F6] border-b border-[#DAD5E4] sticky top-0 z-40
-                    backdrop-blur-md bg-[#FAF9F6]/95 shadow-teamzen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          {/* Logo y marca */}
-          <div className="flex items-center min-w-0 space-x-2 lg:space-x-4">
-            <div className="flex-shrink-0 flex items-center group cursor-pointer"
-                 onClick={() => navigate('/dashboard')}>
-              <img
-                className="h-8 w-auto transition-transform duration-300 group-hover:scale-110"
-                src="/img/pandalogo.png"
-                alt="TeamZen"
-              />
-              <span className="ml-3 text-xl font-bold text-[#2E2E3A] group-hover:text-[#9D83C6]
-                               transition-all duration-300">
-                TeamZen
-              </span>
-            </div>
+      <header className="sticky top-0 z-40 border-b border-[#DAD5E4] bg-[#FAF9F6]/90 backdrop-blur-[12px]">
+        <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-4 sm:px-6">
+          <div className="flex min-w-0 items-center gap-4 sm:gap-7">
+            <button type="button" onClick={() => navigate('/dashboard')} className="flex shrink-0 items-center gap-2.5 text-[#2E2E3A]">
+              <img src="/img/pandazen_favicon.png" alt="" className="h-[34px] w-[34px] rounded-[11px] object-cover" />
+              <span className="hidden font-['Poppins',_Arial,_sans-serif] text-lg font-bold tracking-[-.02em] sm:inline">TeamZen</span>
+            </button>
 
-            {/* Enlaces de navegación */}
-            <div className="hidden md:flex items-center space-x-1 ml-2 lg:ml-8">
-              <a
-                href="#"
-                onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}
-                className={`px-2.5 lg:px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  location.pathname === '/dashboard'
-                    ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white shadow-lg'
-                    : 'text-[#5B5B6B] hover:text-[#2E2E3A] hover:bg-[#DAD5E4]/30'
-                }`}
-              >
-                Dashboard
-              </a>
-              <a
-                href="#"
-                onClick={(e) => { e.preventDefault(); navigate('/evaluaciones'); }}
-                className={`px-2.5 lg:px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  location.pathname === '/evaluaciones'
-                    ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white shadow-lg'
-                    : 'text-[#5B5B6B] hover:text-[#2E2E3A] hover:bg-[#DAD5E4]/30'
-                }`}
-              >
-                Evaluaciones
-              </a>
-              <a
-                href="#"
-                onClick={(e) => { e.preventDefault(); navigate('/reportes'); }}
-                className={`px-2.5 lg:px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  location.pathname === '/reportes'
-                    ? 'bg-gradient-to-r from-[#55C2A2] to-[#9D83C6] text-white shadow-lg'
-                    : 'text-[#5B5B6B] hover:text-[#2E2E3A] hover:bg-[#DAD5E4]/30'
-                }`}
-              >
-                Reportes
-              </a>
-            </div>
+            <nav className="hidden items-center gap-1 md:flex">
+              {NAV_ITEMS.map((item) => {
+                const active = location.pathname === item.to;
+                return (
+                  <a
+                    key={item.to}
+                    href={item.to}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(item.to);
+                    }}
+                    aria-current={active ? 'page' : undefined}
+                    className={`whitespace-nowrap rounded-xl px-3.5 py-2 font-['Poppins',_Arial,_sans-serif] text-sm transition-colors ${
+                      active
+                        ? 'bg-[rgba(85,194,162,.14)] font-semibold text-[#2E2E3A]'
+                        : 'font-medium text-[#5B5B6B] hover:bg-[#DAD5E4]/40 hover:text-[#8B6FB8]'
+                    }`}
+                  >
+                    {item.label}
+                  </a>
+                );
+              })}
+            </nav>
           </div>
 
-          {/* Menú de usuario */}
-          <div className="flex items-center min-w-0 space-x-2 lg:space-x-4">
-            <div className="text-right hidden sm:block min-w-0">
-              <p className="text-sm text-[#5B5B6B]">Bienvenido,</p>
-              <p
-                className="font-medium text-[#2E2E3A] truncate max-w-[90px] md:max-w-[110px] lg:max-w-none"
-                title={profile?.first_name && profile?.last_name
-                  ? `${profile.first_name} ${profile.last_name}`
-                  : user?.email}
-              >
-                {profile?.first_name && profile?.last_name
-                  ? `${profile.first_name} ${profile.last_name}`
-                  : user?.email
-                }
-              </p>
-            </div>
+          <div className="flex shrink-0 items-center gap-3.5">
+            <span className="hidden text-sm text-[#5B5B6B] sm:inline">
+              Bienvenido, <strong className="font-bold text-[#2E2E3A]">{name}</strong>
+            </span>
             <div className="relative profile-menu-container">
               <button
-                className="w-10 h-10 bg-gradient-to-r from-[#55C2A2] to-[#9D83C6]
-                           rounded-full flex items-center justify-center text-white font-medium
-                           hover:from-[#4AA690] hover:to-[#8B6FB8] transition-all duration-300
-                           hover:scale-110 hover:shadow-lg"
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                aria-label="Menú de perfil"
+                type="button"
+                onClick={() => setShowProfileMenu((o) => !o)}
+                aria-haspopup="menu"
                 aria-expanded={showProfileMenu}
+                aria-label="Menú de perfil"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] font-['Poppins',_Arial,_sans-serif] text-[15px] font-bold text-white shadow-[0_8px_18px_rgba(85,194,162,.22)] transition hover:scale-110"
               >
-                {profile?.first_name?.charAt(0) || user?.email?.charAt(0).toUpperCase()}
+                {initial}
               </button>
-              
-              {/* Menú desplegable */}
-              {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-[#FAF9F6] rounded-xl 
-                                shadow-teamzen-strong border border-[#DAD5E4] py-1 z-50
-                                animate-modal-enter">
-                  <div className="px-4 py-3 border-b border-[#DAD5E4]">
-                    <p className="text-sm font-medium text-[#2E2E3A]">
-                      {profile?.first_name && profile?.last_name 
-                        ? `${profile.first_name} ${profile.last_name}`
-                        : 'Usuario'
-                      }
-                    </p>
-                    <p className="text-xs text-[#5B5B6B]">{user?.email}</p>
-                    {profile?.role && (
-                      <span className="inline-block mt-2 bg-gradient-to-r from-[#55C2A2]/20 to-[#9D83C6]/20 
-                                       text-[#2E2E3A] text-xs font-medium px-2 py-1 rounded-full 
-                                       border border-[#55C2A2]/30">
-                        {profile.role === "leader" ? "Líder de Equipo" : "Miembro de Equipo"}
-                      </span>
-                    )}
-                  </div>
-                  
-                  <button
-                    onClick={handleProfileEditClick}
-                    className="w-full text-left px-4 py-3 text-sm text-[#5B5B6B]
-                               hover:text-[#2E2E3A] hover:bg-[#DAD5E4]/30
-                               flex items-center space-x-3 transition-colors duration-200"
-                  >
-                    <svg className="w-4 h-4 text-[#55C2A2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    <span>Editar perfil</span>
-                  </button>
 
+              {showProfileMenu && (
+                <div
+                  role="menu"
+                  className="animate-modal-enter absolute right-0 top-[calc(100%+10px)] flex w-[270px] flex-col gap-3 rounded-2xl border border-[#DAD5E4] bg-white p-4 shadow-teamzen-strong"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-['Poppins',_Arial,_sans-serif] text-[15px] font-semibold text-[#2E2E3A]">{name}</span>
+                    <span className="text-[13px] text-[#5B5B6B]">{user?.email}</span>
+                  </div>
+                  {profile?.role && (
+                    <span className="self-start rounded-full bg-[rgba(157,131,198,.18)] px-[11px] py-[5px] font-['Poppins',_Arial,_sans-serif] text-xs font-semibold text-[#6f56a0]">
+                      {profile.role === 'leader' ? 'Líder de Equipo' : 'Miembro de Equipo'}
+                    </span>
+                  )}
+                  <div className="h-px bg-[#DAD5E4]" />
                   <button
-                    onClick={handleLogoutClick}
-                    className="w-full text-left px-4 py-3 text-sm text-red-600
-                               hover:text-red-700 hover:bg-red-50
-                               flex items-center space-x-3 transition-colors duration-200"
+                    type="button"
+                    role="menuitem"
+                    onClick={handleProfileEditClick}
+                    className="rounded-xl px-2.5 py-2 text-left font-['Poppins',_Arial,_sans-serif] text-sm font-semibold text-[#2E2E3A] transition-colors hover:bg-[#DAD5E4]/45"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    <span>Cerrar sesión</span>
+                    Editar perfil
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleLogoutClick}
+                    className="rounded-xl px-2.5 py-2 text-left font-['Poppins',_Arial,_sans-serif] text-sm font-semibold text-[#c0392b] transition-colors hover:bg-[rgba(192,57,43,.08)]"
+                  >
+                    Cerrar sesión
                   </button>
                 </div>
               )}
             </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </header>
 
-    {/* Navegación móvil inferior: la única forma de cambiar de sección por
-        debajo de md:, ya que los enlaces de arriba se ocultan ahí. Vive
-        fuera de <nav> porque backdrop-blur-md en el nav convierte al nav
-        en el contenedor de posicionamiento de sus hijos fixed (igual que
-        transform), lo que pegaría esta barra al fondo del nav en vez de
-        al fondo real del viewport. */}
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#FAF9F6] border-t border-[#DAD5E4] shadow-teamzen-strong z-40">
-        <div className="flex justify-around py-3">
-          {MOBILE_NAV_ITEMS.map((item) => {
+      {/* Navegación móvil inferior: la única forma de cambiar de sección por
+          debajo de md:, ya que los enlaces de arriba se ocultan ahí. Vive
+          fuera del <header> porque backdrop-filter en el header convierte al
+          header en el contenedor de posicionamiento de sus hijos fixed (igual
+          que transform), lo que pegaría esta barra al fondo del header en vez
+          de al fondo real del viewport. */}
+      <nav
+        aria-label="Navegación principal"
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#DAD5E4] bg-[#FAF9F6]/95 pb-[env(safe-area-inset-bottom)] shadow-teamzen-strong backdrop-blur-md md:hidden"
+      >
+        <div className="flex justify-around py-2.5">
+          {NAV_ITEMS.map((item) => {
             const active = location.pathname === item.to;
             return (
               <button
                 key={item.to}
+                type="button"
                 onClick={() => navigate(item.to)}
-                className="flex flex-col items-center space-y-1 px-3 py-1"
+                aria-current={active ? 'page' : undefined}
+                className="flex flex-col items-center gap-1 rounded-xl px-3 py-1.5"
               >
-                <div className="w-6 h-6 flex items-center justify-center">
-                  <svg
-                    className={`w-5 h-5 ${active ? 'text-[#55C2A2]' : 'text-[#2E2E3A]'}`}
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule={item.fillRule}
-                      clipRule={item.clipRule}
-                      d={item.icon}
-                    />
-                  </svg>
-                </div>
-                <span className={`text-xs font-medium ${active ? 'text-[#2C7B64]' : 'text-[#2E2E3A]'}`}>
+                <svg
+                  className={`h-5 w-5 ${active ? 'text-[#3d8a74]' : 'text-[#5B5B6B]'}`}
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  aria-hidden="true"
+                >
+                  <path fillRule={item.fillRule} clipRule={item.clipRule} d={item.icon} />
+                </svg>
+                <span className={`font-['Poppins',_Arial,_sans-serif] text-[11px] font-semibold ${active ? 'text-[#3d8a74]' : 'text-[#5B5B6B]'}`}>
                   {item.label}
                 </span>
               </button>
             );
           })}
         </div>
-      </div>
+      </nav>
     </>
   );
 }

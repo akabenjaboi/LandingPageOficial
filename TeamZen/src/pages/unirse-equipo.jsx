@@ -1,23 +1,35 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../../supabaseClient";
-import { Card, Button, Input, Alert } from "../components/UIComponents";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../supabaseClient';
+import { Card, Btn, Check, Dot, Alert } from '../components/app-ui';
+
+const STEPS = ['Código', 'Confirmar', 'Listo'];
+const STEP_INDEX = { 'enter-code': 1, confirm: 2, success: 3 };
+
+const CONSENT = [
+  { tone: 'mint', text: 'Vas a poder responder evaluaciones de forma privada.' },
+  { tone: 'mint', text: 'Tus respuestas individuales no se muestran a tu líder por defecto — solo un promedio del equipo, y nunca con menos de 3 personas respondiendo.' },
+  { tone: 'purple', text: 'Puedes elegir compartir tus resultados individuales con el líder, y cambiar esa decisión después.' },
+];
+const NEXT = [
+  { tone: 'mint', text: 'Podrás ver a los demás miembros del equipo.' },
+  { tone: 'mint', text: 'Próximamente podrás realizar evaluaciones de bienestar.' },
+  { tone: 'purple', text: 'Recibirás consejos personalizados según tus resultados.' },
+];
 
 export default function UnirseEquipo() {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState(null);
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState("enter-code"); // 'enter-code' | 'confirm' | 'success'
+  const [step, setStep] = useState('enter-code'); // 'enter-code' | 'confirm' | 'success'
   const [error, setError] = useState(null);
-  const [teamName, setTeamName] = useState("");
+  const [teamName, setTeamName] = useState('');
   const [shareResults, setShareResults] = useState(false);
 
   // Obtener usuario autenticado
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setUserId(user.id);
-      else navigate("/login");
+      if (!user) navigate('/login');
     });
   }, [navigate]);
 
@@ -31,18 +43,18 @@ export default function UnirseEquipo() {
       // ocurre en la base de datos (preview_team_invite_code), no en el
       // cliente — este paso solo muestra qué equipo es antes de unirte.
       const { data, error: previewError } = await supabase
-        .rpc("preview_team_invite_code", { p_code: code.toUpperCase() })
+        .rpc('preview_team_invite_code', { p_code: code.toUpperCase() })
         .single();
 
       if (previewError) {
-        throw new Error(previewError.message || "No se pudo verificar el código.");
+        throw new Error(previewError.message || 'No se pudo verificar el código.');
       }
 
       setTeamName(data.team_name);
       setShareResults(false);
-      setStep("confirm");
+      setStep('confirm');
     } catch (err) {
-      console.error("Error al verificar el código:", err);
+      console.error('Error al verificar el código:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -58,17 +70,17 @@ export default function UnirseEquipo() {
       // en la base de datos (join_team_with_code), incluyendo la elección de
       // compartir resultados hecha en esta misma pantalla.
       const { error: joinError } = await supabase
-        .rpc("join_team_with_code", { p_code: code.toUpperCase(), p_share_results: shareResults })
+        .rpc('join_team_with_code', { p_code: code.toUpperCase(), p_share_results: shareResults })
         .single();
 
       if (joinError) {
-        throw new Error(joinError.message || "No se pudo unir al equipo.");
+        throw new Error(joinError.message || 'No se pudo unir al equipo.');
       }
 
-      setCode("");
-      setStep("success");
+      setCode('');
+      setStep('success');
     } catch (err) {
-      console.error("Error al unirse al equipo:", err);
+      console.error('Error al unirse al equipo:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -76,220 +88,118 @@ export default function UnirseEquipo() {
   };
 
   const handleCancelConfirm = () => {
-    setStep("enter-code");
-    setTeamName("");
+    setStep('enter-code');
+    setTeamName('');
     setError(null);
   };
 
+  const currentStepNum = STEP_INDEX[step];
+
   return (
     <div className="min-h-screen bg-[#FAF9F6]">
-      {/* Header */}
-      <header className="bg-white border-b border-[#DAD5E4] shadow-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14 sm:h-16">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <img 
-                src={`${import.meta.env.BASE_URL}/img/pandalogo.png`} 
-                alt="TeamZen Logo" 
-                className="w-8 h-8 sm:w-10 sm:h-10"
-              />
-              <span className="text-lg sm:text-2xl font-bold text-[#2E2E3A]">
-                Team<span className="text-[#55C2A2]">Zen</span>
-              </span>
-            </div>
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate("/dashboard")}
-              className="text-sm sm:text-base px-2 sm:px-4"
-            >
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span className="hidden sm:inline">Volver al Dashboard</span>
-              <span className="sm:hidden">Volver</span>
-            </Button>
+      <main className="mx-auto flex max-w-[680px] flex-col gap-[22px] px-4 pb-16 pt-8 sm:px-6">
+        <div className="flex flex-wrap items-center gap-[18px]">
+          <img src="/img/formpanda.png" alt="" className="h-[72px] w-[72px] shrink-0 rounded-3xl object-cover sm:h-[88px] sm:w-[88px]" />
+          <div className="flex min-w-[220px] flex-1 flex-col gap-1.5">
+            <h1 className="font-['Poppins',_Arial,_sans-serif] text-[26px] font-bold tracking-[-.02em] text-[#2E2E3A] sm:text-3xl">Unirse a un equipo</h1>
+            <p className="text-base text-[#5B5B6B]">Pide el código de 6 letras a quien lidera el equipo.</p>
           </div>
-        </div>
-      </header>
-
-      <div className="max-w-2xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12">
-        <div className="text-center mb-6 sm:mb-8">
-          <img 
-            src={`${import.meta.env.BASE_URL}/img/formpanda.png`} 
-            alt="Panda buscando" 
-            className="w-20 h-20 sm:w-32 sm:h-32 mx-auto mb-4 sm:mb-6"
-          />
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#2E2E3A] mb-2">Unirse a un Equipo</h1>
-          <p className="text-[#5B5B6B] text-base sm:text-lg px-4">
-            Ingresa el código de invitación que te proporcionó tu líder de equipo
-          </p>
+          <Btn variant="ghost" onClick={() => navigate('/dashboard')}>← Volver al dashboard</Btn>
         </div>
 
-        <Card className="max-w-lg mx-auto">
-          {step === "enter-code" && (
-            <form onSubmit={handlePreview} className="space-y-4 sm:space-y-6">
-              <div className="space-y-4">
-                <Input
-                  label="Código de Invitación"
-                  type="text"
-                  required
-                  placeholder="Ej: ABC123"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  className="text-center text-xl sm:text-2xl font-mono tracking-wider"
-                  maxLength={6}
-                />
-                <div className="text-xs sm:text-sm text-[#5B5B6B] text-center">
-                  Los códigos tienen 6 letras (ej: ABC123)
-                </div>
+        <div className="flex items-center gap-2.5">
+          {STEPS.map((label, i) => {
+            const n = i + 1;
+            const on = currentStepNum >= n;
+            return (
+              <div key={label} className="flex flex-1 items-center gap-2.5">
+                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-['Poppins',_Arial,_sans-serif] text-[13px] font-bold ${on ? 'bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] text-white' : 'border-[1.5px] border-[#DAD5E4] bg-[#FAF9F6] text-[#5B5B6B]'}`}>
+                  {currentStepNum > n ? '✓' : n}
+                </span>
+                <span className={`whitespace-nowrap font-['Poppins',_Arial,_sans-serif] text-[13px] font-semibold ${on ? 'text-[#2E2E3A]' : 'text-[#5B5B6B]'}`}>{label}</span>
+                {i < STEPS.length - 1 && <span className="h-0.5 flex-1 rounded-sm bg-[#DAD5E4]" />}
               </div>
+            );
+          })}
+        </div>
 
-              <Button
-                type="submit"
-                loading={loading}
-                className="w-full text-sm sm:text-base"
-                size="large"
-                disabled={code.length < 6}
-              >
-                {loading ? "Verificando código..." : "Continuar"}
-              </Button>
+        <Card pad="p-7" className="flex flex-col gap-5">
+          {step === 'enter-code' && (
+            <form onSubmit={handlePreview} className="flex flex-col gap-4">
+              <h2 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">Ingresa el código de invitación</h2>
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
+                placeholder="ABC123"
+                maxLength={6}
+                autoFocus
+                className="rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-[18px] text-center font-['Poppins',_Arial,_sans-serif] text-[28px] font-bold uppercase tracking-[.28em] text-[#2E2E3A] outline-none transition focus:border-[#55C2A2] focus:bg-white focus:shadow-[0_0_0_3px_rgba(85,194,162,.22)]"
+              />
+              <span className="text-center text-[13px] text-[#5B5B6B]">Los códigos tienen 6 letras y son únicos por equipo.</span>
+              <Btn type="submit" disabled={loading || code.length < 6} className="justify-center">
+                {loading ? 'Verificando código...' : 'Continuar'}
+              </Btn>
             </form>
           )}
 
-          {step === "confirm" && (
-            <div className="space-y-4 sm:space-y-6">
-              <div className="text-center">
-                <h2 className="text-xl sm:text-2xl font-bold text-[#2E2E3A] mb-2">
-                  Antes de unirte a {teamName}
-                </h2>
-                <p className="text-[#5B5B6B] text-sm sm:text-base">
-                  Este equipo usa TeamZen para medir el bienestar del equipo con evaluaciones periódicas (MBI).
-                </p>
+          {step === 'confirm' && (
+            <div className="flex flex-col gap-[18px]">
+              <h2 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">Antes de unirte a {teamName}</h2>
+              <p className="text-[15px] text-[#5B5B6B]">
+                Este equipo usa TeamZen para medir su bienestar con evaluaciones periódicas. Esto es lo que debes saber:
+              </p>
+              <div className="flex flex-col gap-2.5">
+                {CONSENT.map((c) => (
+                  <div key={c.text} className="flex items-start gap-3 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-3.5">
+                    <Dot tone={c.tone} size={8} className="mt-[7px]" />
+                    <span className="text-sm text-[#2E2E3A]">{c.text}</span>
+                  </div>
+                ))}
               </div>
-
-              <ul className="text-xs sm:text-sm text-[#5B5B6B] space-y-2 text-left bg-gradient-to-r from-[#55C2A2]/10 to-[#9D83C6]/10 border border-[#55C2A2]/30 rounded-lg p-4 sm:p-6">
-                <li className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-[#55C2A2] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span>Vas a poder responder evaluaciones de forma privada.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-[#55C2A2] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span>Tus respuestas individuales NO se muestran a tu líder por defecto — el líder solo ve un promedio de todo el equipo, y nunca con menos de 3 personas respondiendo (para que nadie pueda ser identificado a partir del promedio).</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-[#55C2A2] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span>Podés elegir compartir tus resultados individuales con tu líder si querés. Podés cambiar esta decisión cuando quieras desde tu equipo.</span>
-                </li>
-              </ul>
-
-              <div className="border border-[#DAD5E4] rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    id="shareResults"
-                    checked={shareResults}
-                    onChange={(e) => setShareResults(e.target.checked)}
-                    className="mt-1 w-4 h-4 text-[#9D83C6] border-[#DAD5E4] rounded focus:ring-[#9D83C6]"
-                  />
-                  <label htmlFor="shareResults" className="text-sm font-medium text-[#2E2E3A] cursor-pointer">
-                    Compartir mis resultados individuales con el líder de este equipo
-                  </label>
+              <div className="flex items-start gap-3.5 rounded-2xl border border-[rgba(157,131,198,.3)] bg-[rgba(157,131,198,.1)] p-4">
+                <Check checked={shareResults} onChange={() => setShareResults((v) => !v)} />
+                <div>
+                  <h4 className="font-['Poppins',_Arial,_sans-serif] text-[15px] font-semibold text-[#2E2E3A]">Compartir mis resultados individuales con el líder de este equipo</h4>
+                  <p className="mt-0.5 text-sm text-[#5B5B6B]">Opcional. Por defecto está desactivado.</p>
                 </div>
               </div>
-
-              <div className="flex gap-3">
-                <Button
-                  variant="ghost"
-                  onClick={handleCancelConfirm}
-                  className="flex-1 text-sm"
-                  disabled={loading}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleConfirmJoin}
-                  loading={loading}
-                  className="flex-1 text-sm"
-                >
-                  {loading ? "Uniéndose..." : "Unirme al equipo"}
-                </Button>
+              <div className="flex flex-wrap justify-end gap-3">
+                <Btn variant="secondary" onClick={handleCancelConfirm} disabled={loading}>Cancelar</Btn>
+                <Btn onClick={handleConfirmJoin} disabled={loading}>{loading ? 'Uniéndose...' : 'Unirme al equipo'}</Btn>
               </div>
             </div>
           )}
 
-          {step === "success" && (
-            <div className="text-center space-y-4 sm:space-y-6">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+          {step === 'success' && (
+            <div className="flex flex-col items-center gap-4 text-center">
+              <span className="flex h-[62px] w-[62px] items-center justify-center rounded-full bg-[rgba(85,194,162,.18)] text-[28px] text-[#3d8a74]">✓</span>
+              <h2 className="font-['Poppins',_Arial,_sans-serif] text-2xl font-bold text-[#2E2E3A]">¡Bienvenido al equipo!</h2>
+              <div className="flex w-full flex-col gap-2.5 text-left">
+                <h3 className="font-['Poppins',_Arial,_sans-serif] text-base font-semibold text-[#2E2E3A]">¿Qué sigue?</h3>
+                {NEXT.map((n) => (
+                  <div key={n.text} className="flex items-start gap-3 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-3.5">
+                    <Dot tone={n.tone} size={8} className="mt-[7px]" />
+                    <span className="text-sm text-[#2E2E3A]">{n.text}</span>
+                  </div>
+                ))}
               </div>
-              
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-[#2E2E3A] mb-2">¡Bienvenido al equipo!</h2>
-                <p className="text-[#5B5B6B] text-sm sm:text-base">Te has unido exitosamente al equipo</p>
-              </div>
-
-              <div className="bg-gradient-to-r from-[#55C2A2]/10 to-[#9D83C6]/10 border border-[#55C2A2]/30 rounded-lg p-4 sm:p-6">
-                <h3 className="font-semibold text-[#2E2E3A] mb-2 text-sm sm:text-base">¿Qué sigue?</h3>
-                <ul className="text-xs sm:text-sm text-[#5B5B6B] space-y-2 text-left">
-                  <li className="flex items-start gap-2">
-                    <svg className="w-4 h-4 text-[#55C2A2] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span>Podrás ver a los demás miembros del equipo</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <svg className="w-4 h-4 text-[#55C2A2] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span>Próximamente podrás realizar evaluaciones de bienestar</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <svg className="w-4 h-4 text-[#55C2A2] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span>Recibirás consejos personalizados según tus resultados</span>
-                  </li>
-                </ul>
-              </div>
-
-              <Button onClick={() => navigate("/dashboard")} className="w-full text-sm sm:text-base">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v1H8V5z" />
-                </svg>
-                Ir al Dashboard
-              </Button>
+              <Btn onClick={() => navigate('/dashboard')} className="w-full justify-center">Ir al dashboard</Btn>
             </div>
           )}
 
-          {error && (
-            <Alert type="error" title="Error al unirse al equipo" className="mt-4">
-              {error}
-            </Alert>
-          )}
+          {error && <Alert title="Error al unirse al equipo">{error}</Alert>}
         </Card>
 
-        {/* Información adicional */}
-        <div className="mt-8 sm:mt-12 text-center">
-          <h3 className="text-base sm:text-lg font-semibold text-[#2E2E3A] mb-4">¿No tienes un código?</h3>
-          <div className="bg-white rounded-lg border border-[#DAD5E4] p-4 sm:p-6 max-w-md mx-auto">
-            <p className="text-[#5B5B6B] text-xs sm:text-sm mb-3">
-              Solicita el código de invitación a tu líder de equipo o administrador.
-            </p>
-            <p className="text-[#5B5B6B] text-xs sm:text-sm">
-              Los códigos son únicos para cada equipo y se generan automáticamente.
+        <div className="flex items-start gap-3.5 rounded-[20px] border border-dashed border-[#DAD5E4] bg-[#DAD5E4]/35 p-[18px]">
+          <Dot tone="purple" className="mt-[7px]" />
+          <div>
+            <h4 className="font-['Poppins',_Arial,_sans-serif] text-[15px] font-semibold text-[#2E2E3A]">¿No tienes un código?</h4>
+            <p className="mt-0.5 text-sm text-[#5B5B6B]">
+              Pídelo a quien lidera el equipo. Los códigos son únicos por equipo y se generan automáticamente — no hay forma de obtenerlos por cuenta propia.
             </p>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
