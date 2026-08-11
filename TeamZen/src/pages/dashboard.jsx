@@ -329,24 +329,32 @@ export default function Dashboard() {
             setTeamMembers(prev => ({ ...prev, ...memberMembersObj }));
 
             try {
+              // Igual que en la carga de líder: se trae el ciclo más reciente de
+              // cada equipo sin importar su estado, para poder seguir mostrando
+              // "Finalizada" (en vez de "Sin ronda") y quién respondió aunque el
+              // ciclo ya se haya cerrado.
               const { data: cycles, error: cyclesError } = await supabase
                 .from('ibdl_evaluation_cycles')
                 .select('id, team_id, status')
                 .in('team_id', teamIds)
-                .eq('status', 'active');
+                .order('start_at', { ascending: false });
               if (cyclesError) {
-                console.warn('Error cargando ciclos activos (miembro):', cyclesError);
+                console.warn('Error cargando ciclos (miembro):', cyclesError);
                 setDataError('No se pudieron cargar las rondas de evaluación. Algunos datos podrían faltar.');
               }
-              const cycleMap = {};
-              (cycles || []).forEach(c => { cycleMap[c.team_id] = c.id; });
+              const cycleMap = {}; // teamId -> cycleId, solo ciclos activos
+              const latestCycleMap = {}; // teamId -> cycleId, el más reciente sin importar estado
+              (cycles || []).forEach(c => {
+                if (!latestCycleMap[c.team_id]) latestCycleMap[c.team_id] = c.id;
+                if (c.status === 'active' && !cycleMap[c.team_id]) cycleMap[c.team_id] = c.id;
+              });
               setActiveCycles(prev => ({ ...prev, ...cycleMap }));
-              const cycleIds = Object.values(cycleMap);
-              if (cycleIds.length > 0) {
+              const latestCycleIds = Object.values(latestCycleMap);
+              if (latestCycleIds.length > 0) {
                 const { data: respRows, error: respRowsError } = await supabase
                   .from('ibdl_responses')
                   .select('cycle_id, user_id')
-                  .in('cycle_id', cycleIds);
+                  .in('cycle_id', latestCycleIds);
                 if (respRowsError) {
                   console.warn('Error cargando respuestas (miembro):', respRowsError);
                   setDataError('No se pudieron cargar algunas respuestas de bienestar. Algunos datos podrían faltar.');
@@ -355,10 +363,10 @@ export default function Dashboard() {
                 (respRows || []).filter(r => r.user_id === currentUser.id).forEach(r => { if (r.cycle_id) respMap[r.cycle_id] = true; });
                 setRespondedCycles(prev => ({ ...prev, ...respMap }));
                 const teamResponded = {};
+                Object.keys(latestCycleMap).forEach(teamId => { teamResponded[teamId] = new Set(); });
                 (respRows || []).forEach(r => {
-                  const teamId = Object.keys(cycleMap).find(tid => cycleMap[tid] === r.cycle_id);
+                  const teamId = Object.keys(latestCycleMap).find(tid => latestCycleMap[tid] === r.cycle_id);
                   if (teamId) {
-                    if (!teamResponded[teamId]) teamResponded[teamId] = new Set();
                     teamResponded[teamId].add(r.user_id);
                   }
                 });
@@ -1633,13 +1641,19 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
 }
 
 // Tarjeta de equipo para usuarios miembros - Vista de participación
-function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycleId, respondedCycles, respondedMembers, navigate }) {
+function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycleId, respondedMembers, navigate }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const currentMember = members?.find(m => m.user_id === currentUserId);
+
+  // Igual que en la tarjeta de líder: hay datos de alguna ronda (activa o la
+  // última cerrada) para mostrar. Se usa en vez de `activeCycleId` para no
+  // mostrar "Sin ronda" cuando la ronda en realidad ya finalizó.
+  const hasCycle = activeCycleId != null || respondedMembers !== undefined;
+  const iAlreadyResponded = !!(respondedMembers && respondedMembers.has(currentUserId));
 
   // Cerrar menú al hacer click fuera
   useEffect(() => {
@@ -1775,15 +1789,19 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
 
         <div className="grid grid-cols-2 gap-3">
           <Stat label="Miembros" value={totalParticipantes} />
-          <Stat label="Ronda" value={activeCycleId ? "Activa" : "Sin ronda"} color={activeCycleId ? "mint" : undefined} />
+          <Stat label="Ronda" value={activeCycleId ? "Activa" : hasCycle ? "Finalizada" : "Sin ronda"} color={activeCycleId ? "mint" : hasCycle ? "purple" : undefined} />
         </div>
 
-        {activeCycleId && (
-          <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3.5 ${respondedCycles[activeCycleId] ? 'border-[rgba(85,194,162,.3)] bg-[rgba(85,194,162,.1)]' : 'border-[rgba(157,131,198,.32)] bg-[rgba(157,131,198,.12)]'}`}>
-            <Dot tone={respondedCycles[activeCycleId] ? 'mint' : 'purple'} />
+        {hasCycle && (
+          <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3.5 ${iAlreadyResponded ? 'border-[rgba(85,194,162,.3)] bg-[rgba(85,194,162,.1)]' : activeCycleId ? 'border-[rgba(157,131,198,.32)] bg-[rgba(157,131,198,.12)]' : 'border-[#DAD5E4] bg-[#DAD5E4]/35'}`}>
+            <Dot tone={iAlreadyResponded ? 'mint' : activeCycleId ? 'purple' : 'neutral'} />
             <div>
               <p className="text-sm font-medium text-[#2E2E3A]">
-                {respondedCycles[activeCycleId] ? 'Ya respondiste este ciclo' : 'Evaluación pendiente — tus respuestas son privadas.'}
+                {iAlreadyResponded
+                  ? 'Ya respondiste este ciclo'
+                  : activeCycleId
+                    ? 'Evaluación pendiente — tus respuestas son privadas.'
+                    : 'La ronda ya finalizó y no llegaste a responder.'}
               </p>
             </div>
           </div>
@@ -1822,11 +1840,11 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
                         {isCurrentUser && <span className="ml-2 text-xs font-semibold text-[#3d8a74]">(Tú)</span>}
                         {isLeader && <span className="ml-2 text-xs font-semibold text-[#3d8a74]">(Líder)</span>}
                       </span>
-                      {activeCycleId && canSeeResponses ? (
-                        <Badge tone={hasResponded ? 'mint' : 'purple'}>{hasResponded ? 'Respondió' : 'Pendiente'}</Badge>
-                      ) : activeCycleId && !canSeeResponses && isCurrentUser ? (
-                        <Badge tone={hasResponded ? 'mint' : 'purple'}>{hasResponded ? 'Respondiste' : 'Pendiente'}</Badge>
-                      ) : activeCycleId ? (
+                      {hasCycle && canSeeResponses ? (
+                        <Badge tone={hasResponded ? 'mint' : 'purple'}>{hasResponded ? 'Respondió' : (activeCycleId ? 'Pendiente' : 'No respondió')}</Badge>
+                      ) : hasCycle && !canSeeResponses && isCurrentUser ? (
+                        <Badge tone={hasResponded ? 'mint' : 'purple'}>{hasResponded ? 'Respondiste' : (activeCycleId ? 'Pendiente' : 'No respondiste')}</Badge>
+                      ) : hasCycle ? (
                         <Badge tone="neutral">Privado</Badge>
                       ) : (
                         <Badge tone="neutral">Sin ronda</Badge>
@@ -1849,9 +1867,11 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
 
         {/* Acciones */}
         <div className="flex flex-wrap items-center gap-3 border-t border-[#DAD5E4] pt-4">
-          {!activeCycleId ? (
+          {!activeCycleId && !hasCycle ? (
             <span className="flex min-w-[150px] flex-1 items-center justify-center rounded-xl border border-[#DAD5E4] bg-[#DAD5E4]/30 px-4 py-2.5 text-sm font-medium text-[#5B5B6B]">Sin ronda activa</span>
-          ) : respondedCycles[activeCycleId] ? (
+          ) : !activeCycleId ? (
+            <span className="flex min-w-[150px] flex-1 items-center justify-center rounded-xl border border-[#DAD5E4] bg-[#DAD5E4]/30 px-4 py-2.5 text-sm font-medium text-[#5B5B6B]">Ronda finalizada</span>
+          ) : iAlreadyResponded ? (
             <span className="flex min-w-[150px] flex-1 items-center justify-center rounded-xl border border-[rgba(85,194,162,.3)] bg-[rgba(85,194,162,.1)] px-4 py-2.5 text-sm font-medium text-[#3d8a74]">Respondido</span>
           ) : (
             <Btn onClick={() => navigate(`/mbi?team=${team.id}`)} className="min-w-[150px] flex-1 justify-center">Completar evaluación</Btn>
