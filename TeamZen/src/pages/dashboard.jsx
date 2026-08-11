@@ -925,6 +925,7 @@ export default function Dashboard() {
         profile={profile}
         onProfileEdit={() => setShowProfileForm(true)}
         onLogout={handleLogout}
+        attentionItems={(showLeaderSection || showMemberSection) ? attentionItems : null}
       />
 
       <main className="mx-auto flex max-w-[1280px] flex-col gap-[22px] px-4 pb-24 pt-6 sm:px-6 sm:pt-8 md:pb-16" id="teams-section">
@@ -951,8 +952,6 @@ export default function Dashboard() {
           )}
           <Btn variant="secondary" onClick={() => navigate("/unirse-equipo")}>Unirse a equipo</Btn>
         </PageTitle>
-
-        {(showLeaderSection || showMemberSection) && <AttentionSection items={attentionItems} />}
 
         {showLeaderSection && (
           <>
@@ -1047,61 +1046,6 @@ export default function Dashboard() {
         />
       </main>
     </div>
-  );
-}
-
-// ===================================================================
-// SECCIÓN "REQUIERE TU ATENCIÓN" - resumen accionable, action-forward
-// ===================================================================
-// Se ubica antes de la lista de equipos para que un usuario que vuelve
-// vea primero lo que necesita hacer (respuestas pendientes, bienestar
-// bajo, código expirado) en vez de tener que abrir cada equipo para
-// descubrirlo. mint = acción operativa disponible ahora mismo;
-// púrpura = hallazgo analítico (bienestar) que amerita revisar el reporte.
-function AttentionSection({ items }) {
-  if (!items || items.length === 0) {
-    return (
-      <div className="flex items-center gap-3 rounded-2xl border border-[#DAD5E4] bg-[linear-gradient(135deg,rgba(85,194,162,.08),rgba(157,131,198,.06))] p-4 shadow-teamzen sm:p-5">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(85,194,162,.16)] text-base text-[#3d8a74]">✓</span>
-        <p className="text-sm text-[#2E2E3A]">
-          <span className="font-semibold">Todo al día.</span> No hay evaluaciones pendientes ni alertas en tus equipos.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <Card className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">Requiere tu atención</h2>
-        <span className="text-[13px] text-[#5B5B6B]">{items.length} {items.length === 1 ? 'asunto' : 'asuntos'}</span>
-      </div>
-      <div className="flex flex-col gap-3">
-        {items.map((item) => {
-          const isPurple = item.tone === 'purple';
-          return (
-            <div
-              key={item.id}
-              className="flex flex-wrap items-center gap-4 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] p-4"
-            >
-              <Dot tone={isPurple ? 'purple' : 'mint'} size={10} />
-              <span className="min-w-[220px] flex-1 text-[15px] leading-snug text-[#2E2E3A]">{item.message}</span>
-              <button
-                type="button"
-                onClick={item.onClick}
-                className={`whitespace-nowrap rounded-xl px-[18px] py-2.5 font-['Poppins',_Arial,_sans-serif] text-sm font-semibold transition-colors ${
-                  isPurple
-                    ? 'bg-[rgba(157,131,198,.18)] text-[#6f56a0] hover:bg-[rgba(157,131,198,.28)]'
-                    : 'bg-[rgba(85,194,162,.16)] text-[#3d8a74] hover:bg-[rgba(85,194,162,.26)]'
-                }`}
-              >
-                {item.ctaLabel}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    </Card>
   );
 }
 

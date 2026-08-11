@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
+import { Dot } from './app-ui';
 
 // Nav de app compartida por todas las páginas internas (dashboard, evaluaciones,
 // reportes, mbi). onProfileEdit/onLogout son opcionales: páginas que no tienen
@@ -27,10 +28,11 @@ const NAV_ITEMS = [
   },
 ];
 
-export default function AppNavbar({ user, profile, onProfileEdit, onLogout }) {
+export default function AppNavbar({ user, profile, onProfileEdit, onLogout, attentionItems = null }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const name = profile?.first_name && profile?.last_name ? `${profile.first_name} ${profile.last_name}` : user?.email;
   const initial = (profile?.first_name?.[0] || user?.email?.[0] || '?').toUpperCase();
@@ -71,6 +73,23 @@ export default function AppNavbar({ user, profile, onProfileEdit, onLogout }) {
     };
   }, [showProfileMenu]);
 
+  // Cerrar menú de notificaciones al hacer clic afuera o con Esc
+  useEffect(() => {
+    if (!showNotifications) return;
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.notif-menu-container')) setShowNotifications(false);
+    };
+    const handleKey = (event) => {
+      if (event.key === 'Escape') setShowNotifications(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [showNotifications]);
+
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-[#DAD5E4] bg-[#FAF9F6]/90 backdrop-blur-[12px]">
@@ -110,6 +129,73 @@ export default function AppNavbar({ user, profile, onProfileEdit, onLogout }) {
             <span className="hidden text-sm text-[#5B5B6B] sm:inline">
               Bienvenido, <strong className="font-bold text-[#2E2E3A]">{name}</strong>
             </span>
+            {attentionItems !== null && (
+              <div className="relative notif-menu-container">
+                <button
+                  type="button"
+                  onClick={() => setShowNotifications((o) => !o)}
+                  aria-haspopup="menu"
+                  aria-expanded={showNotifications}
+                  aria-label={attentionItems.length > 0 ? `Notificaciones — ${attentionItems.length} ${attentionItems.length === 1 ? 'asunto' : 'asuntos'} requieren tu atención` : 'Notificaciones'}
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#DAD5E4] bg-[#FAF9F6] text-[#5B5B6B] transition-colors hover:border-[#9D83C6] hover:text-[#2E2E3A]"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a2.5 2.5 0 002.45-2h-4.9A2.5 2.5 0 0010 18z" />
+                  </svg>
+                  {attentionItems.length > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#9D83C6] px-1 font-['Poppins',_Arial,_sans-serif] text-[11px] font-bold text-white">
+                      {attentionItems.length}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div
+                    role="menu"
+                    className="animate-modal-enter absolute right-0 top-[calc(100%+10px)] flex max-h-[70vh] w-[min(360px,calc(100vw-2rem))] flex-col gap-3 overflow-y-auto rounded-2xl border border-[#DAD5E4] bg-white p-4 shadow-teamzen-strong"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="font-['Poppins',_Arial,_sans-serif] text-[15px] font-semibold text-[#2E2E3A]">Requiere tu atención</h3>
+                      {attentionItems.length > 0 && (
+                        <span className="text-[13px] text-[#5B5B6B]">{attentionItems.length} {attentionItems.length === 1 ? 'asunto' : 'asuntos'}</span>
+                      )}
+                    </div>
+
+                    {attentionItems.length === 0 ? (
+                      <div className="flex items-center gap-3 rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] p-3.5">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(85,194,162,.16)] text-sm text-[#3d8a74]">✓</span>
+                        <p className="text-sm text-[#2E2E3A]">
+                          <span className="font-semibold">Todo al día.</span> No hay evaluaciones pendientes ni alertas.
+                        </p>
+                      </div>
+                    ) : (
+                      attentionItems.map((item) => {
+                        const isPurple = item.tone === 'purple';
+                        return (
+                          <div key={item.id} className="flex flex-col gap-2.5 rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] p-3.5">
+                            <div className="flex items-start gap-2.5">
+                              <Dot tone={isPurple ? 'purple' : 'mint'} size={9} className="mt-[5px]" />
+                              <span className="flex-1 text-sm leading-snug text-[#2E2E3A]">{item.message}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => { setShowNotifications(false); item.onClick?.(); }}
+                              className={`self-start rounded-lg px-3 py-1.5 font-['Poppins',_Arial,_sans-serif] text-[13px] font-semibold transition-colors ${
+                                isPurple
+                                  ? 'bg-[rgba(157,131,198,.18)] text-[#6f56a0] hover:bg-[rgba(157,131,198,.28)]'
+                                  : 'bg-[rgba(85,194,162,.16)] text-[#3d8a74] hover:bg-[rgba(85,194,162,.26)]'
+                              }`}
+                            >
+                              {item.ctaLabel}
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             <div className="relative profile-menu-container">
               <button
                 type="button"
