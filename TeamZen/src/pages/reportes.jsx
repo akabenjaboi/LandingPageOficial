@@ -166,7 +166,7 @@ export default function ReportesPage() {
       }
     };
     loadTeamMembers();
-  }, [activeTeamId]);
+  }, [activeTeamId, reloadCount]);
 
   // Effect para calcular el nivel de riesgo de miembros que comparten resultados,
   // acotado al equipo/ciclo actual (antes esta consulta traía la respuesta más
