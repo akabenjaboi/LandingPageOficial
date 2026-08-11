@@ -288,7 +288,7 @@ export default function Dashboard() {
 
               const { data: team_members, error } = await supabase
                 .from("team_members")
-                .select("user_id, profiles(first_name, last_name)")
+                .select("user_id, share_results_with_leader, profiles(first_name, last_name)")
                 .eq("team_id", teamId);
 
               if (error) {
