@@ -105,6 +105,15 @@ export default function Dashboard() {
         console.warn('No se pudieron cerrar rondas vencidas', closeExpiredError);
       }
 
+      // Cierra rondas activas donde ya respondieron todos los participantes
+      // requeridos. El cierre "real" ocurre automáticamente en la base de
+      // datos (trigger tras cada respuesta), esta llamada es solo para que
+      // el dashboard se autocorrija si por algún motivo quedó desincronizado.
+      const { error: closeCompletedError } = await supabase.rpc('close_completed_ibdl_cycles');
+      if (closeCompletedError) {
+        console.warn('No se pudieron cerrar rondas completadas', closeCompletedError);
+      }
+
       // Cargar perfil
       // Nota: se usa maybeSingle() en vez de single() para poder distinguir
       // "el perfil todavía no existe" (data null, sin error — usuario nuevo)
@@ -367,7 +376,7 @@ export default function Dashboard() {
     if (!activeCycles || Object.keys(activeCycles).length === 0) return;
     const channel = supabase
       .channel('ibdl_responses_rt')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ibdl_responses' }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ibdl_responses' }, async (payload) => {
         const { cycle_id, user_id } = payload.new || {};
         if (!cycle_id || !user_id) return;
         // Encontrar teamId asociado a ese ciclo activo
@@ -383,6 +392,22 @@ export default function Dashboard() {
         // Si es este usuario, marcar respondedCycles
         if (user_id === user.id) {
           setRespondedCycles(prev => ({ ...prev, [cycle_id]: true }));
+        }
+        // Si esta era la última respuesta pendiente, el trigger de la BD ya
+        // cerró el ciclo (misma transacción del insert). Confirmamos el
+        // estado actual para que la tarjeta del equipo pase de "Terminar
+        // ronda" a "Iniciar nueva ronda" / "Ver reporte" sin recargar.
+        const { data: cycleRow } = await supabase
+          .from('ibdl_evaluation_cycles')
+          .select('status')
+          .eq('id', cycle_id)
+          .maybeSingle();
+        if (cycleRow?.status === 'closed') {
+          setActiveCycles(prev => {
+            const clone = { ...prev };
+            delete clone[teamId];
+            return clone;
+          });
         }
       })
       .subscribe();
@@ -1561,7 +1586,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
             </Btn>
           ) : (
             <Btn onClick={() => onLaunch && onLaunch(team)} disabled={launching} aria-expanded={isLaunchingThisTeam} className="min-w-[150px] flex-1 justify-center">
-              {launching ? 'Iniciando...' : 'Iniciar ronda'}
+              {launching ? 'Iniciando...' : 'Iniciar nueva ronda'}
             </Btn>
           )}
           {activeCycleId && (
@@ -1570,7 +1595,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
             </span>
           )}
           <Btn variant="secondary" onClick={() => navigate(`/reportes?team=${team.id}`)} className="min-w-[150px] flex-1 justify-center">
-            Generar reporte
+            Ver reporte
           </Btn>
         </div>
 
