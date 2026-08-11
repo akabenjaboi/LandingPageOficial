@@ -618,6 +618,7 @@ function AdvicePanel({ data, teamId }) {
   const [error, setError] = React.useState('');
   const [currentActionStatuses, setCurrentActionStatuses] = React.useState({}); // action_text -> status, for the current cycle
   const [prevActionStatuses, setPrevActionStatuses] = React.useState([]); // [{action_text, status}], for the previous cycle, oldest-first
+  const [prevActionsExpanded, setPrevActionsExpanded] = React.useState(false);
 
   // Hoisted above this component's early returns below (React forbids hooks
   // after a conditional return), purely to learn the current/previous cycle
@@ -912,8 +913,16 @@ function AdvicePanel({ data, teamId }) {
 
       {prevActionStatuses.length > 0 && (
         <div className="flex flex-col gap-3 pt-1">
-          <h3 className="font-['Poppins',_Arial,_sans-serif] text-base font-semibold text-[#2E2E3A]">Acciones de la ronda anterior</h3>
-          {prevActionStatuses.map((row) => (
+          <button
+            type="button"
+            onClick={() => setPrevActionsExpanded((o) => !o)}
+            aria-expanded={prevActionsExpanded}
+            className="flex items-center justify-between py-1 font-['Poppins',_Arial,_sans-serif] text-base font-semibold text-[#2E2E3A]"
+          >
+            <span>Acciones de la ronda anterior</span>
+            <span className="text-sm text-[#5B5B6B]">{prevActionsExpanded ? '▲' : '▼'}</span>
+          </button>
+          {prevActionsExpanded && prevActionStatuses.map((row) => (
             <div key={row.action_text} className="flex items-center gap-3 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-3.5">
               <Dot tone={STATE_TONE[row.status] === 'mint' ? 'mint' : STATE_TONE[row.status] === 'purple' ? 'purple' : 'neutral'} size={12} />
               <span className="flex-1 text-sm text-[#2E2E3A]">{row.action_text}</span>
