@@ -1082,8 +1082,9 @@ function AttentionSection({ items }) {
           return (
             <div
               key={item.id}
-              className={`flex flex-wrap items-center gap-4 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] p-4 border-l-4 ${isPurple ? 'border-l-[#9D83C6]' : 'border-l-[#55C2A2]'}`}
+              className="flex flex-wrap items-center gap-4 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] p-4"
             >
+              <Dot tone={isPurple ? 'purple' : 'mint'} size={10} />
               <span className="min-w-[220px] flex-1 text-[15px] leading-snug text-[#2E2E3A]">{item.message}</span>
               <button
                 type="button"
