@@ -165,25 +165,34 @@ export default function Dashboard() {
         if (leaderTeamsData && leaderTeamsData.length > 0) {
           try {
             const teamIds = leaderTeamsData.map(t => t.id);
+            // Se traen TODOS los ciclos (no solo activos) para poder seguir
+            // mostrando la participación/bienestar de la última ronda de un
+            // equipo aunque ya se haya cerrado (manual o automáticamente al
+            // responder todos) — la tarjeta no debe "vaciarse" al cerrar.
             const { data: cycles, error: cyclesError } = await supabase
               .from('ibdl_evaluation_cycles')
               .select('id, team_id, status')
               .in('team_id', teamIds)
-              .eq('status', 'active');
+              .order('start_at', { ascending: false });
             if (cyclesError) {
-              console.warn('Error cargando ciclos activos (líder):', cyclesError);
+              console.warn('Error cargando ciclos (líder):', cyclesError);
               setDataError('No se pudieron cargar las rondas de evaluación. Algunos datos podrían faltar.');
             }
-            const cycleMap = {};
-            (cycles || []).forEach(c => { cycleMap[c.team_id] = c.id; });
+            const cycleMap = {}; // teamId -> cycleId, solo ciclos activos (acciones/realtime)
+            const latestCycleMap = {}; // teamId -> cycleId, el más reciente sin importar estado (para mostrar datos)
+            (cycles || []).forEach(c => {
+              if (!latestCycleMap[c.team_id]) latestCycleMap[c.team_id] = c.id; // ordenado desc: el primero es el más reciente
+              if (c.status === 'active' && !cycleMap[c.team_id]) cycleMap[c.team_id] = c.id;
+            });
             setActiveCycles(prev => ({ ...prev, ...cycleMap }));
 
-            const activeCycleIds = Object.values(cycleMap);
-            if (activeCycleIds.length > 0) {
-              // Uses ibdl_cycle_respondents (participation only, no scores) per active
-              // cycle, so opted-out members who did respond still count as "responded".
+            const latestCycleIds = Object.values(latestCycleMap);
+            if (latestCycleIds.length > 0) {
+              // Uses ibdl_cycle_respondents (participation only, no scores) per cycle
+              // (activo o el último cerrado), así los que optaron por no compartir
+              // resultados igual cuentan como "respondió".
               const cycleResults = await Promise.all(
-                Object.entries(cycleMap).map(async ([teamId, cycleId]) => {
+                Object.entries(latestCycleMap).map(async ([teamId, cycleId]) => {
                   const { data, error } = await supabase
                     .rpc('ibdl_cycle_respondents', { p_cycle_id: cycleId });
                   return { teamId, cycleId, data, error };
@@ -210,7 +219,7 @@ export default function Dashboard() {
               const { data: scoreRows, error: scoreErr } = await supabase
                 .from('ibdl_scores')
                 .select('response_id, ag_score, ci_score, ef_score, ibdl_responses (cycle_id, team_id)')
-                .in('ibdl_responses.cycle_id', activeCycleIds);
+                .in('ibdl_responses.cycle_id', latestCycleIds);
               if (scoreErr) {
                 console.warn('Error obteniendo scores para wellbeing', scoreErr);
               }
@@ -1360,6 +1369,12 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Hay datos de alguna ronda (activa o la última cerrada) para mostrar.
+  // Se usa en vez de `activeCycleId` para las estadísticas: al cerrarse una
+  // ronda (manual o automáticamente) la tarjeta debe seguir mostrando su
+  // participación/bienestar, no vaciarse — solo cambian los botones de abajo.
+  const hasCycle = activeCycleId != null || respondedMembers !== undefined;
+
   // Cálculo de participación (incluye al líder como participante potencial)
   const totalBase = members?.length || 0;
   const leaderCounts = team.include_leader_in_metrics !== false; // default true if undefined
@@ -1395,7 +1410,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
     return baseMembers;
   }, [members, leaderCounts, profile, team.leader_id, currentUserId]);
   const respondedCount = Math.min(Math.max(respondedCountRaw, 0), totalParticipantes);
-  const participationPct = activeCycleId ? Math.round((respondedCount / (totalParticipantes || 1)) * 100) : 0;
+  const participationPct = hasCycle ? Math.round((respondedCount / (totalParticipantes || 1)) * 100) : 0;
 
   const copyCode = async () => {
     if (team.team_invite_codes?.length > 0) {
@@ -1456,20 +1471,20 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
         {/* Estadísticas */}
         <div className="grid grid-cols-2 gap-3">
           <Stat label="Miembros" value={totalParticipantes} />
-          <Stat label="Ronda" value={activeCycleId ? "Activa" : "Sin ronda"} color={activeCycleId ? "mint" : undefined} />
+          <Stat label="Ronda" value={activeCycleId ? "Activa" : hasCycle ? "Finalizada" : "Sin ronda"} color={activeCycleId ? "mint" : hasCycle ? "purple" : undefined} />
           <Stat
             label="Participación"
-            value={activeCycleId ? `${participationPct}%` : "—"}
-            meter={activeCycleId ? participationPct : undefined}
-            foot={activeCycleId ? `${respondedCount} / ${totalParticipantes} respondieron` : undefined}
+            value={hasCycle ? `${participationPct}%` : "—"}
+            meter={hasCycle ? participationPct : undefined}
+            foot={hasCycle ? `${respondedCount} / ${totalParticipantes} respondieron` : undefined}
           />
           <Stat
             label="Bienestar"
-            value={activeCycleId ? (wellbeingMetric && wellbeingMetric.avg != null ? wellbeingMetric.avg : "—") : "—"}
-            suffix={activeCycleId && wellbeingMetric?.avg != null ? "/100" : undefined}
+            value={hasCycle ? (wellbeingMetric && wellbeingMetric.avg != null ? wellbeingMetric.avg : "—") : "—"}
+            suffix={hasCycle && wellbeingMetric?.avg != null ? "/100" : undefined}
             color="purple"
-            meter={activeCycleId && wellbeingMetric?.avg != null ? wellbeingMetric.avg : undefined}
-            foot={activeCycleId && wellbeingMetric?.avg != null ? `${wellbeingMetric.count} resp.` : undefined}
+            meter={hasCycle && wellbeingMetric?.avg != null ? wellbeingMetric.avg : undefined}
+            foot={hasCycle && wellbeingMetric?.avg != null ? `${wellbeingMetric.count} resp.` : undefined}
           />
         </div>
 
@@ -1550,8 +1565,12 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                           : 'Usuario sin nombre'}
                       </span>
                       <span className="hidden text-xs text-[#5B5B6B] sm:inline">{isLeaderMember ? 'Líder' : 'Miembro'}</span>
-                      {activeCycleId ? (
-                        <Badge tone={hasResponded ? 'mint' : 'purple'}>{hasResponded ? 'Respondió' : 'Pendiente'}</Badge>
+                      {hasCycle ? (
+                        hasResponded ? (
+                          <Badge tone="mint">Respondió</Badge>
+                        ) : (
+                          <Badge tone={activeCycleId ? 'purple' : 'neutral'}>{activeCycleId ? 'Pendiente' : 'No respondió'}</Badge>
+                        )
                       ) : (
                         <Badge tone="neutral">Sin ronda</Badge>
                       )}
@@ -1589,10 +1608,16 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
               {launching ? 'Iniciando...' : 'Iniciar nueva ronda'}
             </Btn>
           )}
-          {activeCycleId && (
-            <span className="hidden rounded-xl border border-[rgba(85,194,162,.3)] bg-[rgba(85,194,162,.1)] px-4 py-2.5 text-xs font-medium text-[#3d8a74] sm:inline-flex sm:min-w-[150px] sm:flex-1 sm:items-center sm:justify-center">
-              {participationPct === 100 ? 'Todos respondieron' : 'Ronda activa'}
-            </span>
+          {hasCycle && (
+            participationPct === 100 || activeCycleId ? (
+              <span className="hidden rounded-xl border border-[rgba(85,194,162,.3)] bg-[rgba(85,194,162,.1)] px-4 py-2.5 text-xs font-medium text-[#3d8a74] sm:inline-flex sm:min-w-[150px] sm:flex-1 sm:items-center sm:justify-center">
+                {participationPct === 100 ? 'Todos respondieron' : 'Ronda activa'}
+              </span>
+            ) : (
+              <span className="hidden rounded-xl border border-[#DAD5E4] bg-[#DAD5E4]/35 px-4 py-2.5 text-xs font-medium text-[#5B5B6B] sm:inline-flex sm:min-w-[150px] sm:flex-1 sm:items-center sm:justify-center">
+                Ronda finalizada
+              </span>
+            )
           )}
           <Btn variant="secondary" onClick={() => navigate(`/reportes?team=${team.id}`)} className="min-w-[150px] flex-1 justify-center">
             Ver reporte
