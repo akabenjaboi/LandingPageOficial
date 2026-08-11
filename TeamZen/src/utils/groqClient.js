@@ -444,6 +444,17 @@ INFORMACIÓN DEL EMPLEADO:
     prompt += `\n- Eficacia percibida: ${first.ef_score} → ${latest.ef_score} (${latest.ef_score - first.ef_score > 0 ? 'Mejora' : latest.ef_score - first.ef_score < 0 ? 'Declive' : 'Estable'})`;
   }
 
+  // Nivel de riesgo actual calculado de forma determinista (no se le pide a
+  // la IA que lo infiera): se usa para exigirle la recomendación de apoyo
+  // profesional cuando corresponde, en vez de dejarlo a su criterio.
+  const latestScores = recentHistory[recentHistory.length - 1]?.ibdl_scores;
+  const latestLevel = latestScores
+    ? classifyIbdl(latestScores.ag_score, latestScores.ci_score, latestScores.ef_score).level
+    : null;
+  const isHighRisk = latestLevel === 'Alto' || latestLevel === 'Muy alto';
+
+  prompt += `\n\nNIVEL DE RIESGO ACTUAL (calculado, no lo reinterpretes): ${latestLevel || 'sin datos suficientes'}`;
+
   prompt += `\n\nResponde ÚNICAMENTE con JSON válido (sin texto antes o después, sin comillas dobles dentro de strings):
 {
   "personal_summary": "Resumen del estado personal actual en máximo 2 líneas",
@@ -462,12 +473,14 @@ INFORMACIÓN DEL EMPLEADO:
       "why": "Cómo esto mejorará tu situación específica"
     },
     {
-      "category": "Largo plazo", 
+      "category": "Largo plazo",
       "action": "Estrategia personal de autocuidado y desarrollo que no depende de tu empleador",
       "why": "Impacto a largo plazo en tu bienestar personal"
     }
   ],
   "burnout_level": "Alto/Medio/Bajo",
+  "professional_support_recommended": ${isHighRisk ? 'true' : 'false'},
+  "professional_support_message": ${isHighRisk ? '"mensaje cálido invitando a buscar apoyo profesional o hablar con alguien de confianza"' : 'null'},
   "next_evaluation_suggestion": "Recomendación de cuándo hacer la próxima evaluación"
 }
 
@@ -475,10 +488,12 @@ REGLAS CRÍTICAS:
 - Responde SOLO el JSON, nada más
 - NO uses comillas dobles dentro de los strings (usa comillas simples si necesitas)
 - NO incluyas saltos de línea dentro de los valores de string
-- Todos los consejos deben ser acciones que TÚ puedes hacer por tu cuenta
-- NO sugieras tomar días libres, cambiar horarios, o hablar con el jefe
-- Enfócate en técnicas de respiración, ejercicios, organización personal, mindfulness, actividades en casa
-- Considera que trabajas en: ${profile?.job_title || 'un entorno laboral'} 
+- Las 3 "personalized_recommendations" (Inmediato/Corto plazo/Largo plazo) son técnicas de autocuidado que la persona puede aplicar por su cuenta: respiración, ejercicio, organización personal, mindfulness, límites saludables, actividades fuera del trabajo
+- "professional_support_recommended" y "professional_support_message" son OBLIGATORIOS y van APARTE de esas 3 recomendaciones, no las reemplazan
+- El nivel de riesgo actual ya fue calculado arriba como "${latestLevel || 'sin datos suficientes'}" — cópialo tal cual en "burnout_level" (Alto si es Alto o Muy alto, Medio si es Moderado, Bajo si es Bajo)
+- Si el nivel de riesgo actual es Alto o Muy alto: "professional_support_recommended" DEBE ser true, y "professional_support_message" debe invitar, con calidez y sin alarmismo, a buscar apoyo profesional de salud mental o hablar con alguien de confianza (un profesional, RRHH, su líder si le tiene confianza, alguien cercano) — no minimices el riesgo ni lo condiciones a que "si quiere"
+- Si el nivel de riesgo actual es Bajo o Moderado: "professional_support_recommended" debe ser false y "professional_support_message" debe ser null
+- Considera que trabajas en: ${profile?.job_title || 'un entorno laboral'}
 - Los consejos deben ser específicos para tu situación laboral actual
 - Usa un tono directo y personal (habla en segunda persona)`;
 
@@ -538,9 +553,13 @@ function parsePersonalAnalysisResponse(content) {
         why: String(rec.why || '').trim()
       })),
       burnout_level: String(parsed.burnout_level || '').trim(),
+      professional_support_recommended: !!parsed.professional_support_recommended,
+      professional_support_message: parsed.professional_support_message && parsed.professional_support_message !== 'null'
+        ? String(parsed.professional_support_message).trim()
+        : null,
       next_evaluation_suggestion: String(parsed.next_evaluation_suggestion || '').trim()
     };
-    
+
   } catch (error) {
     console.error('❌ Error parseando respuesta de análisis personal:', error);
     console.error('📄 Contenido que causó el error:', content);
@@ -583,6 +602,8 @@ function parsePersonalAnalysisResponse(content) {
         }
       ],
       burnout_level: 'Medio',
+      professional_support_recommended: false,
+      professional_support_message: null,
       next_evaluation_suggestion: 'Evalúa nuevamente en 2-3 semanas para seguimiento'
     };
   }
@@ -599,17 +620,25 @@ function extractDataManually(content) {
     risk_areas: [],
     personalized_recommendations: [],
     burnout_level: 'Medio',
+    professional_support_recommended: false,
+    professional_support_message: null,
     next_evaluation_suggestion: ''
   };
-  
+
   // Extraer resumen personal
   const summaryMatch = content.match(/"personal_summary":\s*"([^"]+)"/);
   if (summaryMatch) data.personal_summary = summaryMatch[1];
-  
+
   // Extraer nivel de burnout
   const burnoutMatch = content.match(/"burnout_level":\s*"([^"]+)"/);
   if (burnoutMatch) data.burnout_level = burnoutMatch[1];
-  
+
+  // Extraer recomendación de apoyo profesional
+  const supportRecMatch = content.match(/"professional_support_recommended":\s*(true|false)/);
+  if (supportRecMatch) data.professional_support_recommended = supportRecMatch[1] === 'true';
+  const supportMsgMatch = content.match(/"professional_support_message":\s*"([^"]+)"/);
+  if (supportMsgMatch) data.professional_support_message = supportMsgMatch[1];
+
   // Extraer sugerencia de próxima evaluación
   const nextEvalMatch = content.match(/"next_evaluation_suggestion":\s*"([^"]+)"/);
   if (nextEvalMatch) data.next_evaluation_suggestion = nextEvalMatch[1];

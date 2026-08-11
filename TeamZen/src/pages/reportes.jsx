@@ -4,7 +4,7 @@ import { supabase } from '../../supabaseClient';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AppNavbar from '../components/AppNavbar';
 import TrendChart from '../components/TrendChart';
-import { Card, Btn, Badge, Dot, Highlight, PageTitle, Alert } from '../components/app-ui';
+import { Card, Btn, Badge, Dot, Highlight, PageTitle, Alert, Notice } from '../components/app-ui';
 import { generateAdvice, getAIAdviceWithCache } from '../utils/adviceEngine';
 import { classifyIbdl, computeWellbeingFromIbdlScores } from '../utils/ibdlClassification';
 
@@ -932,6 +932,13 @@ function AdvicePanel({ data, teamId }) {
 // VISTA MIEMBRO — ANÁLISIS PERSONAL
 // ===================================================================
 
+// Mensaje de respaldo cuando el nivel de riesgo real (calculado de forma
+// determinista, no según lo que diga la IA) es Alto o Muy alto, pero no hay
+// un mensaje más específico disponible (falló la IA sin fallback, o el
+// fallback/la IA no trajeron uno). Se muestra siempre en ese caso — nunca
+// depende de que la IA haya recordado incluirlo.
+const PROFESSIONAL_SUPPORT_DEFAULT_MESSAGE = 'Si sientes que esto te está superando, no estás solo/a. Buscar apoyo — con un profesional de salud mental, RRHH, tu líder si le tienes confianza, o alguien cercano — es un signo de fortaleza, no de debilidad.';
+
 // Análisis heurístico local, usado cuando la IA externa no responde a tiempo
 // o falla — mismo rol que el fallback local del panel de equipo (AdvicePanel),
 // pero calculado a partir de la evaluación IBDL-6 más reciente del propio usuario.
@@ -970,12 +977,16 @@ function buildLocalPersonalFallback(ibdlHistory) {
     trend_analysis = `Respecto a tu evaluación anterior: agotamiento ${trendWord(latestScores.ag_score, previousScores.ag_score)}, cinismo/distanciamiento ${trendWord(latestScores.ci_score, previousScores.ci_score)}, eficacia percibida ${trendWord(latestScores.ef_score, previousScores.ef_score, true)}.`;
   }
 
+  const needsSupport = level === 'Alto' || level === 'Muy alto';
+
   return {
     personal_summary: `Análisis heurístico local (la IA externa no respondió a tiempo): tu nivel de riesgo según el IBDL-6 es ${level?.toLowerCase()}.`,
     burnout_level,
     trend_analysis,
     strengths,
     risk_areas,
+    professional_support_recommended: needsSupport,
+    professional_support_message: needsSupport ? PROFESSIONAL_SUPPORT_DEFAULT_MESSAGE : null,
     fromCache: false,
     isLocalFallback: true,
     generatedAt: new Date().toISOString()
@@ -1067,6 +1078,16 @@ function UserPersonalReports({ user, profile }) {
         ? `Recién generado · ${new Date(analysis.generatedAt).toLocaleDateString()}`
         : '';
 
+  // Se calcula siempre desde el puntaje real más reciente, independiente de
+  // si la IA respondió, falló, o si el análisis (IA o local) trajo su propio
+  // "professional_support_message" — este aviso nunca debe depender de que
+  // la IA se haya acordado de incluirlo.
+  const latestScoresForSupport = ibdlHistory[0]?.ibdl_scores;
+  const latestLevelForSupport = latestScoresForSupport?.ag_score != null && latestScoresForSupport?.ci_score != null && latestScoresForSupport?.ef_score != null
+    ? classifyIbdl(latestScoresForSupport.ag_score, latestScoresForSupport.ci_score, latestScoresForSupport.ef_score).level
+    : null;
+  const needsProfessionalSupport = latestLevelForSupport === 'Alto' || latestLevelForSupport === 'Muy alto';
+
   return (
     <div className="mx-auto flex w-full max-w-[900px] flex-col gap-[22px]">
       <div className="flex flex-col gap-1.5">
@@ -1080,6 +1101,13 @@ function UserPersonalReports({ user, profile }) {
           <Kpi label="Última" value={new Date(ibdlHistory[0]?.created_at).toLocaleDateString()} />
           <Kpi label="Cargo actual" value={profile?.job_title || 'No especificado'} />
         </div>
+      )}
+
+      {needsProfessionalSupport && (
+        <Notice tone="purple">
+          <strong className="font-semibold">Tu último resultado muestra un nivel de riesgo alto.</strong>{' '}
+          {(analysis?.professional_support_message) || PROFESSIONAL_SUPPORT_DEFAULT_MESSAGE}
+        </Notice>
       )}
 
       {ibdlHistory.length === 0 ? (
