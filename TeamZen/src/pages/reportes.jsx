@@ -241,7 +241,7 @@ export default function ReportesPage() {
   return (
     <div className="min-h-screen bg-[#FAF9F6]">
       <AppNavbar user={user} profile={profile} />
-      <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-4 pb-24 pt-6 sm:px-6 sm:pt-8 md:pb-16">
+      <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-4 pb-32 pt-6 sm:px-6 sm:pt-8 md:pb-16">
         {error && !fetching && teams.length === 0 && <Alert>{error}</Alert>}
         {profile?.role === 'leader' ? (
           <LeaderReports
@@ -374,7 +374,7 @@ function LeaderReports({ teams, activeTeamId, setActiveTeamId, aggregated, fetch
               <Card className="flex flex-col gap-4">
                 <h2 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">Historial de rondas</h2>
                 <div className="flex flex-col gap-2">
-                  <div className="hidden gap-3 px-4 lg:grid lg:grid-cols-[1.5fr_.7fr_.7fr_.7fr_.7fr_1.3fr_1fr]">
+                  <div className="hidden gap-3 px-4 md:grid md:grid-cols-[1.5fr_.7fr_.7fr_.7fr_.7fr_1.3fr_1fr]">
                     {['Ronda', 'Resp.', 'AG', 'CI', 'EF', 'Bienestar', 'Riesgo'].map((h) => (
                       <span key={h} className="text-[11px] font-bold uppercase tracking-[.06em] text-[#5B5B6B]">{h}</span>
                     ))}
@@ -390,9 +390,10 @@ function LeaderReports({ teams, activeTeamId, setActiveTeamId, aggregated, fetch
                     const ranFullTerm = hasReliableEnd ? (endDate.getTime() - startDate.getTime()) >= 7 * 24 * 60 * 60 * 1000 : true;
                     const statusText = row.isActiveCycle ? 'en curso' : (ranFullTerm ? 'completado' : 'cerrado anticipadamente');
                     const dist = row.dist;
+                    const distText = dist ? `B:${dist.Bajo} · M:${dist.Moderado} · A:${dist.Alto} · MA:${dist['Muy alto']}` : null;
                     return (
-                      <div key={row.cycle.id} className="grid grid-cols-2 items-center gap-x-3 gap-y-2 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-3.5 lg:grid-cols-[1.5fr_.7fr_.7fr_.7fr_.7fr_1.3fr_1fr]">
-                        <div className="col-span-2 flex flex-col lg:col-span-1">
+                      <div key={row.cycle.id} className="grid grid-cols-2 items-center gap-x-3 gap-y-2 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-3.5 md:grid-cols-[1.5fr_.7fr_.7fr_.7fr_.7fr_1.3fr_1fr]">
+                        <div className="col-span-2 flex flex-col md:col-span-1">
                           <span className="font-['Poppins',_Arial,_sans-serif] text-sm font-semibold text-[#2E2E3A]">Ronda {roundNumber}</span>
                           <span className="text-xs text-[#5B5B6B]">
                             {startDate ? startDate.toLocaleDateString() : '—'}
@@ -404,7 +405,7 @@ function LeaderReports({ teams, activeTeamId, setActiveTeamId, aggregated, fetch
                         <MobileLabeled label="AG"><span className="tabular-nums">{row.agAvg ?? '—'}</span></MobileLabeled>
                         <MobileLabeled label="CI"><span className="tabular-nums">{row.ciAvg ?? '—'}</span></MobileLabeled>
                         <MobileLabeled label="EF"><span className="tabular-nums">{row.efAvg ?? '—'}</span></MobileLabeled>
-                        <div className="col-span-2 flex items-center gap-2.5 lg:col-span-1">
+                        <div className="col-span-2 flex items-center gap-2.5 md:col-span-1">
                           {row.wellbeing != null ? (
                             <>
                               <div className="h-2 flex-1 overflow-hidden rounded-[5px] bg-[#DAD5E4]">
@@ -414,13 +415,15 @@ function LeaderReports({ teams, activeTeamId, setActiveTeamId, aggregated, fetch
                             </>
                           ) : <span className="text-sm text-[#5B5B6B]">—</span>}
                         </div>
-                        <div className="hidden lg:flex lg:flex-col lg:items-start lg:gap-1">
+                        {/* Riesgo: en md+ va en su propia columna; en mobile se muestra como fila completa (antes se ocultaba por completo bajo lg, perdiendo el nivel dominante y el desglose). */}
+                        <div className="col-span-2 flex items-center gap-2.5 md:hidden">
+                          <span className="text-[11px] font-bold uppercase tracking-[.06em] text-[#5B5B6B]">Riesgo</span>
                           {row.dominant ? <Badge tone={row.dominant === 'Bajo' ? 'mint' : 'purple'}>{row.dominant}</Badge> : <span className="text-sm text-[#5B5B6B]">—</span>}
-                          {dist && (
-                            <span className="text-[10px] text-[#5B5B6B]">
-                              B:{dist.Bajo} · M:{dist.Moderado} · A:{dist.Alto} · MA:{dist['Muy alto']}
-                            </span>
-                          )}
+                          {distText && <span className="text-xs text-[#5B5B6B]">{distText}</span>}
+                        </div>
+                        <div className="hidden md:flex md:flex-col md:items-start md:gap-1">
+                          {row.dominant ? <Badge tone={row.dominant === 'Bajo' ? 'mint' : 'purple'}>{row.dominant}</Badge> : <span className="text-sm text-[#5B5B6B]">—</span>}
+                          {distText && <span className="text-xs text-[#5B5B6B]">{distText}</span>}
                         </div>
                       </div>
                     );
@@ -462,15 +465,15 @@ function LeaderReports({ teams, activeTeamId, setActiveTeamId, aggregated, fetch
 
                   return (
                     <div key={member.user_id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(157,131,198,.2)] font-['Poppins',_Arial,_sans-serif] text-sm font-bold text-[#6f56a0]">
                           {fullName.charAt(0).toUpperCase()}
                         </span>
-                        <div>
+                        <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-[#2E2E3A]">{fullName}</p>
+                            <p className="truncate text-sm font-medium text-[#2E2E3A]">{fullName}</p>
                             {sharesResults && hasResponded && riskLevel && (
-                              <Badge tone={riskLevel === 'Bajo' ? 'mint' : 'purple'}>{riskLevel}</Badge>
+                              <Badge tone={riskLevel === 'Bajo' ? 'mint' : 'purple'} className="shrink-0">{riskLevel}</Badge>
                             )}
                           </div>
                           <p className="text-xs text-[#5B5B6B]">
@@ -480,7 +483,7 @@ function LeaderReports({ teams, activeTeamId, setActiveTeamId, aggregated, fetch
                           </p>
                         </div>
                       </div>
-                      <Badge tone={hasResponded ? 'mint' : 'purple'}>{hasResponded ? 'Respondió' : 'Pendiente'}</Badge>
+                      <Badge tone={hasResponded ? 'mint' : 'purple'} className="shrink-0">{hasResponded ? 'Respondió' : 'Pendiente'}</Badge>
                     </div>
                   );
                 })}
@@ -495,9 +498,9 @@ function LeaderReports({ teams, activeTeamId, setActiveTeamId, aggregated, fetch
 
 function Kpi({ label, value, foot, color }) {
   return (
-    <div className="flex flex-col gap-1 rounded-[20px] border border-[#DAD5E4] bg-white p-[18px] shadow-teamzen">
+    <div className="flex min-w-0 flex-col gap-1 rounded-[20px] border border-[#DAD5E4] bg-white p-[18px] shadow-teamzen">
       <span className="text-[11px] font-bold uppercase tracking-[.06em] text-[#5B5B6B]">{label}</span>
-      <span className={`font-['Poppins',_Arial,_sans-serif] text-[28px] font-bold tabular-nums ${color || 'text-[#2E2E3A]'}`}>{value}</span>
+      <span className={`break-words font-['Poppins',_Arial,_sans-serif] text-xl font-bold tabular-nums sm:text-2xl md:text-3xl ${color || 'text-[#2E2E3A]'}`}>{value}</span>
       {foot && <span className="text-xs text-[#5B5B6B]">{foot}</span>}
     </div>
   );
@@ -505,8 +508,8 @@ function Kpi({ label, value, foot, color }) {
 
 function MobileLabeled({ label, children }) {
   return (
-    <div className="flex flex-col gap-0.5 lg:contents">
-      <span className="text-[10px] font-bold uppercase tracking-[.06em] text-[#5B5B6B] lg:hidden">{label}</span>
+    <div className="flex flex-col gap-0.5 md:contents">
+      <span className="text-xs font-bold uppercase tracking-[.06em] text-[#5B5B6B] md:hidden">{label}</span>
       <span className="text-sm text-[#2E2E3A]">{children}</span>
     </div>
   );
@@ -823,7 +826,7 @@ function AdvicePanel({ data, teamId }) {
             <button
               type="button"
               onClick={() => { setMode('local'); setError(''); }}
-              className={`rounded-full px-4 py-2 font-['Poppins',_Arial,_sans-serif] text-[12.5px] font-semibold transition ${mode === 'local' ? 'bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] text-white' : 'text-[#5B5B6B]'}`}
+              className={`inline-flex min-h-11 items-center justify-center rounded-full px-4 font-['Poppins',_Arial,_sans-serif] text-[12.5px] font-semibold transition ${mode === 'local' ? 'bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] text-white' : 'text-[#5B5B6B]'}`}
             >
               Local
             </button>
@@ -831,7 +834,7 @@ function AdvicePanel({ data, teamId }) {
               type="button"
               onClick={() => handleAIFetch(false)}
               disabled={loading}
-              className={`rounded-full px-4 py-2 font-['Poppins',_Arial,_sans-serif] text-[12.5px] font-semibold transition disabled:opacity-60 ${mode === 'ai' ? 'bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] text-white' : 'text-[#5B5B6B]'}`}
+              className={`inline-flex min-h-11 items-center justify-center rounded-full px-4 font-['Poppins',_Arial,_sans-serif] text-[12.5px] font-semibold transition disabled:opacity-60 ${mode === 'ai' ? 'bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] text-white' : 'text-[#5B5B6B]'}`}
             >
               {loading ? 'Analizando...' : 'IA + Tendencias'}
             </button>
@@ -842,7 +845,7 @@ function AdvicePanel({ data, teamId }) {
               onClick={() => handleAIFetch(true)}
               aria-label="Regenerar consejo"
               title="Regenerar análisis forzadamente"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] text-[15px] text-[#5B5B6B] hover:border-[#9D83C6] hover:text-[#2E2E3A]"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] text-[15px] text-[#5B5B6B] hover:border-[#9D83C6] hover:text-[#2E2E3A]"
             >
               ↻
             </button>
@@ -892,6 +895,7 @@ function AdvicePanel({ data, teamId }) {
                     type="button"
                     onClick={() => handleToggleActionStatus(currentForTracking.cycle.id, action, status, true)}
                     aria-label={`Cambiar estado: ahora ${STATE_LABEL[status]}`}
+                    className="-m-2 flex min-h-11 items-center p-2"
                   >
                     <Badge as="span" tone={STATE_TONE[status]} className="cursor-pointer">{STATE_LABEL[status]}</Badge>
                   </button>
@@ -926,7 +930,7 @@ function AdvicePanel({ data, teamId }) {
             <div key={row.action_text} className="flex items-center gap-3 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-3.5">
               <Dot tone={STATE_TONE[row.status] === 'mint' ? 'mint' : STATE_TONE[row.status] === 'purple' ? 'purple' : 'neutral'} size={12} />
               <span className="flex-1 text-sm text-[#2E2E3A]">{row.action_text}</span>
-              <button type="button" onClick={() => handleToggleActionStatus(prevForTracking.cycle.id, row.action_text, row.status, false)}>
+              <button type="button" onClick={() => handleToggleActionStatus(prevForTracking.cycle.id, row.action_text, row.status, false)} className="-m-2 flex min-h-11 items-center p-2">
                 <Badge tone={STATE_TONE[row.status]} className="cursor-pointer">{STATE_LABEL[row.status] || STATE_LABEL.pendiente}</Badge>
               </button>
             </div>
@@ -1143,7 +1147,7 @@ function UserPersonalReports({ user, profile }) {
                   Nivel de riesgo: {analysis.burnout_level.toLowerCase()}
                 </Badge>
               )}
-              <Btn variant="secondary" onClick={() => generateAnalysis(true)} disabled={loading} className="px-[18px] py-2.5 text-sm">
+              <Btn variant="secondary" onClick={() => generateAnalysis(true)} disabled={loading}>
                 {loading ? 'Analizando...' : 'Actualizar'}
               </Btn>
             </div>
@@ -1239,21 +1243,28 @@ function UserPersonalReports({ user, profile }) {
       {ibdlHistory.length > 0 && (
         <Card className="flex flex-col gap-3.5">
           <h2 className="font-['Poppins',_Arial,_sans-serif] text-xl font-semibold text-[#2E2E3A]">Mi historial</h2>
+          <div className="hidden gap-3 px-4 md:grid md:grid-cols-[2fr_.6fr_.6fr_.6fr_.8fr]">
+            {['Fecha', 'AG', 'CI', 'EF', 'Nivel'].map((h) => (
+              <span key={h} className="text-[11px] font-bold uppercase tracking-[.06em] text-[#5B5B6B]">{h}</span>
+            ))}
+          </div>
           {ibdlHistory.map((h) => {
             const scores = h.ibdl_scores;
             const { level } = scores?.ag_score != null && scores?.ci_score != null && scores?.ef_score != null
               ? classifyIbdl(scores.ag_score, scores.ci_score, scores.ef_score)
               : { level: null };
             return (
-              <div key={h.id} className="flex flex-wrap items-center gap-3.5 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-[15px]">
-                <div className="flex min-w-[150px] flex-1 flex-col">
+              <div key={h.id} className="grid grid-cols-2 items-center gap-x-3 gap-y-2 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] px-4 py-[15px] md:grid-cols-[2fr_.6fr_.6fr_.6fr_.8fr]">
+                <div className="col-span-2 flex flex-col md:col-span-1">
                   <span className="font-['Poppins',_Arial,_sans-serif] text-sm font-semibold text-[#2E2E3A]">{new Date(h.created_at).toLocaleDateString()}</span>
                   <span className="text-xs text-[#5B5B6B]">{h.teams?.name || 'Individual'}</span>
                 </div>
-                <span className="text-[13px] tabular-nums text-[#5B5B6B]">AG {scores?.ag_score ?? '—'}</span>
-                <span className="text-[13px] tabular-nums text-[#5B5B6B]">CI {scores?.ci_score ?? '—'}</span>
-                <span className="text-[13px] tabular-nums text-[#5B5B6B]">EF {scores?.ef_score ?? '—'}</span>
-                {level && <Badge tone={level === 'Bajo' ? 'mint' : 'purple'}>{level}</Badge>}
+                <MobileLabeled label="AG"><span className="tabular-nums">{scores?.ag_score ?? '—'}</span></MobileLabeled>
+                <MobileLabeled label="CI"><span className="tabular-nums">{scores?.ci_score ?? '—'}</span></MobileLabeled>
+                <MobileLabeled label="EF"><span className="tabular-nums">{scores?.ef_score ?? '—'}</span></MobileLabeled>
+                <div className="col-span-2 md:col-span-1">
+                  {level ? <Badge tone={level === 'Bajo' ? 'mint' : 'purple'}>{level}</Badge> : <span className="text-sm text-[#5B5B6B]">—</span>}
+                </div>
               </div>
             );
           })}

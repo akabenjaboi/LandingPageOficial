@@ -928,7 +928,7 @@ export default function Dashboard() {
         attentionItems={(showLeaderSection || showMemberSection) ? attentionItems : null}
       />
 
-      <main className="mx-auto flex max-w-[1280px] flex-col gap-[22px] px-4 pb-24 pt-6 sm:px-6 sm:pt-8 md:pb-16" id="teams-section">
+      <main className="mx-auto flex max-w-[1280px] flex-col gap-[22px] px-4 pb-32 pt-6 sm:px-6 sm:pt-8 md:pb-16" id="teams-section">
         {dataError && (
           <Alert title="Error al cargar datos">{dataError}</Alert>
         )}
@@ -1215,7 +1215,7 @@ function ProfileFormModal({
               onClick={onCancel}
               aria-label="Cerrar"
               disabled={saving}
-              className="rounded-xl p-1.5 text-[#5B5B6B] transition-colors hover:bg-[#DAD5E4]/40 hover:text-[#2E2E3A]"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#5B5B6B] transition-colors hover:bg-[#DAD5E4]/40 hover:text-[#2E2E3A]"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1407,7 +1407,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
               onClick={() => setIsExpanded(!isExpanded)}
               aria-expanded={isExpanded}
               aria-label={isExpanded ? 'Ocultar miembros del equipo' : 'Mostrar miembros del equipo'}
-              className="rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] p-2 text-[#5B5B6B] transition-colors hover:border-[#9D83C6] hover:text-[#2E2E3A]"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] text-[#5B5B6B] transition-colors hover:border-[#9D83C6] hover:text-[#2E2E3A]"
             >
               <svg className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -1422,14 +1422,14 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
         )}
 
         {/* Estadísticas */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat label="Miembros" value={totalParticipantes} />
           <Stat label="Ronda" value={activeCycleId ? "Activa" : hasCycle ? "Finalizada" : "Sin ronda"} color={activeCycleId ? "mint" : hasCycle ? "purple" : undefined} />
           <Stat
             label="Participación"
             value={hasCycle ? `${participationPct}%` : "—"}
             meter={hasCycle ? participationPct : undefined}
-            foot={hasCycle ? `${respondedCount} / ${totalParticipantes} respondieron` : undefined}
+            foot={hasCycle ? `${respondedCount}/${totalParticipantes} respondieron` : undefined}
           />
           <Stat
             label="Bienestar"
@@ -1442,7 +1442,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
         </div>
 
         {/* Código de invitación */}
-        <div className="flex flex-wrap items-start gap-3.5 rounded-2xl border border-dashed border-[#DAD5E4] bg-[#DAD5E4]/35 px-4 py-3.5">
+        <div className="flex flex-col items-start gap-3.5 rounded-2xl border border-dashed border-[#DAD5E4] bg-[#DAD5E4]/35 px-4 py-3.5 sm:flex-row sm:flex-wrap">
           <div className="flex min-w-[150px] flex-1 flex-col">
             <span className="text-[11px] font-bold uppercase tracking-[.06em] text-[#5B5B6B]">Código de invitación</span>
             {team.team_invite_codes?.length > 0 ? (
@@ -1463,25 +1463,25 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
               <span className="font-['Poppins',_Arial,_sans-serif] text-base font-semibold text-[#5B5B6B]">Sin código</span>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <button
               type="button"
               onClick={() => setShowInvite((v) => !v)}
-              className="rounded-xl border border-[#DAD5E4] bg-white px-3.5 py-2.5 font-['Poppins',_Arial,_sans-serif] text-[13px] font-semibold text-[#2E2E3A] hover:border-[#9D83C6]"
+              className="min-h-11 flex-1 rounded-xl border border-[#DAD5E4] bg-white px-3.5 py-2.5 font-['Poppins',_Arial,_sans-serif] text-[13px] font-semibold text-[#2E2E3A] hover:border-[#9D83C6] sm:flex-none"
             >
               {showInvite ? 'Ocultar' : 'Mostrar'}
             </button>
             <button
               type="button"
               onClick={copyCode}
-              className="rounded-xl bg-[rgba(85,194,162,.16)] px-3.5 py-2.5 font-['Poppins',_Arial,_sans-serif] text-[13px] font-semibold text-[#3d8a74] hover:bg-[rgba(85,194,162,.26)]"
+              className="min-h-11 flex-1 rounded-xl bg-[rgba(85,194,162,.16)] px-3.5 py-2.5 font-['Poppins',_Arial,_sans-serif] text-[13px] font-semibold text-[#3d8a74] hover:bg-[rgba(85,194,162,.26)] sm:flex-none"
             >
               {copied ? 'Copiado' : 'Copiar'}
             </button>
             <button
               type="button"
               onClick={() => onRegenerateCode && onRegenerateCode(team.id)}
-              className="rounded-xl border border-[#9D83C6]/50 px-3.5 py-2.5 font-['Poppins',_Arial,_sans-serif] text-[13px] font-semibold text-[#6f56a0] hover:bg-[rgba(157,131,198,.1)]"
+              className="min-h-11 flex-1 rounded-xl border border-[#9D83C6]/50 px-3.5 py-2.5 font-['Poppins',_Arial,_sans-serif] text-[13px] font-semibold text-[#6f56a0] hover:bg-[rgba(157,131,198,.1)] sm:flex-none"
             >
               Regenerar
             </button>
@@ -1517,7 +1517,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                           ? `${member.profiles.first_name} ${member.profiles.last_name}`
                           : 'Usuario sin nombre'}
                       </span>
-                      <span className="hidden text-xs text-[#5B5B6B] sm:inline">{isLeaderMember ? 'Líder' : 'Miembro'}</span>
+                      <span className="whitespace-nowrap text-xs text-[#5B5B6B]">{isLeaderMember ? 'Líder' : 'Miembro'}</span>
                       {hasCycle ? (
                         hasResponded ? (
                           <Badge tone="mint">Respondió</Badge>
@@ -1533,7 +1533,7 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
                           onClick={() => onKickMember && onKickMember(team.id, member.user_id)}
                           aria-label="Expulsar miembro"
                           title="Expulsar del equipo"
-                          className="rounded-lg p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
+                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
                         >
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1563,11 +1563,11 @@ function LeaderTeamCard({ team, members, membersLoading, activeCycleId, onLaunch
           )}
           {hasCycle && (
             participationPct === 100 || activeCycleId ? (
-              <span className="hidden rounded-xl border border-[rgba(85,194,162,.3)] bg-[rgba(85,194,162,.1)] px-4 py-2.5 text-xs font-medium text-[#3d8a74] sm:inline-flex sm:min-w-[150px] sm:flex-1 sm:items-center sm:justify-center">
+              <span className="inline-flex w-full items-center justify-center rounded-xl border border-[rgba(85,194,162,.3)] bg-[rgba(85,194,162,.1)] px-4 py-2.5 text-xs font-medium text-[#3d8a74] sm:w-auto sm:min-w-[150px] sm:flex-1">
                 {participationPct === 100 ? 'Todos respondieron' : 'Ronda activa'}
               </span>
             ) : (
-              <span className="hidden rounded-xl border border-[#DAD5E4] bg-[#DAD5E4]/35 px-4 py-2.5 text-xs font-medium text-[#5B5B6B] sm:inline-flex sm:min-w-[150px] sm:flex-1 sm:items-center sm:justify-center">
+              <span className="inline-flex w-full items-center justify-center rounded-xl border border-[#DAD5E4] bg-[#DAD5E4]/35 px-4 py-2.5 text-xs font-medium text-[#5B5B6B] sm:w-auto sm:min-w-[150px] sm:flex-1">
                 Ronda finalizada
               </span>
             )
@@ -1692,7 +1692,7 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
                 onClick={() => setShowOptionsMenu(!showOptionsMenu)}
                 aria-label="Opciones del equipo"
                 aria-expanded={showOptionsMenu}
-                className="rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] p-2 text-[#5B5B6B] transition-colors hover:border-[#9D83C6] hover:text-[#2E2E3A]"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] text-[#5B5B6B] transition-colors hover:border-[#9D83C6] hover:text-[#2E2E3A]"
               >
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
@@ -1723,7 +1723,7 @@ function UserTeamCard({ team, members, membersLoading, currentUserId, activeCycl
               onClick={() => setIsExpanded(!isExpanded)}
               aria-expanded={isExpanded}
               aria-label={isExpanded ? 'Ocultar miembros del equipo' : 'Mostrar miembros del equipo'}
-              className="rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] p-2 text-[#5B5B6B] transition-colors hover:border-[#9D83C6] hover:text-[#2E2E3A]"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] text-[#5B5B6B] transition-colors hover:border-[#9D83C6] hover:text-[#2E2E3A]"
             >
               <svg className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

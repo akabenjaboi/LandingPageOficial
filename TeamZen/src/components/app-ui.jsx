@@ -52,7 +52,7 @@ export function Field({ label, as = "input", hint, className = "", ...props }) {
 
 export function Stat({ label, value, suffix, meter, color = "mint", foot }) {
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] p-3.5">
+    <div className="flex min-w-0 flex-col gap-2 rounded-2xl border border-[#DAD5E4] bg-[#FAF9F6] p-3.5">
       <span className="text-[11px] font-bold uppercase tracking-[.06em] text-[#5B5B6B]">{label}</span>
       <span className={`font-['Poppins',_Arial,_sans-serif] text-2xl font-bold tabular-nums ${color === "purple" ? "text-[#8B6FB8]" : "text-[#2E2E3A]"}`}>
         {value}
@@ -63,7 +63,7 @@ export function Stat({ label, value, suffix, meter, color = "mint", foot }) {
           <div className={color === "purple" ? "h-full bg-[#9D83C6]" : "h-full bg-[#55C2A2]"} style={{ width: `${meter}%` }} />
         </div>
       )}
-      {foot && <span className="text-xs text-[#5B5B6B]">{foot}</span>}
+      {foot && <span className="text-xs leading-snug text-[#5B5B6B]">{foot}</span>}
     </div>
   );
 }

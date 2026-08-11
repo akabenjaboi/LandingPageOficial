@@ -43,7 +43,7 @@ export default function TeamOptionsMenu({ team, onEdit, onDelete, onTransferLead
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] p-2 text-[#5B5B6B] transition-colors hover:border-[#9D83C6] hover:text-[#2E2E3A]"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#DAD5E4] bg-[#FAF9F6] text-[#5B5B6B] transition-colors hover:border-[#9D83C6] hover:text-[#2E2E3A]"
         aria-label="Opciones del equipo"
         aria-expanded={isOpen}
       >
