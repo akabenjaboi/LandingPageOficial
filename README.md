@@ -1,7 +1,4 @@
 # 🧘‍♂️ TeamZen
-
-<div align="center">
-  <img src="public/img/pandalogo.png" alt="TeamZen Logo" width="120" height="120">
   
   <h3>Equipos más saludables, trabajo más productivo</h3>
   
