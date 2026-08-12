@@ -152,7 +152,7 @@ export default function AppNavbar({ user, profile, onProfileEdit, onLogout, atte
                 {showNotifications && (
                   <div
                     role="menu"
-                    className="animate-modal-enter absolute right-0 top-[calc(100%+10px)] flex max-h-[70vh] w-[min(360px,calc(100vw-2rem))] flex-col gap-3 overflow-y-auto rounded-2xl border border-[#DAD5E4] bg-white p-4 shadow-teamzen-strong"
+                    className="animate-modal-enter fixed inset-x-4 top-[72px] flex max-h-[70vh] flex-col gap-3 overflow-y-auto rounded-2xl border border-[#DAD5E4] bg-white p-4 shadow-teamzen-strong sm:absolute sm:inset-x-auto sm:right-0 sm:top-[calc(100%+10px)] sm:w-[360px]"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <h3 className="font-['Poppins',_Arial,_sans-serif] text-[15px] font-semibold text-[#2E2E3A]">Requiere tu atención</h3>
