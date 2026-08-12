@@ -7,8 +7,8 @@ export default function Home() {
     <>
       <SEO
         title="TeamZen - Mide y reduce el burnout en tu equipo"
-        description="TeamZen es la primera plataforma digital chilena para prevenir el burnout e impulsar el bienestar en equipos usando el inventario MBI. Mejora la productividad y cultura organizacional."
-        keywords="burnout, bienestar laboral, MBI, equipos, productividad, salud mental, TeamZen, Chile, cultura organizacional"
+        description="TeamZen es la primera plataforma digital chilena para prevenir el burnout e impulsar el bienestar en equipos. Mejora la productividad y cultura organizacional."
+        keywords="burnout, bienestar laboral, equipos, productividad, salud mental, TeamZen, Chile, cultura organizacional"
         canonical="https://teamzen.cl/"
       />
       <TeamZenLanding />

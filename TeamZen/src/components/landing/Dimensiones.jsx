@@ -1,9 +1,9 @@
 import { Chip, Eyebrow, Meter } from "./ui";
 
 const DIMENSIONES = [
-  { titulo: "Agotamiento emocional", rango: "0 – 54", texto: "Cuánta energía queda al final del día. Baja primero y avisa antes que el resto.", meter: 46, color: "mint" },
-  { titulo: "Despersonalización", rango: "0 – 30", texto: "Distancia y cinismo hacia el trabajo y las personas con las que se trabaja.", meter: 28, color: "purple" },
-  { titulo: "Realización personal", rango: "0 – 48", texto: "Sensación de logro y competencia. Acá un puntaje alto es buena señal.", meter: 72, color: "mint" },
+  { titulo: "Agotamiento", rango: "2 – 10", texto: "Cuánta energía queda al final del día. Baja primero y avisa antes que el resto.", meter: 46, color: "mint" },
+  { titulo: "Cinismo / distanciamiento", rango: "2 – 10", texto: "Distancia y cinismo hacia el trabajo y las personas con las que se trabaja.", meter: 28, color: "purple" },
+  { titulo: "Eficacia percibida", rango: "2 – 10", texto: "Sensación de logro y competencia. Acá un puntaje alto es buena señal.", meter: 72, color: "mint" },
 ];
 
 export default function Dimensiones() {
@@ -13,14 +13,14 @@ export default function Dimensiones() {
         <div className="flex flex-col gap-4">
           <Eyebrow tone="mint">Qué medimos</Eyebrow>
           <h2 className="font-['Poppins',_Arial,_sans-serif] text-[30px] font-bold leading-[1.14] tracking-[-.02em] text-[#2E2E3A] lg:text-[38px]">
-            Un cuestionario validado, tres dimensiones
+            Un cuestionario breve, tres dimensiones
           </h2>
           <p className="max-w-[34em] text-[17px] text-[#5B5B6B] [text-wrap:pretty]">
-            No inventamos preguntas. Cada ronda usa una escala psicométrica reconocida y devuelve un
-            puntaje por dimensión, más un índice de bienestar de 0 a 100 comparable entre rondas.
+            Cada ronda evalúa tres dimensiones del desgaste laboral y devuelve un puntaje por
+            dimensión, más un índice de bienestar de 0 a 100 comparable entre rondas.
           </p>
           <div className="mt-1 flex flex-wrap gap-2.5">
-            <Chip>22 preguntas · 5 minutos</Chip>
+            <Chip>6 preguntas · 2 minutos</Chip>
             <Chip>Rondas de 7 días</Chip>
           </div>
         </div>
