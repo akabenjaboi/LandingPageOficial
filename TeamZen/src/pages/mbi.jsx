@@ -229,7 +229,6 @@ export default function MBIPage() {
           setAlreadyAnswered(true);
           if (draftKey) localStorage.removeItem(draftKey);
           setSuccess('Ya habías enviado esta evaluación. ¡Gracias por tu participación!');
-          setTimeout(() => navigate('/dashboard'), 1500);
           return;
         }
         throw insertRespErr;
@@ -258,7 +257,6 @@ export default function MBIPage() {
 
       if (draftKey) localStorage.removeItem(draftKey);
       setSuccess('¡Gracias! Tu respuesta fue enviada correctamente.');
-      setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {
       console.error(err);
       setError(err.message || 'No se pudo enviar la respuesta. Verifica que las tablas del inventario existan.');
@@ -301,8 +299,33 @@ export default function MBIPage() {
         {teamId && !activeCycle && !error && (
           <Notice tone="purple">No hay una ronda activa en este momento para este equipo.</Notice>
         )}
-        {alreadyAnswered && <Notice>Ya has respondido esta evaluación. Gracias por tu participación.</Notice>}
+        {!success && alreadyAnswered && <Notice>Ya has respondido esta evaluación. Gracias por tu participación.</Notice>}
 
+        {success ? (
+          <div className="flex flex-col items-center gap-4 rounded-[20px] border border-[#DAD5E4] bg-white p-[34px] text-center shadow-teamzen">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(85,194,162,.16)] text-2xl text-[#3d8a74]">✓</span>
+            <p className="font-['Poppins',_Arial,_sans-serif] text-lg font-semibold text-[#2E2E3A]">{success}</p>
+            <p className="max-w-[36em] text-sm text-[#5B5B6B]">
+              Puedes revisar tu resultado y su evolución en el tiempo cuando quieras, en la sección de reportes.
+            </p>
+            <div className="mt-1 flex w-full max-w-[420px] flex-col gap-2.5 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard')}
+                className="flex-1 rounded-xl bg-[#DAD5E4] px-[22px] py-[13px] font-['Poppins',_Arial,_sans-serif] text-[15px] font-semibold text-[#2E2E3A] transition hover:bg-[#cdc6db]"
+              >
+                Volver al dashboard
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(teamId ? `/reportes?team=${teamId}` : '/reportes')}
+                className="flex-1 rounded-xl bg-[linear-gradient(135deg,#55C2A2,#9D83C6)] px-[22px] py-[13px] font-['Poppins',_Arial,_sans-serif] text-[15px] font-semibold text-white shadow-[0_12px_26px_rgba(85,194,162,.28)] transition hover:scale-[1.02] hover:bg-[linear-gradient(135deg,#4AA690,#8B6FB8)]"
+              >
+                Ver mi reporte
+              </button>
+            </div>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
           {ITEMS.map((it, qi) => (
             <div key={it.id} className="flex flex-col gap-3.5 rounded-[20px] border border-[#DAD5E4] bg-white p-[22px] shadow-teamzen">
@@ -343,7 +366,6 @@ export default function MBIPage() {
           ))}
 
           {error && <Alert>{error}</Alert>}
-          {success && <Alert tone="success">{success}</Alert>}
 
           <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center bg-[linear-gradient(180deg,rgba(250,249,246,0),rgba(250,249,246,.96)_40%)] px-4 py-4 sm:px-6">
             <div className="pointer-events-auto flex w-full max-w-[860px] flex-wrap items-center gap-3.5 rounded-[20px] border border-[#DAD5E4] bg-white px-5 py-4 shadow-teamzen-strong">
@@ -372,6 +394,7 @@ export default function MBIPage() {
             </div>
           </div>
         </form>
+        )}
       </main>
     </div>
   );
